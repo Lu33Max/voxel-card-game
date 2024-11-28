@@ -49,6 +49,8 @@ public class SteamLobby : MonoBehaviour
         lobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(OnGetLobbyData);
 
         connectingFailed = Callback<P2PSessionConnectFail_t>.Create(OnConnectingFailed);
+
+        MainMenu.singleton.OnGetSteamLobbyList += GetLobbiesList;
     }
 
     public void JoinGameHost()
