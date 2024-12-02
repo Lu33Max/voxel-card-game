@@ -50,21 +50,13 @@ public class SteamLobby : MonoBehaviour
 
         connectingFailed = Callback<P2PSessionConnectFail_t>.Create(OnConnectingFailed);
 
+        MainMenu.singleton.OnCreatingLobby += JoinGameHost;
         MainMenu.singleton.OnGetSteamLobbyList += GetLobbiesList;
     }
 
     public void JoinGameHost()
     {
-        //networkManager.StartHost();
-
-        if (true)
-        {
-            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, networkManager.maxConnections);
-        }
-        else
-        {
-            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePrivate, networkManager.maxConnections);
-        }
+        SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, networkManager.maxConnections);
 
         Debug.Log("Lobby created");
     }

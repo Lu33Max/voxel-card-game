@@ -9,6 +9,7 @@ public class MainMenu : MonoBehaviour
 {
     public static MainMenu singleton;
 
+    public event Action OnCreatingLobby;
     public event Action OnGetSteamLobbyList;
 
     [SerializeField] GameObject lobbyDataItemPrefab;
@@ -16,12 +17,13 @@ public class MainMenu : MonoBehaviour
 
     List<GameObject> listOfLobbies = new List<GameObject>();
 
-    [SerializeField] GameObject lobbyListLoading;
-
     private void Awake()
     {
         singleton = this;
+    }
 
+    private void Start()
+    {
         NetworkManager.singleton.GetComponent<SteamLobby>().onGetLobbyData += DisplayLobbies;
     }
 
@@ -46,9 +48,12 @@ public class MainMenu : MonoBehaviour
 
             }
         }
-
-        lobbyListLoading.SetActive(false);
     }
+    public void CreateLobbyButton()
+    {
+        OnCreatingLobby?.Invoke();
+    }
+
 
     public void GetListOfLobbiesButton()
     {
