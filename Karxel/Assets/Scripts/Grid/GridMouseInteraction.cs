@@ -5,6 +5,10 @@ public class GridMouseInteraction : MonoBehaviour
 {
     [SerializeField] private LayerMask groundLayer;
     
+    [Header("Hover Highlight")]
+    [SerializeField] private GameObject highlightMarker;
+    [SerializeField] private float groundDistance = 0.01f;
+    
     private Camera _mainCamera;
     private TileData _hoveredTile;
 
@@ -18,6 +22,7 @@ public class GridMouseInteraction : MonoBehaviour
     private void Update()
     {
         CheckForHoveredTile();
+        UpdateHighlighter();
     }
 
     private void CheckForHoveredTile()
@@ -54,6 +59,19 @@ public class GridMouseInteraction : MonoBehaviour
         else
         {
             _isHovering = false;
+        }
+    }
+
+    private void UpdateHighlighter()
+    {
+        if (_isHovering)
+        {
+            highlightMarker.SetActive(true);
+            highlightMarker.transform.position = _hoveredTile.GetWorldPosition(groundDistance);
+        }
+        else
+        {
+            highlightMarker.SetActive(false);
         }
     }
 }

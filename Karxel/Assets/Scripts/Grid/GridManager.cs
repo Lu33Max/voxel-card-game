@@ -1,13 +1,18 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
 
-    [SerializeField] private int gridSizeX;
-    [SerializeField] private int gridSizeY;
-    [SerializeField] private float gridResolution;
+    [SerializeField, Tooltip("Max number of tiles in x-Direction")] 
+    private int gridSizeX;
+    [SerializeField, Tooltip("Max number of tiles in z-Direction")] 
+    private int gridSizeZ;
+    [SerializeField, Tooltip("Edge length of a single tile")] 
+    private float gridResolution;
     
     [SerializeField] private LayerMask groundLayer;
 
@@ -29,41 +34,46 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
-    /// <param name="tilePosition">Grid position of the tile.</param>
-    /// <returns></returns>
-    public TileData GetTileAtPosition(Vector2Int tilePosition)
+    public TileData GetTileAtGridPosition(Vector2Int tilePosition)
     {
         _tiles.TryGetValue(tilePosition, out TileData tile);
         return tile;
     }
 
     /// <summary>Retrieve TileData at a world position by converting it to grid tiles.</summary>
-    /// <param name="worldPosition">Absolute tile world position</param>
-    /// <returns></returns>
     public TileData GetTileAtWorldPosition(Vector2 worldPosition)
     {
         Vector2Int gridPosition = WorldToGridPosition(worldPosition);
-        return GetTileAtPosition(gridPosition);
+        return GetTileAtGridPosition(gridPosition);
     }
 
     /// <summary>Converts a given world coordinate into a grid coordinate.</summary>
-    /// <param name="worldPosition">Position in world coordinates</param>
-    /// <returns></returns>
     public Vector2Int WorldToGridPosition(Vector2 worldPosition)
     {
-        return new Vector2Int(Mathf.FloorToInt(worldPosition.x / gridResolution), Mathf.FloorToInt(worldPosition.y / gridResolution));
+        return new Vector2Int(Mathf.FloorToInt(worldPosition.x / gridResolution),
+            Mathf.FloorToInt(worldPosition.y / gridResolution));
     }
 
+    /// <summary>Convert a grid position into world coordinates</summary>
+    public Vector2 GridToWorldPosition(Vector2Int gridPosition)
+    {
+        return new Vector2(gridPosition.x * gridResolution + gridResolution / 2,
+            gridPosition.y * gridResolution + gridResolution / 2);
+    }
+
+    /// <summary>Checks if grid position is inside the world boundaries.</summary>
     public bool IsValidGridPosition(Vector2Int gridPosition)
     {
-        return gridPosition.x >= 0 && gridPosition.x < gridSizeX && gridPosition.y >= 0 && gridPosition.y < gridSizeY;
+        return gridPosition.x >= 0 && gridPosition.x < gridSizeX && gridPosition.y >= 0 && gridPosition.y < gridSizeZ;
     }
 
+    // Calculates all tile positions of the board by doing a raycast at each one of them
+    // With this method, even uneven play fields can be correctly mapped
     private void CalculateTilePositions()
     {
         for (int x = 0; x < gridSizeX; x++)
         {
-            for (int y = 0; y < gridSizeY; y++)
+            for (int y = 0; y < gridSizeZ; y++)
             {
                 Ray ray = new Ray(new Vector3(x * gridResolution, 200, y * gridResolution), Vector3.down);
                 
