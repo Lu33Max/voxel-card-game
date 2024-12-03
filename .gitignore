@@ -71,4 +71,4 @@ Karxel/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 Karxel/[Aa]ssets/[Ss]treamingAssets/aa.meta
 Karxel/[Aa]ssets/[Ss]treamingAssets/aa/*
 
-*/.idea/*
+**/.idea/**
