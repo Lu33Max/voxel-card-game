@@ -11,6 +11,7 @@ public class GridMouseInteraction : MonoBehaviour
     
     private Camera _mainCamera;
     private TileData _hoveredTile;
+    private Unit _selectedUnit;
 
     private bool _isHovering;
 
@@ -36,6 +37,7 @@ public class GridMouseInteraction : MonoBehaviour
             bool inGrid = GridManager.Instance.IsValidGridPosition(hoveredPosition);
             if (!inGrid)
             {
+                _selectedUnit = null;
                 _isHovering = false;
                 return;
             }
@@ -44,6 +46,7 @@ public class GridMouseInteraction : MonoBehaviour
             TileData tile = GridManager.Instance.GetTileAtWorldPosition(new Vector2(hit.point.x, hit.point.z));
             if (tile == null)
             {
+                _selectedUnit = null;
                 _isHovering = false;
                 return;
             }
@@ -54,6 +57,30 @@ public class GridMouseInteraction : MonoBehaviour
             if (Input.GetMouseButtonDown(0))
             {
                 Debug.Log($"Tile clicked at position: {tile.Position}");
+
+                if (_selectedUnit == null)
+                {
+                    _selectedUnit = tile.Unit;
+                    // Get Valid Moves
+                    // Highlight moves on map
+                    return;
+                }
+
+                // TODO: Replace with cards movement Range
+                var moveCommand = _selectedUnit.GetValidMoves(2)
+                    .Find(move => move.TargetPosition == tile.Position);
+                
+                if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
+                {
+                    Debug.Log("I should step to " + moveCommand.TargetPosition + " now");
+                    _selectedUnit.StepToTile(moveCommand);
+                    _selectedUnit = null;
+                }
+                else
+                {
+                    _selectedUnit = null;
+                    // Deselect unit
+                }
             }
         }
         else

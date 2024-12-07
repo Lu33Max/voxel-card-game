@@ -1,20 +1,24 @@
 using System.Collections.Generic;
-using System.ComponentModel;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
 
     [SerializeField, Tooltip("Max number of tiles in x-Direction")] 
-    private int gridSizeX;
+    private int gridSizeX = 10;
     [SerializeField, Tooltip("Max number of tiles in z-Direction")] 
-    private int gridSizeZ;
+    private int gridSizeZ = 10;
     [SerializeField, Tooltip("Edge length of a single tile")] 
-    private float gridResolution;
+    private float gridResolution = 1;
+    [SerializeField, Tooltip("Height of a single map layer")]
+    private float layerHeight = 0.5f;
     
     [SerializeField] private LayerMask groundLayer;
+
+    [Header("Temporary Unit Setup")]
+    [SerializeField] private Transform unitParent;
+    [SerializeField] private GameObject pawnUnit;
 
     private Dictionary<Vector2Int, TileData> _tiles = new();
 
@@ -31,6 +35,7 @@ public class GridManager : MonoBehaviour
     private void Start()
     {
         CalculateTilePositions();
+        SetupUnits();
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
@@ -55,9 +60,12 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>Convert a grid position into world coordinates</summary>
-    public Vector2 GridToWorldPosition(Vector2Int gridPosition)
+    public Vector3 GridToWorldPosition(Vector2Int gridPosition)
     {
-        return new Vector2(gridPosition.x * gridResolution + gridResolution / 2,
+        if (!IsValidGridPosition(gridPosition))
+            return Vector3.zero;
+        
+        return new Vector3(gridPosition.x * gridResolution + gridResolution / 2, _tiles[gridPosition].HeightLayer * layerHeight,
             gridPosition.y * gridResolution + gridResolution / 2);
     }
 
@@ -65,6 +73,34 @@ public class GridManager : MonoBehaviour
     public bool IsValidGridPosition(Vector2Int gridPosition)
     {
         return gridPosition.x >= 0 && gridPosition.x < gridSizeX && gridPosition.y >= 0 && gridPosition.y < gridSizeZ;
+    }
+
+    /// <summary>Checks if the given move is possible to do on the current board configuration</summary>
+    public bool IsMoveValid(MoveCommand move)
+    {
+        if (!_tiles.ContainsKey(move.TargetPosition))
+            return false;
+
+        foreach (var tile in move.Path)
+        {
+            if (!_tiles.ContainsKey(tile))
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Transfers a Unit-reference from a start tile to a target tile</summary>
+    // TODO: Check for units on target tile
+    public void MoveUnit(Vector2Int startTile, Vector2Int targetTile)
+    {
+        var unit = _tiles[startTile].Unit;
+        
+        if(unit == null)
+            return;
+
+        _tiles[startTile].Unit = null;
+        _tiles[targetTile].Unit = unit;
     }
 
     // Calculates all tile positions of the board by doing a raycast at each one of them
@@ -81,9 +117,18 @@ public class GridManager : MonoBehaviour
                     continue;
 
                 var gridPos = new Vector2Int(x, y);
-                
-                _tiles.Add(gridPos, new TileData{ Position = gridPos, Height = hitInfo.point.y });
+                _tiles.Add(gridPos, new TileData{ Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) });
             }
         }
+    }
+
+    // TODO: Replace later with correct spawn logic
+    private void SetupUnits()
+    {
+        var newPiece = Instantiate(pawnUnit, unitParent);
+        var unit = newPiece.GetComponent<Unit>();
+        
+        unit.MoveToTile(Vector2Int.zero);
+        _tiles[Vector2Int.zero].Unit = unit;
     }
 }
