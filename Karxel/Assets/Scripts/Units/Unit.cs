@@ -5,7 +5,7 @@ using UnityEngine;
 
 public abstract class Unit : NetworkBehaviour
 {
-    public Vector2Int TilePosition { get; private set; }
+    protected Vector2Int TilePosition { get; private set; }
 
     [SerializeField] private float stepDuration = 0.3f;
     
@@ -29,6 +29,7 @@ public abstract class Unit : NetworkBehaviour
         TilePosition = moveCommand.TargetPosition;
     }
     
+    // Move the unit along the given path from tile to tile
     private IEnumerator MoveToPositions(MoveCommand moveCommand)
     {
         foreach (var tile in moveCommand.Path)
@@ -41,6 +42,7 @@ public abstract class Unit : NetworkBehaviour
         yield return StartCoroutine(Move(targetPos));
     }
 
+    // MOve the unit to the given world position
     private IEnumerator Move(Vector3 targetPos)
     {
         float elapsedTime = 0;

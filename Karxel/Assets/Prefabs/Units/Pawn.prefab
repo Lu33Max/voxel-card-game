@@ -49,6 +49,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  stepDuration: 0.15
 --- !u!114 &6505779614707281561
 MonoBehaviour:
   m_ObjectHideFlags: 0

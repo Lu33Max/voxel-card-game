@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
 
+    [Header("Grid Setup")]
     [SerializeField, Tooltip("Max number of tiles in x-Direction")] 
     private int gridSizeX = 10;
     [SerializeField, Tooltip("Max number of tiles in z-Direction")] 
@@ -13,9 +15,13 @@ public class GridManager : MonoBehaviour
     private float gridResolution = 1;
     [SerializeField, Tooltip("Height of a single map layer")]
     private float layerHeight = 0.5f;
-    
     [SerializeField] private LayerMask groundLayer;
 
+    [Header("Highlighting")]
+    [SerializeField] private Transform highlightParent;
+    [SerializeField] private GameObject moveTileHighlighter;
+    [SerializeField] private float highlightHoverHeight = 0.001f;
+    
     [Header("Temporary Unit Setup")]
     [SerializeField] private Transform unitParent;
     [SerializeField] private GameObject pawnUnit;
@@ -72,18 +78,18 @@ public class GridManager : MonoBehaviour
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
     public bool IsValidGridPosition(Vector2Int gridPosition)
     {
-        return gridPosition.x >= 0 && gridPosition.x < gridSizeX && gridPosition.y >= 0 && gridPosition.y < gridSizeZ;
+        return _tiles.ContainsKey(gridPosition);
     }
 
     /// <summary>Checks if the given move is possible to do on the current board configuration</summary>
     public bool IsMoveValid(MoveCommand move)
     {
-        if (!_tiles.ContainsKey(move.TargetPosition))
+        if (!IsValidGridPosition(move.TargetPosition))
             return false;
 
         foreach (var tile in move.Path)
         {
-            if (!_tiles.ContainsKey(tile))
+            if (!IsValidGridPosition(tile))
                 return false;
         }
 
@@ -103,6 +109,15 @@ public class GridManager : MonoBehaviour
         _tiles[targetTile].Unit = unit;
     }
 
+    public void HighlightMoveTiles(List<MoveCommand> moves, bool shouldHighlight)
+    {
+        foreach (var move in moves)
+        {
+            var tile = GetTileAtGridPosition(move.TargetPosition);
+            tile.Highlight.SetActive(shouldHighlight);
+        }
+    }
+
     // Calculates all tile positions of the board by doing a raycast at each one of them
     // With this method, even uneven play fields can be correctly mapped
     private void CalculateTilePositions()
@@ -111,13 +126,24 @@ public class GridManager : MonoBehaviour
         {
             for (int y = 0; y < gridSizeZ; y++)
             {
-                Ray ray = new Ray(new Vector3(x * gridResolution, 200, y * gridResolution), Vector3.down);
+                Ray ray = new Ray(
+                    new Vector3(x * gridResolution + gridResolution / 2, 200, y * gridResolution + gridResolution / 2),
+                    Vector3.down);
                 
                 if (!Physics.Raycast(ray, out RaycastHit hitInfo, 250, groundLayer))
                     continue;
-
+                
                 var gridPos = new Vector2Int(x, y);
-                _tiles.Add(gridPos, new TileData{ Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) });
+                var tile = new TileData
+                    { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
+                
+                _tiles.Add(gridPos, tile);
+
+                var highlighter = Instantiate(moveTileHighlighter, highlightParent);
+                highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
+                highlighter.SetActive(false);
+
+                tile.Highlight = highlighter;
             }
         }
     }
