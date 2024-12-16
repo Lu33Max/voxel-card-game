@@ -23,7 +23,8 @@ public class NetworkRoom : NetworkRoomManager
 
     public override void OnRoomServerPlayersReady()
     {
-        
+        //LoadGame
+        ServerChangeScene(GameplayScene);
     }
 
     public override void OnRoomServerPlayersNotReady()
