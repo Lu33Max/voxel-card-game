@@ -84,12 +84,12 @@ public class GridManager : MonoBehaviour
     /// <summary>Checks if the given move is possible to do on the current board configuration</summary>
     public bool IsMoveValid(MoveCommand move)
     {
-        if (!IsValidGridPosition(move.TargetPosition))
+        if (!IsValidGridPosition(move.TargetPosition) || _tiles[move.TargetPosition].Unit != null)
             return false;
 
         foreach (var tile in move.Path)
         {
-            if (!IsValidGridPosition(tile))
+            if (!IsValidGridPosition(tile) || _tiles[tile].Unit != null)
                 return false;
         }
 
@@ -97,7 +97,6 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>Transfers a Unit-reference from a start tile to a target tile</summary>
-    // TODO: Check for units on target tile
     public void MoveUnit(Vector2Int startTile, Vector2Int targetTile)
     {
         var unit = _tiles[startTile].Unit;
@@ -109,6 +108,9 @@ public class GridManager : MonoBehaviour
         _tiles[targetTile].Unit = unit;
     }
 
+    /// <summary>Shows or hides the highlights to display move</summary>
+    /// <param name="moves"></param>
+    /// <param name="shouldHighlight"></param>
     public void HighlightMoveTiles(List<MoveCommand> moves, bool shouldHighlight)
     {
         foreach (var move in moves)
@@ -151,10 +153,13 @@ public class GridManager : MonoBehaviour
     // TODO: Replace later with correct spawn logic
     private void SetupUnits()
     {
-        var newPiece = Instantiate(pawnUnit, unitParent);
-        var unit = newPiece.GetComponent<Unit>();
+        foreach (var tile in _tiles.Keys.Where(v => v.x == 0 || v.x == gridSizeX - 1))
+        {
+            var newPiece = Instantiate(pawnUnit, unitParent);
+            var unit = newPiece.GetComponent<Unit>();
         
-        unit.MoveToTile(Vector2Int.zero);
-        _tiles[Vector2Int.zero].Unit = unit;
+            unit.MoveToTile(tile);
+            _tiles[tile].Unit = unit;   
+        }
     }
 }
