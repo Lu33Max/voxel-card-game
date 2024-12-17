@@ -6,7 +6,10 @@ public class Card : MonoBehaviour
 {
     [SerializeField] CardData cardData;
 
-    //public void Se
+    public void CardClickedButton()
+    {
+        StartCoroutine(SelectFigure());
+    }
 
     IEnumerator SelectFigure()
     {
@@ -23,11 +26,16 @@ public class Card : MonoBehaviour
             if (Physics.Raycast(ray, out hit))
             {
                 Debug.Log("Raycast getroffen! Objekt: " + hit.collider.name);
+
+                //Karte der Figur übergeben
+                //Im UI löschen
+
                 break; // Schleife beenden
             }
             else
             {
                 Debug.Log("Kein Treffer. Warte auf den nächsten Klick.");
+                yield return null;
             }
         }
     }
