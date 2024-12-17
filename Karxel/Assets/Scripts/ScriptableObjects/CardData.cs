@@ -6,6 +6,8 @@ public class CardData : ScriptableObject
     public string cardName;
 
     public CardType cardType;
+
+    public Sprite cardSprite;
 }
 
 public enum CardType
