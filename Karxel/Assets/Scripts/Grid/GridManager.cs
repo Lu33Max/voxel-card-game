@@ -121,8 +121,8 @@ public class GridManager : NetworkBehaviour
     {
         foreach (var move in moves)
         {
-            var tile = GetTileAtGridPosition(move.TargetPosition);
-            tile.Highlight.SetActive(shouldHighlight);
+            // var tile = GetTileAtGridPosition(move.TargetPosition);
+            // tile.Highlight.SetActive(shouldHighlight);
         }
     }
 
@@ -148,12 +148,12 @@ public class GridManager : NetworkBehaviour
                 _tiles.Add(gridPos, tile);
                 //CMDAddToTiles(gridPos, tile);
 
-                var highlighter = Instantiate(moveTileHighlighter, highlightParent);
-                highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
-                highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
-                highlighter.SetActive(false);
-
-                tile.Highlight = highlighter;
+                // var highlighter = Instantiate(moveTileHighlighter, highlightParent);
+                // highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
+                // highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
+                // highlighter.SetActive(false);
+                //
+                // tile.Highlight = highlighter;
             }
         }
     }
