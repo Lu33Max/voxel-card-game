@@ -19,8 +19,6 @@ public class GiveAuthority : NetworkBehaviour
     {
         base.OnStartLocalPlayer();
 
-
-
         cube.GetComponent<NetworkIdentity>().AssignClientAuthority(GetComponent<NetworkIdentity>().connectionToClient);
     }
 }

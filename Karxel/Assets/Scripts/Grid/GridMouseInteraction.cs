@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Mirror;
 using UnityEngine;
 
 public class GridMouseInteraction : MonoBehaviour
@@ -69,6 +70,7 @@ public class GridMouseInteraction : MonoBehaviour
                 if(_hoveredTile.Unit == null)
                     return;
                     
+                GameManager.Instance.localPlayer.GetComponent<Player>().RequestAuthority(_hoveredTile.Unit.GetComponent<NetworkIdentity>());
                 _selectedUnit = _hoveredTile.Unit;
                     
                 var moves = _selectedUnit.GetValidMoves(2);
