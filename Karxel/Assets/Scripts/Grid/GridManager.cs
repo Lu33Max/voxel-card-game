@@ -156,22 +156,36 @@ public class GridManager : MonoBehaviour
     // TODO: Replace later with correct spawn logic
     private void SetupUnits()
     {
-        foreach (var tile in _tiles.Keys.Where(v => v.x == 1 || v.x == gridSizeX - 2))
+        // foreach (var tile in _tiles.Keys.Where(v => v.x == 1 || v.x == gridSizeX - 2))
+        // {
+        //     var newPiece = Instantiate(pawnUnit, unitParent);
+        //     var unit = newPiece.GetComponent<Unit>();
+        //
+        //     unit.MoveToTile(tile);
+        //     _tiles[tile].Unit = unit;   
+        // }
+        //
+        // foreach (var tile in _tiles.Keys.Where(v => v.x == 0 || v.x == gridSizeX - 1))
+        // {
+        //     var newPiece = Instantiate(tile.y == Mathf.RoundToInt(gridSizeZ / 2f) ? kingUnit : heavyUnit, unitParent);
+        //     var unit = newPiece.GetComponent<Unit>();
+        //
+        //     unit.MoveToTile(tile);
+        //     _tiles[tile].Unit = unit;   
+        // }
+
+        for(int i = 0; i < unitParent.childCount; i++)
         {
-            var newPiece = Instantiate(pawnUnit, unitParent);
-            var unit = newPiece.GetComponent<Unit>();
-        
-            unit.MoveToTile(tile);
-            _tiles[tile].Unit = unit;   
-        }
-        
-        foreach (var tile in _tiles.Keys.Where(v => v.x == 0 || v.x == gridSizeX - 1))
-        {
-            var newPiece = Instantiate(tile.y == Mathf.RoundToInt(gridSizeZ / 2f) ? kingUnit : heavyUnit, unitParent);
-            var unit = newPiece.GetComponent<Unit>();
-        
-            unit.MoveToTile(tile);
-            _tiles[tile].Unit = unit;   
+            var unit = unitParent.GetChild(i);
+            var unitScript = unit.GetComponent<Unit>();
+
+            Vector2Int gridPos =
+                new Vector2Int(Mathf.RoundToInt((unit.position.x - (gridResolution / 2)) / gridResolution),
+                    Mathf.RoundToInt((unit.position.z - (gridResolution / 2)) / gridResolution));
+            
+            unit.gameObject.SetActive(true);
+            unitScript.MoveToTile(gridPos);
+            _tiles[gridPos].Unit = unitScript;
         }
     }
 }
