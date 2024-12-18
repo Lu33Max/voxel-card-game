@@ -5,6 +5,8 @@ using UnityEngine;
 
 public abstract class Unit : NetworkBehaviour
 {
+    [SerializeField] FigureData figureData;
+
     protected Vector2Int TilePosition { get; private set; }
 
     [SerializeField] private float stepDuration = 0.3f;

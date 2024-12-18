@@ -13,7 +13,7 @@ public class CardManager : MonoBehaviour
         singleton = this;
     }
 
-    public void DrawCard()
+    public void DrawCardButton()
     {
 
     }
