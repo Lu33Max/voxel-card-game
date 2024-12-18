@@ -145,8 +145,8 @@ public class GridManager : NetworkBehaviour
                 var tile = new TileData
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
                 
-                //_tiles.Add(gridPos, tile);
-                CMDAddToTiles(gridPos, tile);
+                _tiles.Add(gridPos, tile);
+                //CMDAddToTiles(gridPos, tile);
 
                 var highlighter = Instantiate(moveTileHighlighter, highlightParent);
                 highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
@@ -204,12 +204,12 @@ public class GridManager : NetworkBehaviour
         RPCUpdateTiles(key, tile);
     }
 
-    [Command(requiresAuthority = false)]
-    public void CMDAddToTiles(Vector2Int key, TileData tile)
-    {
-        //_tiles.Add(key, tile);
-        RPCAddTiles(key, tile);
-    }
+    // [Command(requiresAuthority = false)]
+    // public void CMDAddToTiles(Vector2Int key, TileData tile)
+    // {
+    //     //_tiles.Add(key, tile);
+    //     RPCAddTiles(key, tile);
+    // }
 
     [ClientRpc]
     public void RPCUpdateTiles(Vector2Int pos, TileData newTile)
@@ -217,9 +217,9 @@ public class GridManager : NetworkBehaviour
         _tiles[pos] = newTile;
     }
     
-    [ClientRpc]
-    public void RPCAddTiles(Vector2Int pos, TileData newTile)
-    {
-        _tiles.Add(pos, newTile);
-    }
+    // [ClientRpc]
+    // public void RPCAddTiles(Vector2Int pos, TileData newTile)
+    // {
+    //     _tiles.Add(pos, newTile);
+    // }
 }
