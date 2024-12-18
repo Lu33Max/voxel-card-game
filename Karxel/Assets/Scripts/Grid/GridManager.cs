@@ -31,6 +31,8 @@ public class GridManager : NetworkBehaviour
 
     private Dictionary<Vector2Int, TileData> _tiles = new();
 
+    private int _readyPlayers = 0;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -44,7 +46,7 @@ public class GridManager : NetworkBehaviour
     private void Start()
     {
         CalculateTilePositions();
-        SetupUnits();
+        //SetupUnits();
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
@@ -157,6 +159,8 @@ public class GridManager : NetworkBehaviour
                 // tile.Highlight = highlighter;
             }
         }
+        
+        CMDSetupReady();
     }
 
     // TODO: Replace later with correct spawn logic
@@ -192,35 +196,34 @@ public class GridManager : NetworkBehaviour
             unit.gameObject.SetActive(true);
             unitScript.MoveToTile(gridPos);
             //_tiles[gridPos].Unit = unitScript;
-            CMDUpdateTileUnit(gridPos, unitScript);
+            //CMDUpdateTileUnit(gridPos, unitScript);
+
+            var newTile = _tiles[gridPos];
+            newTile.Unit = unitScript;
+            RPCUpdateTiles(gridPos, newTile);
         }
     }
 
     [Command(requiresAuthority = false)]
-    public void CMDUpdateTileUnit(Vector2Int key, Unit unit)
+    private void CMDUpdateTileUnit(Vector2Int key, Unit unit)
     {
-        //_tiles[key].Unit = unit;
         var tile = _tiles[key];
         tile.Unit = unit;
         RPCUpdateTiles(key, tile);
     }
 
-    // [Command(requiresAuthority = false)]
-    // public void CMDAddToTiles(Vector2Int key, TileData tile)
-    // {
-    //     //_tiles.Add(key, tile);
-    //     RPCAddTiles(key, tile);
-    // }
+    [Command(requiresAuthority = false)]
+    private void CMDSetupReady()
+    {
+        _readyPlayers++;
+        
+        if(_readyPlayers == NetworkServer.connections.Values.Count)
+            SetupUnits();
+    }
 
     [ClientRpc]
-    public void RPCUpdateTiles(Vector2Int pos, TileData newTile)
+    private void RPCUpdateTiles(Vector2Int pos, TileData newTile)
     {
         _tiles[pos] = newTile;
     }
-    
-    // [ClientRpc]
-    // public void RPCAddTiles(Vector2Int pos, TileData newTile)
-    // {
-    //     _tiles.Add(pos, newTile);
-    // }
 }
