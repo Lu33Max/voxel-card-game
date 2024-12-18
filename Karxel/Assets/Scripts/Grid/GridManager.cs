@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using Mirror;
 using UnityEngine;
 
-public class GridManager : MonoBehaviour
+public class GridManager : NetworkBehaviour
 {
     public static GridManager Instance { get; private set; }
 
@@ -28,7 +29,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private GameObject heavyUnit;
     [SerializeField] private GameObject kingUnit;
 
-    private Dictionary<Vector2Int, TileData> _tiles = new();
+    private SyncDictionary<Vector2Int, TileData> _tiles = new();
 
     private void Awake()
     {
@@ -106,8 +107,11 @@ public class GridManager : MonoBehaviour
         if(unit == null)
             return;
 
-        _tiles[startTile].Unit = null;
-        _tiles[targetTile].Unit = unit;
+        //_tiles[startTile].Unit = null;
+        //_tiles[targetTile].Unit = unit;
+
+        CMDUpdateTileUnit(startTile, null);
+        CMDUpdateTileUnit(targetTile, unit);
     }
 
     /// <summary>Shows or hides the highlights to display move</summary>
@@ -141,7 +145,8 @@ public class GridManager : MonoBehaviour
                 var tile = new TileData
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
                 
-                _tiles.Add(gridPos, tile);
+                //_tiles.Add(gridPos, tile);
+                CMDAddToTiles(gridPos, tile);
 
                 var highlighter = Instantiate(moveTileHighlighter, highlightParent);
                 highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
@@ -185,7 +190,20 @@ public class GridManager : MonoBehaviour
             
             unit.gameObject.SetActive(true);
             unitScript.MoveToTile(gridPos);
-            _tiles[gridPos].Unit = unitScript;
+            //_tiles[gridPos].Unit = unitScript;
+            CMDUpdateTileUnit(gridPos, unitScript);
         }
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CMDUpdateTileUnit(Vector2Int key, Unit unit)
+    {
+        _tiles[key].Unit = unit;
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CMDAddToTiles(Vector2Int key, TileData tile)
+    {
+        _tiles.Add(key, tile);
     }
 }
