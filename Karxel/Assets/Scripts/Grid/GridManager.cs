@@ -25,6 +25,8 @@ public class GridManager : MonoBehaviour
     [Header("Temporary Unit Setup")]
     [SerializeField] private Transform unitParent;
     [SerializeField] private GameObject pawnUnit;
+    [SerializeField] private GameObject heavyUnit;
+    [SerializeField] private GameObject kingUnit;
 
     private Dictionary<Vector2Int, TileData> _tiles = new();
 
@@ -143,6 +145,7 @@ public class GridManager : MonoBehaviour
 
                 var highlighter = Instantiate(moveTileHighlighter, highlightParent);
                 highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
+                highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
                 highlighter.SetActive(false);
 
                 tile.Highlight = highlighter;
@@ -153,9 +156,18 @@ public class GridManager : MonoBehaviour
     // TODO: Replace later with correct spawn logic
     private void SetupUnits()
     {
-        foreach (var tile in _tiles.Keys.Where(v => v.x == 0 || v.x == gridSizeX - 1))
+        foreach (var tile in _tiles.Keys.Where(v => v.x == 1 || v.x == gridSizeX - 2))
         {
             var newPiece = Instantiate(pawnUnit, unitParent);
+            var unit = newPiece.GetComponent<Unit>();
+        
+            unit.MoveToTile(tile);
+            _tiles[tile].Unit = unit;   
+        }
+        
+        foreach (var tile in _tiles.Keys.Where(v => v.x == 0 || v.x == gridSizeX - 1))
+        {
+            var newPiece = Instantiate(tile.y == Mathf.RoundToInt(gridSizeZ / 2f) ? kingUnit : heavyUnit, unitParent);
             var unit = newPiece.GetComponent<Unit>();
         
             unit.MoveToTile(tile);

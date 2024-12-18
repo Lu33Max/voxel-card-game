@@ -19,6 +19,7 @@ public class GridMouseInteraction : MonoBehaviour
     private void Start()
     {
         _mainCamera = Camera.main;
+        highlightMarker.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
     }
 
     private void Update()
