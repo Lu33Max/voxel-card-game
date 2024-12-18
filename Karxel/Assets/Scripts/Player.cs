@@ -13,8 +13,14 @@ public class Player : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    public void RequestAuthority(NetworkIdentity obj)
+    public void CMDRequestAuthority(NetworkIdentity obj)
     {
         obj.GetComponent<NetworkIdentity>().AssignClientAuthority(GetComponent<NetworkIdentity>().connectionToClient);
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CMDRemoveAuthority(NetworkIdentity obj)
+    {
+        obj.GetComponent<NetworkIdentity>().RemoveClientAuthority();
     }
 }
