@@ -70,7 +70,7 @@ public class GridMouseInteraction : MonoBehaviour
                 if(_hoveredTile.Unit == null)
                     return;
                     
-                GameManager.Instance.localPlayer.GetComponent<Player>().CMDRequestAuthority(_hoveredTile.Unit.GetComponent<NetworkIdentity>());
+                //GameManager.Instance.localPlayer.GetComponent<Player>().CMDRequestAuthority(_hoveredTile.Unit.GetComponent<NetworkIdentity>());
                 _selectedUnit = _hoveredTile.Unit;
                     
                 var moves = _selectedUnit.GetValidMoves(2);
@@ -89,7 +89,7 @@ public class GridMouseInteraction : MonoBehaviour
                 GridManager.Instance.HighlightMoveTiles(moves, false);
                     
                 _selectedUnit.StepToTile(moveCommand);
-                GameManager.Instance.localPlayer.GetComponent<Player>().CMDRemoveAuthority(_hoveredTile.Unit.GetComponent<NetworkIdentity>());
+                //GameManager.Instance.localPlayer.GetComponent<Player>().CMDRemoveAuthority(_selectedUnit.GetComponent<NetworkIdentity>());
                 _selectedUnit = null;
             }
             else
@@ -97,7 +97,7 @@ public class GridMouseInteraction : MonoBehaviour
                 var moves = _selectedUnit.GetValidMoves(2);
                 GridManager.Instance.HighlightMoveTiles(moves, false);
                     
-                GameManager.Instance.localPlayer.GetComponent<Player>().CMDRemoveAuthority(_hoveredTile.Unit.GetComponent<NetworkIdentity>());
+                //GameManager.Instance.localPlayer.GetComponent<Player>().CMDRemoveAuthority(_selectedUnit.GetComponent<NetworkIdentity>());
                 _selectedUnit = null;
             }
         }

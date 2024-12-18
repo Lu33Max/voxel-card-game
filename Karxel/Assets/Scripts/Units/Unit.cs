@@ -20,15 +20,30 @@ public abstract class Unit : NetworkBehaviour
     {
         TilePosition = tilePos;
         Vector3 worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
-        gameObject.transform.position = worldPos;
+        //gameObject.transform.position = worldPos;
+        CMDChangePosition(gameObject, worldPos);
     }
 
     /// <summary>Step to a target tile while passing over all the given tiles in the path</summary>
     public void StepToTile(MoveCommand moveCommand)
     {
+        Debug.Log($"Target: {moveCommand.TargetPosition} | Calculated Pos: {GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition)}");
+        
         StartCoroutine(MoveToPositions(moveCommand));
         GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
         TilePosition = moveCommand.TargetPosition;
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CMDChangePosition(GameObject go, Vector3 position)
+    {
+        RPCChangePosition(go, position);
+    }
+
+    [ClientRpc]
+    public void RPCChangePosition(GameObject go, Vector3 position)
+    {
+        go.transform.position = position;
     }
     
     // Move the unit along the given path from tile to tile
@@ -51,10 +66,12 @@ public abstract class Unit : NetworkBehaviour
         Vector3 startingPos = transform.position;
         while (elapsedTime < stepDuration)
         {
-            transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration);
+            //transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration);
+            CMDChangePosition(gameObject, Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration));
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
-        transform.position = targetPos;
+        //transform.position = targetPos;
+        CMDChangePosition(gameObject, targetPos);
     }
 }
