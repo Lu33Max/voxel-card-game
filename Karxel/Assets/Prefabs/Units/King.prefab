@@ -92,7 +92,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1160365348562669108}
-  - component: {fileID: 6629697987774451715}
+  - component: {fileID: 4640847198411796687}
   - component: {fileID: 6505779614707281561}
   m_Layer: 0
   m_Name: King
@@ -117,7 +117,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6629697987774451715
+--- !u!114 &4640847198411796687
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -126,7 +126,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5633764496343281651}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e1b06f0249dc9047a04d999863d4ef9, type: 3}
+  m_Script: {fileID: 11500000, guid: 2365b970a03b6c94e8093ff100610da2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   syncDirection: 0
