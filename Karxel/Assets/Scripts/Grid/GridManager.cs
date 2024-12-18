@@ -29,7 +29,7 @@ public class GridManager : NetworkBehaviour
     [SerializeField] private GameObject heavyUnit;
     [SerializeField] private GameObject kingUnit;
 
-    private SyncDictionary<Vector2Int, TileData> _tiles = new();
+    private Dictionary<Vector2Int, TileData> _tiles = new();
 
     private void Awake()
     {
@@ -198,12 +198,28 @@ public class GridManager : NetworkBehaviour
     [Command(requiresAuthority = false)]
     public void CMDUpdateTileUnit(Vector2Int key, Unit unit)
     {
-        _tiles[key].Unit = unit;
+        //_tiles[key].Unit = unit;
+        var tile = _tiles[key];
+        tile.Unit = unit;
+        RPCUpdateTiles(key, tile);
     }
 
     [Command(requiresAuthority = false)]
     public void CMDAddToTiles(Vector2Int key, TileData tile)
     {
-        _tiles.Add(key, tile);
+        //_tiles.Add(key, tile);
+        RPCAddTiles(key, tile);
+    }
+
+    [ClientRpc]
+    public void RPCUpdateTiles(Vector2Int pos, TileData newTile)
+    {
+        _tiles[pos] = newTile;
+    }
+    
+    [ClientRpc]
+    public void RPCAddTiles(Vector2Int pos, TileData newTile)
+    {
+        _tiles.Add(pos, newTile);
     }
 }

@@ -29113,7 +29113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5a6d83af6f528144bd2bca2337163ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
+  syncDirection: 1
   syncMode: 0
   syncInterval: 0
   gridSizeX: 15
