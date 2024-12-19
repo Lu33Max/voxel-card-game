@@ -112,10 +112,21 @@ public class GridManager : NetworkBehaviour
     /// <summary>Shows or hides the highlights to display move</summary>
     public void HighlightMoveTiles(List<MoveCommand> moves, bool shouldHighlight)
     {
-        foreach (var move in moves)
+        if (!shouldHighlight)
         {
-            // var tile = GetTileAtGridPosition(move.TargetPosition);
-            // tile.Highlight.SetActive(shouldHighlight);
+            for(int i = highlightParent.childCount - 1; i >= 0; i--)
+                Destroy(highlightParent.GetChild(i).gameObject);
+            
+            return;
+        }
+        
+        List<Vector2Int> tiles = moves.SelectMany(c => c.Path.Append(c.TargetPosition)).ToHashSet().ToList();
+
+        foreach (var tile in tiles)
+        {
+            var highlighter = Instantiate(moveTileHighlighter, highlightParent);
+            highlighter.transform.position = GetTileAtGridPosition(tile).GetWorldPosition(highlightHoverHeight);
+            highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
         }
     }
 
@@ -139,13 +150,6 @@ public class GridManager : NetworkBehaviour
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
                 
                 _tiles.Add(gridPos, tile);
-
-                // var highlighter = Instantiate(moveTileHighlighter, highlightParent);
-                // highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
-                // highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
-                // highlighter.SetActive(false);
-                //
-                // tile.Highlight = highlighter;
             }
         }
         

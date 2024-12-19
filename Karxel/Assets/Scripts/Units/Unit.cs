@@ -36,27 +36,25 @@ public abstract class Unit : NetworkBehaviour
         foreach (var tile in moveCommand.Path)
         {
             Vector3 worldPos = GridManager.Instance.GridToWorldPosition(tile);
-            yield return StartCoroutine(Move(worldPos, moveCommand.TargetPosition));
+            yield return StartCoroutine(Move(worldPos));
         }
         
         Vector3 targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
-        yield return StartCoroutine(Move(targetPos, moveCommand.TargetPosition));
+        yield return StartCoroutine(Move(targetPos));
     }
 
     // MOve the unit to the given world position
-    private IEnumerator Move(Vector3 targetPos, Vector2Int tilePos)
+    private IEnumerator Move(Vector3 targetPos)
     {
         float elapsedTime = 0;
         Vector3 startingPos = transform.position;
         while (elapsedTime < stepDuration)
         {
             transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration);
-            //CmdChangePosition(gameObject, Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration), tilePos);
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
         transform.position = targetPos;
-        //CmdChangePosition(gameObject, targetPos, tilePos);
     }
     
     [Command(requiresAuthority = false)]

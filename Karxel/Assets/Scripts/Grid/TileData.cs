@@ -10,8 +10,6 @@ public class TileData
 
     [CanBeNull] public Unit Unit;
 
-    public GameObject Highlight;
-
     /// <summary>Calculates the world position of the current tile</summary>
     /// <param name="yOffset">Optional offset on top of y-coordinate</param>
     /// <returns></returns>
