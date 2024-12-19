@@ -63,43 +63,40 @@ public class GridMouseInteraction : MonoBehaviour
     // Used to handle the unit selection and highlight the reachable tiles
     private void CheckForMouseInteraction()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (!Input.GetMouseButtonDown(0)) 
+            return;
+        
+        if (_selectedUnit == null)
         {
-            if (_selectedUnit == null)
-            {
-                if(_hoveredTile.Unit == null)
-                    return;
-                    
-                //GameManager.Instance.localPlayer.GetComponent<Player>().CMDRequestAuthority(_hoveredTile.Unit.GetComponent<NetworkIdentity>());
-                _selectedUnit = _hoveredTile.Unit;
-                    
-                var moves = _selectedUnit.GetValidMoves(2);
-                GridManager.Instance.HighlightMoveTiles(moves, true);
-
+            if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team)
                 return;
-            }
+            
+            _selectedUnit = _hoveredTile.Unit;
+                    
+            var moves = _selectedUnit.GetValidMoves(2);
+            GridManager.Instance.HighlightMoveTiles(moves, true);
 
-            // TODO: Replace with cards movement Range
-            var moveCommand = _selectedUnit.GetValidMoves(2)
-                .Where(move => move.TargetPosition == _hoveredTile.Position).FirstOrDefault();
+            return;
+        }
+
+        // TODO: Replace with cards movement Range
+        var moveCommand = _selectedUnit.GetValidMoves(2)
+            .Where(move => move.TargetPosition == _hoveredTile.Position).FirstOrDefault();
                 
-            if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
-            {
-                var moves = _selectedUnit.GetValidMoves(2);
-                GridManager.Instance.HighlightMoveTiles(moves, false);
+        if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
+        {
+            var moves = _selectedUnit.GetValidMoves(2);
+            GridManager.Instance.HighlightMoveTiles(moves, false);
                     
-                _selectedUnit.StepToTile(moveCommand);
-                //GameManager.Instance.localPlayer.GetComponent<Player>().CMDRemoveAuthority(_selectedUnit.GetComponent<NetworkIdentity>());
-                _selectedUnit = null;
-            }
-            else
-            {
-                var moves = _selectedUnit.GetValidMoves(2);
-                GridManager.Instance.HighlightMoveTiles(moves, false);
-                    
-                //GameManager.Instance.localPlayer.GetComponent<Player>().CMDRemoveAuthority(_selectedUnit.GetComponent<NetworkIdentity>());
-                _selectedUnit = null;
-            }
+            _selectedUnit.StepToTile(moveCommand);
+            _selectedUnit = null;
+        }
+        else
+        {
+            var moves = _selectedUnit.GetValidMoves(2);
+            GridManager.Instance.HighlightMoveTiles(moves, false);
+            
+            _selectedUnit = null;
         }
     }
 

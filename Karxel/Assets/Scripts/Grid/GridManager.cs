@@ -172,6 +172,7 @@ public class GridManager : NetworkBehaviour
             
             unit.gameObject.SetActive(true);
             unitScript.MoveToTile(gridPos);
+            unitScript.owningTeam = unitPosition.x < (gridSizeX / 2f) * gridResolution ? Team.Blue : Team.Red;
 
             var newTile = _tiles[gridPos];
             newTile.Unit = unitScript;

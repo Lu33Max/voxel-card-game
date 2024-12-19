@@ -5,8 +5,10 @@ using UnityEngine;
 
 public abstract class Unit : NetworkBehaviour
 {
+    [SyncVar] public Team owningTeam;
+    
     [SerializeField] private UnitData data;
-
+    
     protected Vector2Int TilePosition { get; private set; }
     
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
@@ -17,7 +19,7 @@ public abstract class Unit : NetworkBehaviour
     public void MoveToTile(Vector2Int tilePos)
     {
         Vector3 worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
-        CmdChangePosition(gameObject, worldPos, tilePos);
+        CmdChangePosition(worldPos, tilePos);
     }
 
     /// <summary>Step to a target tile while passing over all the given tiles in the path</summary>
@@ -58,9 +60,9 @@ public abstract class Unit : NetworkBehaviour
     #region Networking
 
     [Command(requiresAuthority = false)]
-    private void CmdChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
+    private void CmdChangePosition(Vector3 position, Vector2Int tilePos)
     {
-        RPCChangePosition(go, position, tilePos);
+        RPCChangePosition(position, tilePos);
     }
 
     [Command(requiresAuthority = false)]
@@ -70,9 +72,9 @@ public abstract class Unit : NetworkBehaviour
     }
     
     [ClientRpc]
-    private void RPCChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
+    private void RPCChangePosition(Vector3 position, Vector2Int tilePos)
     {
-        go.transform.position = position;
+        transform.position = position;
         TilePosition = tilePos;
     }
     
