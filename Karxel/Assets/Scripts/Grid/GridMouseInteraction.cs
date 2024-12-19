@@ -88,7 +88,8 @@ public class GridMouseInteraction : MonoBehaviour
             var moves = _selectedUnit.GetValidMoves(2);
             GridManager.Instance.HighlightMoveTiles(moves, false);
                     
-            _selectedUnit.StepToTile(moveCommand);
+            //_selectedUnit.StepToTile(moveCommand);
+            _selectedUnit.CmdAddToMoveIntent(moveCommand);
             _selectedUnit = null;
         }
         else

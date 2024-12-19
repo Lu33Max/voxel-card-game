@@ -7,6 +7,7 @@ public class PawnUnit : Unit
     public override List<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
+        var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
 
         for (int i = 1; i <= movementRange; i++)
         {
@@ -17,9 +18,9 @@ public class PawnUnit : Unit
                 var path = new List<Vector2Int>();
                 
                 for (int j = 1; j < movementRange; j++)
-                    path.Add(TilePosition + direction * j);
+                    path.Add(startPosition + direction * j);
                 
-                moves.Add(new MoveCommand { TargetPosition = TilePosition + i * direction, Path = path });
+                moves.Add(new MoveCommand { TargetPosition = startPosition + i * direction, Path = path });
             }
         }
         

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using UnityEngine;
 
@@ -10,11 +11,12 @@ public abstract class Unit : NetworkBehaviour
     [SerializeField] private UnitData data;
     
     protected Vector2Int TilePosition { get; private set; }
-    
+    protected List<MoveCommand> MoveIntent { get; private set; } = new();
+
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
     public abstract List<MoveCommand> GetValidMoves(int movementRange);
-
+    
     /// <summary>Instantly move the unit to the given tile</summary>
     public void MoveToTile(Vector2Int tilePos)
     {
@@ -70,6 +72,17 @@ public abstract class Unit : NetworkBehaviour
     {
         RPCStep(moveCommand);
     }
+
+    [Command(requiresAuthority = false)]
+    public void CmdAddToMoveIntent(MoveCommand moveCommand)
+    {
+        RPCAddToMoveIntent(moveCommand);
+        
+        if (GameManager.Instance.MoveIntents.TryGetValue(TilePosition, out var _))
+            GameManager.Instance.MoveIntents[TilePosition].Add(moveCommand);
+        else
+            GameManager.Instance.MoveIntents.Add(TilePosition, new List<MoveCommand>{ moveCommand });
+    }
     
     [ClientRpc]
     private void RPCChangePosition(Vector3 position, Vector2Int tilePos)
@@ -79,10 +92,19 @@ public abstract class Unit : NetworkBehaviour
     }
     
     [ClientRpc]
-    private void RPCStep(MoveCommand moveCommand)
+    public void RPCStep(MoveCommand moveCommand)
     {
         StartCoroutine(MoveToPositions(moveCommand));
+        
+        GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
         TilePosition = moveCommand.TargetPosition;
+        MoveIntent.Clear();
+    }
+
+    [ClientRpc]
+    private void RPCAddToMoveIntent(MoveCommand moveCommand)
+    {
+        MoveIntent.Add(moveCommand);
     }
 
     #endregion
