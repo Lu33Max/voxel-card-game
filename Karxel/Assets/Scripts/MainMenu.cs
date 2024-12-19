@@ -7,24 +7,28 @@ using UnityEngine;
 
 public class MainMenu : MonoBehaviour
 {
-    public static MainMenu singleton;
+    public static MainMenu Singleton;
 
     public event Action OnCreatingLobby;
     public event Action OnGetSteamLobbyList;
 
-    [SerializeField] GameObject lobbyDataItemPrefab;
-    [SerializeField] GameObject lobbyListContent;
+    [SerializeField] private GameObject lobbyDataItemPrefab;
+    [SerializeField] private GameObject lobbyListContent;
 
-    List<GameObject> listOfLobbies = new List<GameObject>();
+    private List<GameObject> _listOfLobbies = new();
 
     private void Awake()
     {
-        singleton = this;
+        Singleton = this;
     }
 
     private void Start()
     {
-        NetworkManager.singleton.GetComponent<SteamLobby>().onGetLobbyData += DisplayLobbies;
+        SteamLobby lobby = NetworkManager.singleton.GetComponent<SteamLobby>();
+        
+        // Steam lobby will be null for testing with localhost
+        if(lobby != null)
+            lobby.onGetLobbyData += DisplayLobbies;
     }
 
     public void DisplayLobbies(List<CSteamID> _lobbyIDs, LobbyDataUpdate_t _callback)
@@ -34,18 +38,15 @@ public class MainMenu : MonoBehaviour
             if (_lobbyIDs[i].m_SteamID == _callback.m_ulSteamIDLobby)
             {
 
-                GameObject createdItem = Instantiate(lobbyDataItemPrefab);
+                GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
 
                 createdItem.GetComponent<LobbyDataEntry>().lobbyID = (CSteamID)_lobbyIDs[i].m_SteamID;
                 createdItem.GetComponent<LobbyDataEntry>().lobbyName = SteamMatchmaking.GetLobbyData((CSteamID)_lobbyIDs[i].m_SteamID, "name");
-
                 createdItem.GetComponent<LobbyDataEntry>().SetLobbyData();
 
-                createdItem.transform.SetParent(lobbyListContent.transform);
                 createdItem.transform.localScale = Vector3.one;
 
-                listOfLobbies.Add(createdItem);
-
+                _listOfLobbies.Add(createdItem);
             }
         }
     }

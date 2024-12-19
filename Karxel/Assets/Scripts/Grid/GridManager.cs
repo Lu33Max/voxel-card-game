@@ -148,7 +148,6 @@ public class GridManager : NetworkBehaviour
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
                 
                 _tiles.Add(gridPos, tile);
-                Debug.Log($"Added at {gridPos}");
                 //CMDAddToTiles(gridPos, tile);
 
                 // var highlighter = Instantiate(moveTileHighlighter, highlightParent);

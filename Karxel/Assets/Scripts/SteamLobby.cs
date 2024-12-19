@@ -50,8 +50,8 @@ public class SteamLobby : MonoBehaviour
 
         connectingFailed = Callback<P2PSessionConnectFail_t>.Create(OnConnectingFailed);
 
-        MainMenu.singleton.OnCreatingLobby += JoinGameHost;
-        MainMenu.singleton.OnGetSteamLobbyList += GetLobbiesList;
+        MainMenu.Singleton.OnCreatingLobby += JoinGameHost;
+        MainMenu.Singleton.OnGetSteamLobbyList += GetLobbiesList;
     }
 
     public void JoinGameHost()
