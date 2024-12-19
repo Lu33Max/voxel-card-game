@@ -18,33 +18,16 @@ public abstract class Unit : NetworkBehaviour
     /// <summary>Instantly move the unit to the given tile</summary>
     public void MoveToTile(Vector2Int tilePos)
     {
-        //TilePosition = tilePos;
         Vector3 worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
-        //gameObject.transform.position = worldPos;
-        CMDChangePosition(gameObject, worldPos, tilePos);
+        CmdChangePosition(gameObject, worldPos, tilePos);
     }
 
     /// <summary>Step to a target tile while passing over all the given tiles in the path</summary>
     public void StepToTile(MoveCommand moveCommand)
     {
-        //Debug.Log($"Target: {moveCommand.TargetPosition} | Calculated Pos: {GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition)}");
-        
-        StartCoroutine(MoveToPositions(moveCommand));
+        //StartCoroutine(MoveToPositions(moveCommand));
+        CmdStep(moveCommand);
         GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
-        //TilePosition = moveCommand.TargetPosition;
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CMDChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
-    {
-        RPCChangePosition(go, position, tilePos);
-    }
-
-    [ClientRpc]
-    public void RPCChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
-    {
-        go.transform.position = position;
-        TilePosition = tilePos;
     }
     
     // Move the unit along the given path from tile to tile
@@ -67,12 +50,38 @@ public abstract class Unit : NetworkBehaviour
         Vector3 startingPos = transform.position;
         while (elapsedTime < stepDuration)
         {
-            //transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration);
-            CMDChangePosition(gameObject, Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration), tilePos);
+            transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration);
+            //CmdChangePosition(gameObject, Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration), tilePos);
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
-        //transform.position = targetPos;
-        CMDChangePosition(gameObject, targetPos, tilePos);
+        transform.position = targetPos;
+        //CmdChangePosition(gameObject, targetPos, tilePos);
+    }
+    
+    [Command(requiresAuthority = false)]
+    private void CmdChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
+    {
+        RPCChangePosition(go, position, tilePos);
+    }
+
+    [Command(requiresAuthority = false)]
+    private void CmdStep(MoveCommand moveCommand)
+    {
+        RPCStep(moveCommand);
+    }
+    
+    [ClientRpc]
+    private void RPCChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
+    {
+        go.transform.position = position;
+        TilePosition = tilePos;
+    }
+    
+    [ClientRpc]
+    private void RPCStep(MoveCommand moveCommand)
+    {
+        StartCoroutine(MoveToPositions(moveCommand));
+        TilePosition = moveCommand.TargetPosition;
     }
 }

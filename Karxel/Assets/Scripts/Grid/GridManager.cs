@@ -25,12 +25,9 @@ public class GridManager : NetworkBehaviour
     
     [Header("Temporary Unit Setup")]
     [SerializeField] private Transform unitParent;
-    [SerializeField] private GameObject pawnUnit;
-    [SerializeField] private GameObject heavyUnit;
-    [SerializeField] private GameObject kingUnit;
 
     private Dictionary<Vector2Int, TileData> _tiles = new();
-
+    
     private int _readyPlayers = 0;
 
     private void Awake()
@@ -46,7 +43,6 @@ public class GridManager : NetworkBehaviour
     private void Start()
     {
         CalculateTilePositions();
-        //SetupUnits();
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
@@ -108,17 +104,12 @@ public class GridManager : NetworkBehaviour
         
         if(unit == null)
             return;
-
-        //_tiles[startTile].Unit = null;
-        //_tiles[targetTile].Unit = unit;
-
-        CMDUpdateTileUnit(startTile, null);
-        CMDUpdateTileUnit(targetTile, unit);
+        
+        CmdUpdateTileUnit(startTile, null);
+        CmdUpdateTileUnit(targetTile, unit);
     }
 
     /// <summary>Shows or hides the highlights to display move</summary>
-    /// <param name="moves"></param>
-    /// <param name="shouldHighlight"></param>
     public void HighlightMoveTiles(List<MoveCommand> moves, bool shouldHighlight)
     {
         foreach (var move in moves)
@@ -148,7 +139,6 @@ public class GridManager : NetworkBehaviour
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
                 
                 _tiles.Add(gridPos, tile);
-                //CMDAddToTiles(gridPos, tile);
 
                 // var highlighter = Instantiate(moveTileHighlighter, highlightParent);
                 // highlighter.transform.position = tile.GetWorldPosition(highlightHoverHeight);
@@ -159,43 +149,25 @@ public class GridManager : NetworkBehaviour
             }
         }
         
-        CMDSetupReady();
+        CmdSetupReady();
     }
 
-    // TODO: Replace later with correct spawn logic
+    // Read placed units from the board and write them to the tiles
+    [Server]
     private void SetupUnits()
     {
-        // foreach (var tile in _tiles.Keys.Where(v => v.x == 1 || v.x == gridSizeX - 2))
-        // {
-        //     var newPiece = Instantiate(pawnUnit, unitParent);
-        //     var unit = newPiece.GetComponent<Unit>();
-        //
-        //     unit.MoveToTile(tile);
-        //     _tiles[tile].Unit = unit;   
-        // }
-        //
-        // foreach (var tile in _tiles.Keys.Where(v => v.x == 0 || v.x == gridSizeX - 1))
-        // {
-        //     var newPiece = Instantiate(tile.y == Mathf.RoundToInt(gridSizeZ / 2f) ? kingUnit : heavyUnit, unitParent);
-        //     var unit = newPiece.GetComponent<Unit>();
-        //
-        //     unit.MoveToTile(tile);
-        //     _tiles[tile].Unit = unit;   
-        // }
-
         for(int i = 0; i < unitParent.childCount; i++)
         {
             var unit = unitParent.GetChild(i);
             var unitScript = unit.GetComponent<Unit>();
 
+            var unitPosition = unit.position;
             Vector2Int gridPos =
-                new Vector2Int(Mathf.RoundToInt((unit.position.x - (gridResolution / 2)) / gridResolution),
-                    Mathf.RoundToInt((unit.position.z - (gridResolution / 2)) / gridResolution));
+                new Vector2Int(Mathf.RoundToInt((unitPosition.x - (gridResolution / 2)) / gridResolution),
+                    Mathf.RoundToInt((unitPosition.z - (gridResolution / 2)) / gridResolution));
             
             unit.gameObject.SetActive(true);
             unitScript.MoveToTile(gridPos);
-            //_tiles[gridPos].Unit = unitScript;
-            //CMDUpdateTileUnit(gridPos, unitScript);
 
             var newTile = _tiles[gridPos];
             newTile.Unit = unitScript;
@@ -204,15 +176,15 @@ public class GridManager : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    private void CMDUpdateTileUnit(Vector2Int key, Unit unit)
+    private void CmdUpdateTileUnit(Vector2Int gridPos, Unit unit)
     {
-        var tile = _tiles[key];
+        var tile = _tiles[gridPos];
         tile.Unit = unit;
-        RPCUpdateTiles(key, tile);
+        RPCUpdateTiles(gridPos, tile);
     }
 
     [Command(requiresAuthority = false)]
-    private void CMDSetupReady()
+    private void CmdSetupReady()
     {
         _readyPlayers++;
         
