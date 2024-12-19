@@ -5,11 +5,9 @@ using UnityEngine;
 
 public abstract class Unit : NetworkBehaviour
 {
-    [SerializeField] FigureData figureData;
+    [SerializeField] private UnitData data;
 
     protected Vector2Int TilePosition { get; private set; }
-
-    [SerializeField] private float stepDuration = 0.3f;
     
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -48,15 +46,17 @@ public abstract class Unit : NetworkBehaviour
     {
         float elapsedTime = 0;
         Vector3 startingPos = transform.position;
-        while (elapsedTime < stepDuration)
+        while (elapsedTime < data.stepDuration)
         {
-            transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / stepDuration);
+            transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / data.stepDuration);
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
         transform.position = targetPos;
     }
-    
+
+    #region Networking
+
     [Command(requiresAuthority = false)]
     private void CmdChangePosition(GameObject go, Vector3 position, Vector2Int tilePos)
     {
@@ -82,4 +82,6 @@ public abstract class Unit : NetworkBehaviour
         StartCoroutine(MoveToPositions(moveCommand));
         TilePosition = moveCommand.TargetPosition;
     }
+
+    #endregion
 }

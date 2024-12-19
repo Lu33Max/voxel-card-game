@@ -150,5 +150,4 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  figureData: {fileID: 0}
-  stepDuration: 0.15
+  data: {fileID: 11400000, guid: d5c73cecae1eb2647a6c251a1b663295, type: 2}

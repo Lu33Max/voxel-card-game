@@ -9,11 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9264fecca78ed9489ee2c7253b7b18f, type: 3}
-  m_Name: Light
+  m_Script: {fileID: 11500000, guid: ecbda1fd69ce69942bdeddd9b45cce5e, type: 3}
+  m_Name: SO_UnitHeavy
   m_EditorClassIdentifier: 
-  figureName: 
+  unitName: 
   health: 0
-  damage: 0
-  movementPatter: []
-  attackPatter: []
+  moveAmount: 0
+  attackDamage: 0
+  stepDuration: 0.15

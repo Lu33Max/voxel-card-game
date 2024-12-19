@@ -132,8 +132,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  figureData: {fileID: 0}
-  stepDuration: 0.15
+  data: {fileID: 11400000, guid: 2f9ec597530c7ba4bbb38fbd5fe2bde5, type: 2}
 --- !u!114 &6505779614707281561
 MonoBehaviour:
   m_ObjectHideFlags: 0
