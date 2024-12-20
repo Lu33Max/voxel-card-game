@@ -76,6 +76,14 @@ public class GridManager : NetworkBehaviour
             gridPosition.y * gridResolution + gridResolution / 2);
     }
 
+    /// <summary>Returns a list of all positions currently containing references to units</summary>
+    public List<Vector2Int> GetAllUnitTiles()
+    {
+        return _tiles.Where(t => t.Value.Unit != null)
+            .Select(t => t.Key)
+            .ToList();
+    }
+
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
     public bool IsValidGridPosition(Vector2Int gridPosition)
     {

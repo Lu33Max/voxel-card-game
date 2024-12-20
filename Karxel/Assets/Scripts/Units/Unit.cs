@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -98,6 +99,11 @@ public abstract class Unit : NetworkBehaviour
         
         GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
         TilePosition = moveCommand.TargetPosition;
+    }
+
+    [ClientRpc]
+    public void RPCCleanUp()
+    {
         MoveIntent.Clear();
     }
 

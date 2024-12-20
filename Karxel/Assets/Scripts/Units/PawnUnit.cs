@@ -17,7 +17,7 @@ public class PawnUnit : Unit
             {
                 var path = new List<Vector2Int>();
                 
-                for (int j = 1; j < movementRange; j++)
+                for (int j = 1; j < i; j++)
                     path.Add(startPosition + direction * j);
                 
                 moves.Add(new MoveCommand { TargetPosition = startPosition + i * direction, Path = path });

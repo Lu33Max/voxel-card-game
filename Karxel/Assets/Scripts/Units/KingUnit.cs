@@ -8,6 +8,8 @@ public class KingUnit : Unit
     public override List<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
+        var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
+        
         var directions = new List<Vector2Int>
         {
             Vector2Int.down, Vector2Int.left, Vector2Int.right, Vector2Int.up, 
@@ -17,7 +19,7 @@ public class KingUnit : Unit
         {
             var path = new List<Vector2Int>();
             
-            moves.Add(new MoveCommand { TargetPosition = TilePosition + direction, Path = path });
+            moves.Add(new MoveCommand { TargetPosition = startPosition + direction, Path = path });
         }
         
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
