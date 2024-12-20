@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
@@ -18,6 +19,8 @@ public class Player : NetworkBehaviour
     [SerializeField] private GameObject hud;
     [SerializeField] private Button turnSubmitBtn;
 
+    public UnityEvent turnSubmitted = new();
+    
     private void Start()
     {
         if(!isLocalPlayer)
@@ -28,7 +31,8 @@ public class Player : NetworkBehaviour
     {
         base.OnStartLocalPlayer();
         GameManager.Instance.localPlayer = this;
-        GameManager.Instance.GameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.CmdPlayerSpawned();
 
         var newTeam = NetworkServer.connections.Keys.ToList()
             .FindIndex(i => i == connectionToClient.connectionId) % 2 == 0
@@ -38,10 +42,11 @@ public class Player : NetworkBehaviour
         CmdUpdateTeam(newTeam);
         CmdAddToPlayerList(newTeam);
     }
-    
+
     public void SubmitTurn()
     {
         turnSubmitBtn.interactable = false;
+        turnSubmitted?.Invoke();
         GameManager.Instance.CmdSubmitTurn(team);
     }
 

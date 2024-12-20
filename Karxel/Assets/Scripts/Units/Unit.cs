@@ -7,12 +7,13 @@ using UnityEngine;
 
 public abstract class Unit : NetworkBehaviour
 {
-    [SyncVar] public Team owningTeam;
+    [HideInInspector, SyncVar] public Team owningTeam;
+    [HideInInspector, SyncVar] public bool isControlled;
     
     [SerializeField] private UnitData data;
     
     protected Vector2Int TilePosition { get; private set; }
-    protected List<MoveCommand> MoveIntent { get; private set; } = new();
+    protected List<MoveCommand> MoveIntent { get; } = new();
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -83,6 +84,12 @@ public abstract class Unit : NetworkBehaviour
             GameManager.Instance.MoveIntents[TilePosition].Add(moveCommand);
         else
             GameManager.Instance.MoveIntents.Add(TilePosition, new List<MoveCommand>{ moveCommand });
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdUpdateControlStatus(bool newState)
+    {
+        isControlled = newState;
     }
     
     [ClientRpc]

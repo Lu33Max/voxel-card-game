@@ -3,6 +3,7 @@ using System.Linq;
 using Mirror;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 public enum GameState
 {
@@ -19,7 +20,8 @@ public class GameManager : NetworkBehaviour
     /// <summary>SERVER ONLY<br/>List of all moves to execute when round finishes</summary>
     public Dictionary<Vector2Int, List<MoveCommand>> MoveIntents = new();
 
-    public UnityEvent<GameState> GameStateChanged;
+    public static UnityEvent PlayersReady = new();
+    public UnityEvent<GameState> gameStateChanged  = new();
 
     [HideInInspector] public Player localPlayer;
     [HideInInspector] public List<Player> redPlayers; // Server only
@@ -27,6 +29,8 @@ public class GameManager : NetworkBehaviour
 
     private int _redSubmit;
     private int _blueSubmit;
+    
+    private int _readyPlayers;
 
     private void Awake()
     {
@@ -49,31 +53,23 @@ public class GameManager : NetworkBehaviour
 
         if (_blueSubmit == bluePlayers.Count && _redSubmit == redPlayers.Count)
         {
-            ExecuteMoveIntents2();
+            ExecuteMoveIntents();
             _blueSubmit = 0;
             _redSubmit = 0;
         }
     }
 
-    [Server]
-    private void ExecuteMoveIntents()
+    [Command(requiresAuthority = false)]
+    public void CmdPlayerSpawned()
     {
-        foreach (var intent in MoveIntents)
-        {
-            var unit = GridManager.Instance.GetTileAtGridPosition(intent.Key).Unit;
-
-            if (unit == null || intent.Value.Count == 0)
-                continue;
-
-            unit.RPCStep(intent.Value[0]);
-        }
-
-        MoveIntents.Clear();
-        RPCInvokeStateUpdate(GameState.Movement);
+        _readyPlayers++;
+        
+        if(_readyPlayers == NetworkServer.connections.Count)
+            RPCInvokePlayersReady();
     }
 
     [Server]
-    private void ExecuteMoveIntents2()
+    private void ExecuteMoveIntents()
     {
         // Combine all moveCommands for every unit
         Dictionary<Vector2Int, MoveCommand> intendedMoves =
@@ -197,6 +193,12 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void RPCInvokeStateUpdate(GameState newState)
     {
-        GameStateChanged?.Invoke(newState);
+        gameStateChanged?.Invoke(newState);
+    }
+
+    [ClientRpc]
+    private void RPCInvokePlayersReady()
+    {
+        PlayersReady?.Invoke();
     }
 }

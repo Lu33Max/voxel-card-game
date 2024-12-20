@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using UnityEngine;
@@ -16,11 +17,19 @@ public class GridMouseInteraction : MonoBehaviour
     private Unit _selectedUnit;
 
     private bool _isHovering;
+    private List<MoveCommand> _highlightedTiles;
 
     private void Start()
     {
         _mainCamera = Camera.main;
         highlightMarker.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+        
+        GameManager.PlayersReady.AddListener(OnPlayersReady);
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.PlayersReady.RemoveListener(OnPlayersReady);
     }
 
     private void Update()
@@ -41,7 +50,6 @@ public class GridMouseInteraction : MonoBehaviour
             bool inGrid = GridManager.Instance.IsValidGridPosition(hoveredPosition);
             if (!inGrid)
             {
-                _selectedUnit = null;
                 _isHovering = false;
                 return;
             }
@@ -66,16 +74,17 @@ public class GridMouseInteraction : MonoBehaviour
         if (!Input.GetMouseButtonDown(0)) 
             return;
         
+        // If the player has no unit selected, try selecting the hovered one and highlight its movement range
         if (_selectedUnit == null)
         {
-            if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team)
+            if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team || _hoveredTile.Unit.isControlled)
                 return;
             
             _selectedUnit = _hoveredTile.Unit;
-                    
-            var moves = _selectedUnit.GetValidMoves(2);
-            GridManager.Instance.HighlightMoveTiles(moves, true);
+            _selectedUnit.CmdUpdateControlStatus(true);
 
+            _highlightedTiles = _selectedUnit.GetValidMoves(2);
+            GridManager.Instance.HighlightMoveTiles(_highlightedTiles, true);
             return;
         }
 
@@ -84,21 +93,9 @@ public class GridMouseInteraction : MonoBehaviour
             .Where(move => move.TargetPosition == _hoveredTile.Position).FirstOrDefault();
                 
         if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
-        {
-            var moves = _selectedUnit.GetValidMoves(2);
-            GridManager.Instance.HighlightMoveTiles(moves, false);
-                    
-            //_selectedUnit.StepToTile(moveCommand);
             _selectedUnit.CmdAddToMoveIntent(moveCommand);
-            _selectedUnit = null;
-        }
-        else
-        {
-            var moves = _selectedUnit.GetValidMoves(2);
-            GridManager.Instance.HighlightMoveTiles(moves, false);
-            
-            _selectedUnit = null;
-        }
+        
+        DeselectUnit();
     }
 
     // Updates the position of the hover highlight
@@ -113,5 +110,27 @@ public class GridMouseInteraction : MonoBehaviour
         {
             highlightMarker.SetActive(false);
         }
+    }
+
+    private void DeselectUnit()
+    {
+        if(_selectedUnit == null)
+            return;
+        
+        GridManager.Instance.HighlightMoveTiles(_highlightedTiles, false);
+        _selectedUnit.CmdUpdateControlStatus(false);
+
+        _highlightedTiles = null;
+        _selectedUnit = null;
+    }
+    
+    private void OnPlayersReady()
+    {
+        GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
+    }
+
+    private void OnTurnSubmitted()
+    {
+        DeselectUnit();
     }
 }
