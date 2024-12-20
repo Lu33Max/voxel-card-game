@@ -33,6 +33,8 @@ public class Player : NetworkBehaviour
         GameManager.Instance.localPlayer = this;
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         GameManager.Instance.CmdPlayerSpawned();
+        
+        GameManager.RoundTimerUp.AddListener(SubmitTurn);
 
         var newTeam = NetworkServer.connections.Keys.ToList()
             .FindIndex(i => i == connectionToClient.connectionId) % 2 == 0
@@ -41,6 +43,11 @@ public class Player : NetworkBehaviour
         
         CmdUpdateTeam(newTeam);
         CmdAddToPlayerList(newTeam);
+    }
+    
+    private void OnDestroy()
+    {
+        GameManager.RoundTimerUp.RemoveListener(SubmitTurn);
     }
 
     public void SubmitTurn()
@@ -70,9 +77,6 @@ public class Player : NetworkBehaviour
     [Command(requiresAuthority = false)]
     private void CmdAddToPlayerList(Team team)
     {
-        if (team == Team.Blue)
-            GameManager.Instance.bluePlayers.Add(this);
-        else if(team == Team.Red)
-            GameManager.Instance.redPlayers.Add(this);
+        GameManager.Instance.AddPlayerToTeam(team, this);
     }
 }

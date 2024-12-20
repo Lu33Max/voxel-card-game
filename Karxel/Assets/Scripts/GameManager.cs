@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -10,7 +12,8 @@ public enum GameState
     Movement,
     Attack,
     MovementExecution,
-    AttackExecution
+    AttackExecution,
+    PreStart
 }
 
 public class GameManager : NetworkBehaviour
@@ -21,19 +24,34 @@ public class GameManager : NetworkBehaviour
     public Dictionary<Vector2Int, List<MoveCommand>> MoveIntents = new();
 
     public static UnityEvent PlayersReady = new();
-    public UnityEvent<GameState> gameStateChanged  = new();
+    public static UnityEvent RoundTimerUp = new();
+    [HideInInspector] public UnityEvent<GameState> gameStateChanged = new();
 
-    [HideInInspector, SyncVar] public GameState gameState;
+    [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
     [HideInInspector] public Player localPlayer;
     [HideInInspector] public List<Player> redPlayers; // Server only
     [HideInInspector] public List<Player> bluePlayers; // Server only
 
+    [Header("Team Information")]
+    [SerializeField] private TextMeshProUGUI redReadyUIText;
+    [SerializeField] private TextMeshProUGUI blueReadyUIText;
+    
+    [Header("Timer")]
+    [SerializeField] private TextMeshProUGUI timerText;
+    [SerializeField] private int movementTime;
+
+    [SyncVar(hook = nameof(OnUpdateRedText))] private string _redPlayerText;
+    [SyncVar(hook = nameof(OnUpdateBlueText))] private string _bluePlayerText;
+    
     private int _redSubmit;
     private int _blueSubmit;
     
     private int _readyPlayers;
     private int _unitsToMove;
     private int _unitsDoneMoving;
+
+    private bool _timerActive;
+    [SyncVar(hook = nameof(UpdateTimerText))] private float _timeLeft;
 
     private void Awake()
     {
@@ -42,33 +60,41 @@ public class GameManager : NetworkBehaviour
             Destroy(gameObject);
             return;
         }
-
+        
         Instance = this;
     }
-
-    [Command(requiresAuthority = false)]
-    public void CmdSubmitTurn(Team team)
+    
+    private void Update()
     {
-        if (team == Team.Blue)
-            _blueSubmit++;
-        else if (team == Team.Red)
-            _redSubmit++;
-
-        if (_blueSubmit == bluePlayers.Count && _redSubmit == redPlayers.Count)
-        {
-            ExecuteMoveIntents();
-            _blueSubmit = 0;
-            _redSubmit = 0;
-        }
+        if(!isServer)
+            return;
+        
+        if(_timerActive)
+            UpdateTimer();
     }
 
-    [Command(requiresAuthority = false)]
-    public void CmdPlayerSpawned()
+    [Server]
+    public void AddPlayerToTeam(Team team, Player newPlayer)
     {
-        _readyPlayers++;
-        
-        if(_readyPlayers == NetworkServer.connections.Count)
-            RPCInvokePlayersReady();
+        switch (team)
+        {
+            case Team.Blue:
+                bluePlayers.Add(newPlayer);
+                _bluePlayerText = $"0/{bluePlayers.Count}";
+                break;
+            case Team.Red:
+                redPlayers.Add(newPlayer);
+                _redPlayerText = $"0/{redPlayers.Count}";
+                break;
+        }
+
+        // Start the movement phase once all players are ready
+        if (bluePlayers.Count + redPlayers.Count == NetworkServer.connections.Count)
+        {
+            UpdateGameState(GameState.Movement);
+            _timeLeft = movementTime;
+            _timerActive = true;
+        }
     }
 
     [Server]
@@ -187,30 +213,105 @@ public class GameManager : NetworkBehaviour
 
         if (_unitsToMove > 0)
         {
-            gameState = GameState.MovementExecution;
-            RPCInvokeStateUpdate(GameState.MovementExecution);
+            UpdateGameState(GameState.MovementExecution);
         }
         else
         {
-            gameState = GameState.Movement;
-            RPCInvokeStateUpdate(GameState.Movement);
+            UpdateGameState(GameState.Movement);
+            _bluePlayerText = $"0/{bluePlayers.Count}";
+            _redPlayerText = $"0/{redPlayers.Count}";
         }
+    }
+
+    [Server]
+    private void UpdateGameState(GameState newState)
+    {
+        gameState = newState;
+        RPCInvokeStateUpdate(newState);
+    }
+
+    [Server]
+    private void UpdateTimer()
+    {
+        _timeLeft -= Time.deltaTime;
+        
+        if(_timeLeft > 0)
+            return;
+
+        _timeLeft = 0;
+        _timerActive = false;
+        RPCInvokeTimerUp();
+    }
+
+    private void UpdateTimerText(float old, float newTime)
+    {
+        var totalSeconds = Mathf.FloorToInt(newTime);
+        var minuteDisplay = Mathf.FloorToInt(totalSeconds / 60f);
+        var secondDisplay = (totalSeconds - minuteDisplay * 60).ToString().PadLeft(2, '0');
+
+        timerText.text = $"{minuteDisplay}:{secondDisplay}";
+    }
+
+    private void OnUpdateRedText(string old, string newText)
+    {
+        redReadyUIText.text = newText;
+    }
+    
+    private void OnUpdateBlueText(string old, string newText)
+    {
+        blueReadyUIText.text = newText;
+    }
+    
+    [Command(requiresAuthority = false)]
+    public void CmdPlayerSpawned()
+    {
+        _readyPlayers++;
+        
+        if(_readyPlayers == NetworkServer.connections.Count)
+            RPCInvokePlayersReady();
+    }
+    
+    [Command(requiresAuthority = false)]
+    public void CmdSubmitTurn(Team team)
+    {
+        if (team == Team.Blue)
+        {
+            _blueSubmit++;
+            _bluePlayerText = $"{_blueSubmit}/{bluePlayers.Count}";
+        }
+        else if (team == Team.Red)
+        {
+            _redSubmit++;
+            _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
+        }
+
+        if (_blueSubmit != bluePlayers.Count || _redSubmit != redPlayers.Count) 
+            return;
+
+        _timerActive = false;
+        _blueSubmit = 0;
+        _redSubmit = 0;
+        ExecuteMoveIntents();
     }
 
     [Command(requiresAuthority = false)]
     public void CmdUnitMovementDone()
     {
         _unitsDoneMoving++;
-        Debug.Log(_unitsDoneMoving);
 
         if (_unitsDoneMoving != _unitsToMove) 
             return;
         
         _unitsDoneMoving = 0;
         _unitsToMove = 0;
-            
-        gameState = GameState.Movement;
-        RPCInvokeStateUpdate(GameState.Movement);
+        
+        _bluePlayerText = $"0/{bluePlayers.Count}";
+        _redPlayerText = $"0/{redPlayers.Count}";
+
+        _timeLeft = movementTime;
+        _timerActive = true;
+        
+        UpdateGameState(GameState.Movement);
     }
 
     [ClientRpc]
@@ -223,5 +324,11 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokePlayersReady()
     {
         PlayersReady?.Invoke();
+    }
+
+    [ClientRpc]
+    private void RPCInvokeTimerUp()
+    {
+        RoundTimerUp?.Invoke();
     }
 }
