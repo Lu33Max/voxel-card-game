@@ -55,6 +55,7 @@ public class Player : NetworkBehaviour
         switch (newState)
         {
             case GameState.Movement:
+            case GameState.Attack:
                 turnSubmitBtn.interactable = true;
                 break;
         }

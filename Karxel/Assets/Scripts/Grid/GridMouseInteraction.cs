@@ -41,7 +41,8 @@ public class GridMouseInteraction : MonoBehaviour
     // Gets the currently hovered tile and checks for player interaction in case of a mouse click
     private void CheckForHoveredTile()
     {
-        if (Physics.Raycast(_mainCamera.ScreenPointToRay(Input.mousePosition), out var hit, groundLayer))
+        if (GameManager.Instance.gameState is GameState.Attack or GameState.Movement && 
+            Physics.Raycast(_mainCamera.ScreenPointToRay(Input.mousePosition), out var hit, groundLayer))
         {
             Vector2 worldPosition = new Vector2(hit.point.x, hit.point.z);
             Vector2Int hoveredPosition = GridManager.Instance.WorldToGridPosition(worldPosition);

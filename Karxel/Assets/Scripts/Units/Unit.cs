@@ -45,6 +45,9 @@ public abstract class Unit : NetworkBehaviour
         
         Vector3 targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
         yield return StartCoroutine(Move(targetPos));
+        
+        if(isServer)
+            GameManager.Instance.CmdUnitMovementDone();
     }
 
     // MOve the unit to the given world position
@@ -80,7 +83,7 @@ public abstract class Unit : NetworkBehaviour
     {
         RPCAddToMoveIntent(moveCommand);
         
-        if (GameManager.Instance.MoveIntents.TryGetValue(TilePosition, out var _))
+        if (GameManager.Instance.MoveIntents.TryGetValue(TilePosition, out _))
             GameManager.Instance.MoveIntents[TilePosition].Add(moveCommand);
         else
             GameManager.Instance.MoveIntents.Add(TilePosition, new List<MoveCommand>{ moveCommand });
