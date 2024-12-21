@@ -20,6 +20,8 @@ public class Player : NetworkBehaviour
     [SerializeField] private Button turnSubmitBtn;
 
     public UnityEvent turnSubmitted = new();
+
+    private bool _hasSubmitted;
     
     private void Start()
     {
@@ -52,6 +54,10 @@ public class Player : NetworkBehaviour
 
     public void SubmitTurn()
     {
+        if(_hasSubmitted)
+            return;
+
+        _hasSubmitted = true;
         turnSubmitBtn.interactable = false;
         turnSubmitted?.Invoke();
         GameManager.Instance.CmdSubmitTurn(team);
@@ -64,6 +70,7 @@ public class Player : NetworkBehaviour
             case GameState.Movement:
             case GameState.Attack:
                 turnSubmitBtn.interactable = true;
+                _hasSubmitted = false;
                 break;
         }
     }

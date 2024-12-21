@@ -39,6 +39,7 @@ public class GameManager : NetworkBehaviour
     [Header("Timer")]
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private int movementTime;
+    [SerializeField] private int submitTime;
 
     [SyncVar(hook = nameof(OnUpdateRedText))] private string _redPlayerText;
     [SyncVar(hook = nameof(OnUpdateBlueText))] private string _bluePlayerText;
@@ -285,8 +286,14 @@ public class GameManager : NetworkBehaviour
             _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
         }
 
-        if (_blueSubmit != bluePlayers.Count || _redSubmit != redPlayers.Count) 
+        if (_blueSubmit != bluePlayers.Count || _redSubmit != redPlayers.Count)
+        {
+            // If all players of one team have submitted, reduce the remaining round time
+            if ((_blueSubmit == bluePlayers.Count || _redSubmit == redPlayers.Count) && _timeLeft > submitTime)
+                _timeLeft = submitTime;
+            
             return;
+        }
 
         _timerActive = false;
         _blueSubmit = 0;

@@ -4070,6 +4070,7 @@ MonoBehaviour:
   blueReadyUIText: {fileID: 1890660695}
   timerText: {fileID: 121835740}
   movementTime: 60
+  submitTime: 10
 --- !u!4 &271981436
 Transform:
   m_ObjectHideFlags: 0
