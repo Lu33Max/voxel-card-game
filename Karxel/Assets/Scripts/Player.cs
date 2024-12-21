@@ -1,9 +1,7 @@
-using System;
 using System.Linq;
 using Mirror;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public enum Team

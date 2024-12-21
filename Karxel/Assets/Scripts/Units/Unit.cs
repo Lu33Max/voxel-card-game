@@ -81,7 +81,8 @@ public abstract class Unit : NetworkBehaviour
     [Command(requiresAuthority = false)]
     public void CmdAddToMoveIntent(MoveCommand moveCommand)
     {
-        RPCAddToMoveIntent(moveCommand);
+        PathManager.Instance.CreatePath(moveCommand,
+            MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition, TilePosition);
         
         if (GameManager.Instance.MoveIntents.TryGetValue(TilePosition, out _))
             GameManager.Instance.MoveIntents[TilePosition].Add(moveCommand);
@@ -118,7 +119,7 @@ public abstract class Unit : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void RPCAddToMoveIntent(MoveCommand moveCommand)
+    public void RPCAddToMoveIntent(MoveCommand moveCommand, GameObject pathRenderer)
     {
         MoveIntent.Add(moveCommand);
     }
