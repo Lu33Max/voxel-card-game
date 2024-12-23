@@ -58,4 +58,14 @@ public class KingUnit : Unit
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }
+
+    protected override void Die()
+    {
+        base.Die();
+        
+        if(!isServer)
+            return;
+        
+        GameManager.Instance.KingDefeated(owningTeam);
+    }
 }

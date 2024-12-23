@@ -5,6 +5,7 @@ using System.Linq;
 using Mirror;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
 {
@@ -12,12 +13,15 @@ public abstract class Unit : NetworkBehaviour
     [HideInInspector, SyncVar] public bool isControlled;
     
     [SerializeField] protected UnitData data;
+    [SerializeField] private GameObject canvas;
+    [SerializeField] private Slider healthSlider;
     
     public Vector2Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
     public List<Attack> AttackIntent { get; } = new();
 
-    [SyncVar] private int _currentHealth;
+    [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
+    private Transform _camera;
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -35,12 +39,19 @@ public abstract class Unit : NetworkBehaviour
 
     private void Start()
     {
+        _camera = Camera.main.transform;
+
         if(!isServer)
             return;
         
         UpdateHealth(data.health);
         GameManager.AttackExecuted.AddListener(OnAttackExecuted);
         GameManager.CheckHealth.AddListener(OnCheckHealth);
+    }
+
+    private void Update()
+    {
+        canvas.transform.LookAt(_camera);
     }
 
     private void OnDestroy()
@@ -105,6 +116,11 @@ public abstract class Unit : NetworkBehaviour
         GameManager.Instance.CmdUnitAttackDone();
     }
 
+    private void OnHealthUpdated(int old, int newHealth)
+    {
+        healthSlider.value = (float)newHealth / data.health;
+    }
+
     [Server]
     private void OnAttackExecuted(Attack attack)
     {
@@ -121,7 +137,7 @@ public abstract class Unit : NetworkBehaviour
     }
 
     [Server]
-    private void OnCheckHealth()
+    protected void OnCheckHealth()
     {
         if(_currentHealth <= 0)
             Die();

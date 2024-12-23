@@ -11,7 +11,8 @@ public enum GameState
     Attack,
     MovementExecution,
     AttackExecution,
-    PreStart
+    PreStart,
+    Win
 }
 
 public class GameManager : NetworkBehaviour
@@ -43,6 +44,9 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private int movementTime;
     [SerializeField] private int submitTime;
 
+    [Header("Game Over")] 
+    [SerializeField] private GameObject gameOverScreen;
+
     [SyncVar(hook = nameof(OnUpdateRedText))] private string _redPlayerText;
     [SyncVar(hook = nameof(OnUpdateBlueText))] private string _bluePlayerText;
     
@@ -56,6 +60,8 @@ public class GameManager : NetworkBehaviour
     private int _attackRound;
     private int _unitsToAttack;
     private int _unitsDoneAttacking;
+
+    private HashSet<Team> _defeatedKings = new();
 
     private bool _timerActive;
     [SyncVar(hook = nameof(UpdateTimerText))] private float _timeLeft;
@@ -128,6 +134,12 @@ public class GameManager : NetworkBehaviour
     public void UnitDefeated(Vector2Int unitPos)
     {
         AttackIntents.Remove(unitPos);
+    }
+
+    [Server]
+    public void KingDefeated(Team team)
+    {
+        _defeatedKings.Add(team);
     }
 
     [Server]
@@ -264,6 +276,12 @@ public class GameManager : NetworkBehaviour
         GridManager.Instance.HideAttackTiles();
         var attacksToExecute = AttackIntents.Where(a => a.Value.Count > _attackRound).ToList();
 
+        if (_defeatedKings.Count > 0)
+        {
+            GameOver();
+            return;
+        }
+        
         if (!attacksToExecute.Any())
         {
             UpdateGameState(GameState.Movement);
@@ -317,6 +335,16 @@ public class GameManager : NetworkBehaviour
         _timeLeft = 0;
         _timerActive = false;
         RPCInvokeTimerUp();
+    }
+
+    [Server]
+    private void GameOver()
+    {
+        UpdateGameState(GameState.Win);
+
+        var screenText = _defeatedKings.Count > 1 ? "The game ends in a tie" :
+            _defeatedKings.First() == Team.Blue ? "Red team has won!" : "Blue team has won!";
+        RPCGameOver(screenText);
     }
 
     private void UpdateTimerText(float old, float newTime)
@@ -442,5 +470,12 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokeTimerUp()
     {
         RoundTimerUp?.Invoke();
+    }
+    
+    [ClientRpc]
+    private void RPCGameOver(string text)
+    {
+        gameOverScreen.SetActive(true);
+        gameOverScreen.GetComponent<TextMeshProUGUI>().text = text;
     }
 }
