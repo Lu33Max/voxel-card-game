@@ -244,21 +244,14 @@ public class GameManager : NetworkBehaviour
         MoveIntents.Clear();
 
         if (_unitsToMove > 0)
-        {
             UpdateGameState(GameState.MovementExecution);
-        }
         else
-        {
-            UpdateGameState(GameState.Attack);
-            _bluePlayerText = $"0/{bluePlayers.Count}";
-            _redPlayerText = $"0/{redPlayers.Count}";
-        }
+            StartAttackPhase();
     }
 
     [Server]
     private void ExecuteAttackIntents()
     {
-        Debug.Log("Start attack execution");
         UpdateGameState(GameState.AttackExecution);
         _attackRound = 0;
         ExecuteCurrentAttackRound();
@@ -272,7 +265,6 @@ public class GameManager : NetworkBehaviour
 
         if (!attacksToExecute.Any())
         {
-            Debug.Log("All attacks executed");
             UpdateGameState(GameState.Movement);
             
             _bluePlayerText = $"0/{bluePlayers.Count}";
@@ -293,7 +285,6 @@ public class GameManager : NetworkBehaviour
         
         foreach (var attackIntent in attacksToExecute)
         {
-            Debug.Log("Execute attack to " + attackIntent.Value[_attackRound].Tiles.First());
             GridManager.Instance.ShowAttackTilesGlobal(attackIntent.Value[_attackRound].Tiles);
 
             _unitsToAttack = attacksToExecute.Count * NetworkServer.connections.Count;
@@ -398,22 +389,26 @@ public class GameManager : NetworkBehaviour
         if (_unitsDoneMoving != _unitsToMove) 
             return;
         
+        StartAttackPhase();
+    }
+
+    private void StartAttackPhase()
+    {
         _unitsDoneMoving = 0;
         _unitsToMove = 0;
-        
+
         _bluePlayerText = $"0/{bluePlayers.Count}";
         _redPlayerText = $"0/{redPlayers.Count}";
 
         _timeLeft = movementTime;
         _timerActive = true;
-        
+
         UpdateGameState(GameState.Attack);
     }
 
     [Command(requiresAuthority = false)]
     public void CmdUnitAttackDone()
     {
-        Debug.Log("Attack done in GM");
         _unitsDoneAttacking++;
         
         if(_unitsDoneAttacking != _unitsToAttack)
@@ -423,7 +418,6 @@ public class GameManager : NetworkBehaviour
         _unitsToAttack = 0;
         _attackRound++;
         
-        Debug.Log("Start next round of attacks");
         ExecuteCurrentAttackRound();
     }
 

@@ -78,7 +78,6 @@ public abstract class Unit : NetworkBehaviour
     protected virtual IEnumerator Attack(Attack attack)
     {
         yield return new WaitForSeconds(2);
-        Debug.Log("Attack done in unit");
         GameManager.Instance.CmdUnitAttackDone();
     }
 
@@ -157,7 +156,6 @@ public abstract class Unit : NetworkBehaviour
     [ClientRpc]
     public void RPCExecuteAttack(Attack attack)
     {
-        Debug.Log("Execute in unit");
         StartCoroutine(Attack(attack));
     }
 

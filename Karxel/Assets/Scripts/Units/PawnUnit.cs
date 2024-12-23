@@ -57,7 +57,7 @@ public class PawnUnit : Unit
         {
             Damage = data.attackDamage * damageMultiplier,
             Tiles = new List<Vector2Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
-            PlayerId = GameManager.Instance.localPlayer.connectionToServer.connectionId
+            PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }
 }

@@ -106,7 +106,7 @@ public class GridMouseInteraction : MonoBehaviour
             
             // If the user tries to select a unit during the attack phase he already assigned an attack to
             if (GameManager.Instance.gameState == GameState.Attack &&
-                _hoveredTile.Unit.AttackIntent.Exists(a => a.PlayerId == player.connectionToServer.connectionId))
+                _hoveredTile.Unit.AttackIntent.Exists(a => a.PlayerId == player.netId))
                 return;
 
             _selectedUnit = _hoveredTile.Unit;
