@@ -10,14 +10,25 @@ public abstract class Unit : NetworkBehaviour
     [HideInInspector, SyncVar] public Team owningTeam;
     [HideInInspector, SyncVar] public bool isControlled;
     
-    [SerializeField] private UnitData data;
+    [SerializeField] protected UnitData data;
     
-    protected Vector2Int TilePosition { get; private set; }
+    public Vector2Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
+    public List<Attack> AttackIntent { get; } = new();
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
     public abstract List<MoveCommand> GetValidMoves(int movementRange);
+
+    /// <summary>Get all tiles that would be effected by an attack. Only includes valid tiles.</summary>
+    /// <param name="attackRange">The attack range given by the played card</param>
+    /// <param name="damageMultiplier">The damage multiplier given by the played card</param>
+    /// <param name="hoveredPosition">Mouse position on the board</param>
+    /// <param name="previousPosition">Previous Mouse position on the board</param>
+    /// <param name="shouldBreak">Whether the method should return early in case of the same calc results</param>
+    /// <param name="hasChanged">Whether the effected tiles have changed because of mouse movements compared to the last calculation</param>
+    public abstract Attack GetValidAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
+        Vector3 previousPosition, bool shouldBreak, out bool hasChanged);
     
     /// <summary>Instantly move the unit to the given tile</summary>
     public void MoveToTile(Vector2Int tilePos)
@@ -46,8 +57,7 @@ public abstract class Unit : NetworkBehaviour
         Vector3 targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
         yield return StartCoroutine(Move(targetPos));
         
-        if(isServer)
-            GameManager.Instance.CmdUnitMovementDone();
+        GameManager.Instance.CmdUnitMovementDone();
     }
 
     // MOve the unit to the given world position
@@ -62,6 +72,14 @@ public abstract class Unit : NetworkBehaviour
             yield return new WaitForEndOfFrame();
         }
         transform.position = targetPos;
+    }
+
+    /// <summary>Used to play animations, sfx etc.</summary>
+    protected virtual IEnumerator Attack(Attack attack)
+    {
+        yield return new WaitForSeconds(2);
+        Debug.Log("Attack done in unit");
+        GameManager.Instance.CmdUnitAttackDone();
     }
 
     #region Networking
@@ -79,15 +97,20 @@ public abstract class Unit : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    public void CmdAddToMoveIntent(MoveCommand moveCommand)
+    public void CmdRegisterMoveIntent(MoveCommand moveCommand)
     {
         PathManager.Instance.CreatePath(moveCommand,
             MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition, TilePosition);
-        
-        if (GameManager.Instance.MoveIntents.TryGetValue(TilePosition, out _))
-            GameManager.Instance.MoveIntents[TilePosition].Add(moveCommand);
-        else
-            GameManager.Instance.MoveIntents.Add(TilePosition, new List<MoveCommand>{ moveCommand });
+
+        GameManager.Instance.RegisterMoveIntent(TilePosition, moveCommand);
+        RPCAddToMoveIntent(moveCommand);
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdRegisterAttackIntent(Attack newAttack)
+    {
+        GameManager.Instance.RegisterAttackIntent(TilePosition, newAttack, owningTeam);
+        RPCAddToAttackIntent(newAttack);
     }
 
     [Command(requiresAuthority = false)]
@@ -116,12 +139,26 @@ public abstract class Unit : NetworkBehaviour
     public void RPCCleanUp()
     {
         MoveIntent.Clear();
+        AttackIntent.Clear();
     }
 
     [ClientRpc]
-    public void RPCAddToMoveIntent(MoveCommand moveCommand, GameObject pathRenderer)
+    private void RPCAddToMoveIntent(MoveCommand moveCommand)
     {
         MoveIntent.Add(moveCommand);
+    }
+
+    [ClientRpc]
+    private void RPCAddToAttackIntent(Attack newAttack)
+    {
+        AttackIntent.Add(newAttack);
+    }
+
+    [ClientRpc]
+    public void RPCExecuteAttack(Attack attack)
+    {
+        Debug.Log("Execute in unit");
+        StartCoroutine(Attack(attack));
     }
 
     #endregion

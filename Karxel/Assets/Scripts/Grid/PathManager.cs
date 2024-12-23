@@ -67,12 +67,6 @@ public class PathManager : NetworkBehaviour
             RPCRemoveAllPaths();
     }
 
-    [Command(requiresAuthority = false)]
-    private void CmdAddMoveIntent(Unit unit, MoveCommand moveCommand, GameObject newPath)
-    {
-        unit.RPCAddToMoveIntent(moveCommand, newPath);
-    }
-
     [ClientRpc]
     private void RPCSpawnNewPath(MoveCommand moveCommand, Vector2Int start, Vector2Int unitPosition)
     {
@@ -89,8 +83,6 @@ public class PathManager : NetworkBehaviour
         
         if (pathRenderer != null)
             pathRenderer.DrawPath(moveCommand, start);
-        
-        CmdAddMoveIntent(unit, moveCommand, newPath);
     }
 
     [ClientRpc]

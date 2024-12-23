@@ -25,4 +25,38 @@ public class HeavyUnit : Unit
         
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
+    
+    public override Attack GetValidAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
+        Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
+    {
+        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition);
+        
+        var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
+        var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
+        
+        if (newAngle == oldAngle && shouldBreak)
+        {
+            hasChanged = false;
+            return null;
+        }
+        
+        hasChanged = true;
+
+        Vector2Int tile = newAngle switch
+        {
+            0 => Vector2Int.down,
+            1 => Vector2Int.right,
+            2 => Vector2Int.up,
+            3 => Vector2Int.left,
+            4 => Vector2Int.down,
+            _ => Vector2Int.up
+        };
+
+        return new Attack
+        {
+            Damage = data.attackDamage * damageMultiplier,
+            Tiles = new List<Vector2Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
+            PlayerId = GameManager.Instance.localPlayer.connectionToServer.connectionId
+        };
+    }
 }

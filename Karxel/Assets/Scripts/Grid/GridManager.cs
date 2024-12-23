@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
@@ -23,10 +24,13 @@ public class GridManager : NetworkBehaviour
     [SerializeField] private GameObject moveTileHighlighter;
     [SerializeField] private float highlightHoverHeight = 0.001f;
     
-    [Header("Temporary Unit Setup")]
+    [Header("Unit Setup")]
     [SerializeField] private Transform unitParent;
 
+    public float GridResolution => gridResolution;
+    
     private Dictionary<Vector2Int, TileData> _tiles = new();
+    private Dictionary<Vector2Int, GameObject> _attackHighlights = new();
     
     private int _readyPlayers = 0;
 
@@ -117,6 +121,7 @@ public class GridManager : NetworkBehaviour
         CmdUpdateTileUnit(targetTile, unit);
     }
 
+    // TODO: Move to GridMouseInteraction
     /// <summary>Shows or hides the highlights to display move</summary>
     public void HighlightMoveTiles(List<MoveCommand> moves, bool shouldHighlight)
     {
@@ -136,6 +141,45 @@ public class GridManager : NetworkBehaviour
             highlighter.transform.position = GetTileAtGridPosition(tile).GetWorldPosition(highlightHoverHeight);
             highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
         }
+    }
+
+    [ClientRpc]
+    public void ShowAttackTilesGlobal(List<Vector2Int> tiles)
+    {
+        InstantiateAttackTiles(tiles);
+    }
+
+    [ClientRpc]
+    public void ShowAttackTilesTeam(Team team, List<Vector2Int> tiles)
+    {
+        if(team != GameManager.Instance.localPlayer.team)
+            return;
+        
+        InstantiateAttackTiles(tiles);
+    }
+
+    private void InstantiateAttackTiles(List<Vector2Int> tiles)
+    {
+        foreach (var tile in tiles)
+        {
+            if(_attackHighlights.TryGetValue(tile, out _))
+                continue;
+                
+            var highlighter = Instantiate(moveTileHighlighter, highlightParent);
+            highlighter.transform.position = GetTileAtGridPosition(tile).GetWorldPosition(highlightHoverHeight);
+            highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
+                
+            _attackHighlights.Add(tile, highlighter);
+        }
+    }
+
+    [ClientRpc]
+    public void HideAttackTiles()
+    {
+        foreach (var highlight in _attackHighlights.Values)
+            Destroy(highlight);
+        
+        _attackHighlights.Clear();
     }
 
     // Calculates all tile positions of the board by doing a raycast at each one of them

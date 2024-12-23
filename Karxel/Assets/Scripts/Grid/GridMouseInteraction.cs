@@ -12,12 +12,19 @@ public class GridMouseInteraction : MonoBehaviour
     [SerializeField] private GameObject highlightMarker;
     [SerializeField] private float groundDistance = 0.01f;
     
+    [Header("Attack Highlight")]
+    [SerializeField] private GameObject attackMarker;
+    
     private Camera _mainCamera;
     private TileData _hoveredTile;
     private Unit _selectedUnit;
 
     private bool _isHovering;
-    private List<MoveCommand> _highlightedTiles;
+    private Vector3 _prevMousePos;
+    private List<MoveCommand> _highlightedMoveTiles = new();
+    private Attack _currentAttack;
+    private Dictionary<Vector2Int, List<GameObject>> _highlightedAttackTiles = new();
+    
 
     private void Start()
     {
@@ -35,7 +42,7 @@ public class GridMouseInteraction : MonoBehaviour
     private void Update()
     {
         CheckForHoveredTile();
-        UpdateHighlighter();
+        UpdateHoverHighlighter();
     }
 
     // Gets the currently hovered tile and checks for player interaction in case of a mouse click
@@ -60,6 +67,20 @@ public class GridMouseInteraction : MonoBehaviour
 
             _isHovering = true;
             _hoveredTile = tile;
+
+            if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
+            {
+                // TODO: Replace with card values
+                var attack = _selectedUnit.GetValidAttackTiles(1, 1, hit.point, _prevMousePos, true, out bool hasChanged);
+
+                if (hasChanged)
+                {
+                    _currentAttack = attack;
+                    HighlightAttackTilesLocal(attack.Tiles, _selectedUnit.TilePosition);
+                }
+            }
+
+            _prevMousePos = hit.point;
             
             CheckForMouseInteraction();
         }
@@ -78,29 +99,58 @@ public class GridMouseInteraction : MonoBehaviour
         // If the player has no unit selected, try selecting the hovered one and highlight its movement range
         if (_selectedUnit == null)
         {
-            if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team || _hoveredTile.Unit.isControlled)
+            var player = GameManager.Instance.localPlayer;
+            
+            if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != player.team || _hoveredTile.Unit.isControlled)
                 return;
             
+            // If the user tries to select a unit during the attack phase he already assigned an attack to
+            if (GameManager.Instance.gameState == GameState.Attack &&
+                _hoveredTile.Unit.AttackIntent.Exists(a => a.PlayerId == player.connectionToServer.connectionId))
+                return;
+
             _selectedUnit = _hoveredTile.Unit;
             _selectedUnit.CmdUpdateControlStatus(true);
 
-            _highlightedTiles = _selectedUnit.GetValidMoves(2);
-            GridManager.Instance.HighlightMoveTiles(_highlightedTiles, true);
+            switch (GameManager.Instance.gameState)
+            {
+                // Player can only issue an attack command to a unit once per round
+                case GameState.Attack:
+                    // If the unit was selected this frame it should always generate the highlight tiles
+                    // TODO: Replace with card values
+                    _currentAttack = _selectedUnit.GetValidAttackTiles(1, 1, _prevMousePos, _prevMousePos, false, out _);
+                    HighlightAttackTilesLocal(_currentAttack.Tiles, _selectedUnit.TilePosition);
+                    break;
+                case GameState.Movement:
+                    // TODO: Replace with card values
+                    _highlightedMoveTiles = _selectedUnit.GetValidMoves(2);
+                    GridManager.Instance.HighlightMoveTiles(_highlightedMoveTiles, true);
+                    break;
+            }
             return;
         }
 
-        // TODO: Replace with cards movement Range
-        var moveCommand = _selectedUnit.GetValidMoves(2)
-            .Where(move => move.TargetPosition == _hoveredTile.Position).FirstOrDefault();
-                
-        if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
-            _selectedUnit.CmdAddToMoveIntent(moveCommand);
+        switch (GameManager.Instance.gameState)
+        {
+            case GameState.Movement:
+                // TODO: Replace with cards movement Range
+                var moveCommand = _selectedUnit.GetValidMoves(2)
+                    .FirstOrDefault(move => move.TargetPosition == _hoveredTile.Position);
+                if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
+                    _selectedUnit.CmdRegisterMoveIntent(moveCommand);
+                break;
+            case GameState.Attack:
+                // If the player clicked on a tile within the current attack radius
+                if (_currentAttack.Tiles.Contains(_hoveredTile.Position))
+                    _selectedUnit.CmdRegisterAttackIntent(_currentAttack);
+                break;
+        }
         
         DeselectUnit();
     }
 
     // Updates the position of the hover highlight
-    private void UpdateHighlighter()
+    private void UpdateHoverHighlighter()
     {
         if (_isHovering)
         {
@@ -117,21 +167,83 @@ public class GridMouseInteraction : MonoBehaviour
     {
         if(_selectedUnit == null)
             return;
-        
-        GridManager.Instance.HighlightMoveTiles(_highlightedTiles, false);
-        _selectedUnit.CmdUpdateControlStatus(false);
 
-        _highlightedTiles = null;
+        switch (GameManager.Instance.gameState)
+        {
+            case GameState.Movement:
+                GridManager.Instance.HighlightMoveTiles(_highlightedMoveTiles, false);
+                break;
+            case GameState.Attack:
+                HideAllLocalAttackTiles();
+                break;
+        }
+        
+        _selectedUnit.CmdUpdateControlStatus(false);
+        
+        _highlightedMoveTiles = null;
         _selectedUnit = null;
+    }
+    
+    private void HighlightAttackTilesLocal(List<Vector2Int> tiles, Vector2Int unit)
+    {
+        var exist = _highlightedAttackTiles.TryGetValue(unit, out var previousTiles);
+        
+        if(exist)
+            for (int i = 0; i < previousTiles.Count; i++)
+            {
+                if (i < tiles.Count)
+                    previousTiles[i].transform.position = GridManager.Instance.GetTileAtGridPosition(tiles[i])
+                        .GetWorldPosition(groundDistance);
+                else
+                {
+                    _highlightedAttackTiles[unit].Remove(previousTiles[i]);
+                    Destroy(previousTiles[i]);
+                }
+            }
+        
+        if(tiles.Count - (previousTiles?.Count ?? 0) <= 0)
+            return;
+
+        var start = previousTiles?.Count ?? 0;
+        
+        for (int i = start; i < tiles.Count; i++)
+        {
+            var newMarker = Instantiate(attackMarker, transform);
+            newMarker.transform.position =
+                GridManager.Instance.GetTileAtGridPosition(tiles[i]).GetWorldPosition(groundDistance);
+            
+            var res = GridManager.Instance.GridResolution;
+            newMarker.transform.localScale = new Vector3(res, res, res);
+            
+            if(exist || i > start)
+                _highlightedAttackTiles[unit].Add(newMarker);
+            else
+                _highlightedAttackTiles.Add(unit, new List<GameObject>{newMarker});
+        }
+    }
+    
+    private void HideAllLocalAttackTiles()
+    {
+        foreach(var highlight in _highlightedAttackTiles.Values.SelectMany(h => h))
+            Destroy(highlight);
+        
+        _highlightedAttackTiles.Clear();
     }
     
     private void OnPlayersReady()
     {
         GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
+        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
     }
 
     private void OnTurnSubmitted()
     {
         DeselectUnit();
+    }
+
+    private void OnGameStateChanged(GameState newState)
+    {
+        if(newState == GameState.AttackExecution)
+            HideAllLocalAttackTiles();
     }
 }

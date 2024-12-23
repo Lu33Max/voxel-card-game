@@ -5167,6 +5167,8 @@ MonoBehaviour:
     m_Bits: 64
   highlightMarker: {fileID: 555851588}
   groundDistance: 0.015
+  attackMarker: {fileID: 2182866295286198080, guid: c935f02f5a1d5eb4abcd49a992ee3546,
+    type: 3}
 --- !u!4 &330402075
 Transform:
   m_ObjectHideFlags: 0

@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 public enum GameState
 {
@@ -16,12 +14,21 @@ public enum GameState
     PreStart
 }
 
+public class Attack
+{
+    public List<Vector2Int> Tiles;
+    public int Damage;
+    public int PlayerId;
+}
+
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
 
     /// <summary>SERVER ONLY<br/>List of all moves to execute when round finishes</summary>
     public Dictionary<Vector2Int, List<MoveCommand>> MoveIntents = new();
+    /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
+    public Dictionary<Vector2Int, List<Attack>> AttackIntents = new();
 
     public static UnityEvent PlayersReady = new();
     public static UnityEvent RoundTimerUp = new();
@@ -50,6 +57,10 @@ public class GameManager : NetworkBehaviour
     private int _readyPlayers;
     private int _unitsToMove;
     private int _unitsDoneMoving;
+    
+    private int _attackRound;
+    private int _unitsToAttack;
+    private int _unitsDoneAttacking;
 
     private bool _timerActive;
     [SyncVar(hook = nameof(UpdateTimerText))] private float _timeLeft;
@@ -96,6 +107,26 @@ public class GameManager : NetworkBehaviour
             _timeLeft = movementTime;
             _timerActive = true;
         }
+    }
+
+    [Server]
+    public void RegisterMoveIntent(Vector2Int unitPos, MoveCommand moveCommand)
+    {
+        if (MoveIntents.TryGetValue(unitPos, out _))
+            MoveIntents[unitPos].Add(moveCommand);
+        else
+            MoveIntents.Add(unitPos, new List<MoveCommand>{ moveCommand });
+    }
+
+    [Server]
+    public void RegisterAttackIntent(Vector2Int unitPos, Attack newAttack, Team team)
+    {
+        if (AttackIntents.TryGetValue(unitPos, out _))
+            AttackIntents[unitPos].Add(newAttack);
+        else
+            AttackIntents.Add(unitPos, new List<Attack>{ newAttack });
+        
+        GridManager.Instance.ShowAttackTilesTeam(team, newAttack.Tiles);
     }
 
     [Server]
@@ -209,7 +240,7 @@ public class GameManager : NetworkBehaviour
         }
 
         // Since movement is done clientside, each unit on each client will call the command
-        _unitsToMove = actualMoves.Count;
+        _unitsToMove = actualMoves.Count * NetworkServer.connections.Count;
         MoveIntents.Clear();
 
         if (_unitsToMove > 0)
@@ -218,9 +249,58 @@ public class GameManager : NetworkBehaviour
         }
         else
         {
-            UpdateGameState(GameState.Movement);
+            UpdateGameState(GameState.Attack);
             _bluePlayerText = $"0/{bluePlayers.Count}";
             _redPlayerText = $"0/{redPlayers.Count}";
+        }
+    }
+
+    [Server]
+    private void ExecuteAttackIntents()
+    {
+        Debug.Log("Start attack execution");
+        UpdateGameState(GameState.AttackExecution);
+        _attackRound = 0;
+        ExecuteCurrentAttackRound();
+    }
+
+    [Server]
+    private void ExecuteCurrentAttackRound()
+    {
+        GridManager.Instance.HideAttackTiles();
+        var attacksToExecute = AttackIntents.Where(a => a.Value.Count > _attackRound).ToList();
+
+        if (!attacksToExecute.Any())
+        {
+            Debug.Log("All attacks executed");
+            UpdateGameState(GameState.Movement);
+            
+            _bluePlayerText = $"0/{bluePlayers.Count}";
+            _redPlayerText = $"0/{redPlayers.Count}";
+            
+            _timeLeft = movementTime;
+            _timerActive = true;
+            
+            foreach (var unit in AttackIntents
+                         .Select(origIntent => GridManager.Instance.GetTileAtGridPosition(origIntent.Key).Unit)
+                         .Where(unit => unit != null))
+            {
+                unit.RPCCleanUp();
+            }
+            
+            AttackIntents.Clear();
+        } 
+        
+        foreach (var attackIntent in attacksToExecute)
+        {
+            Debug.Log("Execute attack to " + attackIntent.Value[_attackRound].Tiles.First());
+            GridManager.Instance.ShowAttackTilesGlobal(attackIntent.Value[_attackRound].Tiles);
+
+            _unitsToAttack = attacksToExecute.Count * NetworkServer.connections.Count;
+            
+            var unit = GridManager.Instance.GetTileAtGridPosition(attackIntent.Key).Unit;
+            if (unit != null)
+                unit.RPCExecuteAttack(attackIntent.Value[_attackRound]);
         }
     }
 
@@ -298,7 +378,16 @@ public class GameManager : NetworkBehaviour
         _timerActive = false;
         _blueSubmit = 0;
         _redSubmit = 0;
-        ExecuteMoveIntents();
+        
+        switch (gameState)
+        {
+            case GameState.Movement:
+                ExecuteMoveIntents();
+                break;
+            case GameState.Attack:
+                ExecuteAttackIntents();
+                break;
+        }
     }
 
     [Command(requiresAuthority = false)]
@@ -318,7 +407,24 @@ public class GameManager : NetworkBehaviour
         _timeLeft = movementTime;
         _timerActive = true;
         
-        UpdateGameState(GameState.Movement);
+        UpdateGameState(GameState.Attack);
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdUnitAttackDone()
+    {
+        Debug.Log("Attack done in GM");
+        _unitsDoneAttacking++;
+        
+        if(_unitsDoneAttacking != _unitsToAttack)
+            return;
+
+        _unitsDoneAttacking = 0;
+        _unitsToAttack = 0;
+        _attackRound++;
+        
+        Debug.Log("Start next round of attacks");
+        ExecuteCurrentAttackRound();
     }
 
     [ClientRpc]
