@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SO_UnitKing
   m_EditorClassIdentifier: 
   unitName: 
-  health: 0
-  moveAmount: 0
-  attackDamage: 0
+  health: 7
+  moveAmount: 1
+  attackDamage: 2
   stepDuration: 0.15

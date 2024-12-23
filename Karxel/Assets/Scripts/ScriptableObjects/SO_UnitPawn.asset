@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SO_UnitPawn
   m_EditorClassIdentifier: 
   unitName: 
-  health: 0
-  moveAmount: 0
-  attackDamage: 0
+  health: 5
+  moveAmount: 1
+  attackDamage: 3
   stepDuration: 0.15

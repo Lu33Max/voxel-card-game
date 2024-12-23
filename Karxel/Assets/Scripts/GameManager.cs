@@ -14,13 +14,6 @@ public enum GameState
     PreStart
 }
 
-public class Attack
-{
-    public List<Vector2Int> Tiles;
-    public int Damage;
-    public int PlayerId;
-}
-
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -32,6 +25,8 @@ public class GameManager : NetworkBehaviour
 
     public static UnityEvent PlayersReady = new();
     public static UnityEvent RoundTimerUp = new();
+    public static UnityEvent<Attack> AttackExecuted = new();
+    public static UnityEvent CheckHealth = new();
     [HideInInspector] public UnityEvent<GameState> gameStateChanged = new();
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
@@ -127,6 +122,12 @@ public class GameManager : NetworkBehaviour
             AttackIntents.Add(unitPos, new List<Attack>{ newAttack });
         
         GridManager.Instance.ShowAttackTilesTeam(team, newAttack.Tiles);
+    }
+
+    [Server]
+    public void UnitDefeated(Vector2Int unitPos)
+    {
+        AttackIntents.Remove(unitPos);
     }
 
     [Server]
@@ -285,13 +286,16 @@ public class GameManager : NetworkBehaviour
         
         foreach (var attackIntent in attacksToExecute)
         {
-            GridManager.Instance.ShowAttackTilesGlobal(attackIntent.Value[_attackRound].Tiles);
+            var currentAttack = attackIntent.Value[_attackRound];
+            
+            GridManager.Instance.ShowAttackTilesGlobal(currentAttack.Tiles);
+            AttackExecuted?.Invoke(currentAttack);
 
             _unitsToAttack = attacksToExecute.Count * NetworkServer.connections.Count;
             
             var unit = GridManager.Instance.GetTileAtGridPosition(attackIntent.Key).Unit;
             if (unit != null)
-                unit.RPCExecuteAttack(attackIntent.Value[_attackRound]);
+                unit.RPCExecuteAttack(currentAttack);
         }
     }
 
@@ -326,12 +330,12 @@ public class GameManager : NetworkBehaviour
 
     private void OnUpdateRedText(string old, string newText)
     {
-        redReadyUIText.text = newText;
+        redReadyUIText.text = _redPlayerText;
     }
     
     private void OnUpdateBlueText(string old, string newText)
     {
-        blueReadyUIText.text = newText;
+        blueReadyUIText.text = _bluePlayerText;
     }
     
     [Command(requiresAuthority = false)]
@@ -418,6 +422,7 @@ public class GameManager : NetworkBehaviour
         _unitsToAttack = 0;
         _attackRound++;
         
+        CheckHealth?.Invoke();
         ExecuteCurrentAttackRound();
     }
 

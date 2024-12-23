@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 
 public abstract class Unit : NetworkBehaviour
 {
@@ -15,6 +16,8 @@ public abstract class Unit : NetworkBehaviour
     public Vector2Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
     public List<Attack> AttackIntent { get; } = new();
+
+    [SyncVar] private int _currentHealth;
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -29,7 +32,28 @@ public abstract class Unit : NetworkBehaviour
     /// <param name="hasChanged">Whether the effected tiles have changed because of mouse movements compared to the last calculation</param>
     public abstract Attack GetValidAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
         Vector3 previousPosition, bool shouldBreak, out bool hasChanged);
-    
+
+    private void Start()
+    {
+        if(!isServer)
+            return;
+        
+        UpdateHealth(data.health);
+        GameManager.AttackExecuted.AddListener(OnAttackExecuted);
+        GameManager.CheckHealth.AddListener(OnCheckHealth);
+    }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+        
+        if(!isServer)
+            return;
+        
+        GameManager.AttackExecuted.RemoveListener(OnAttackExecuted);
+        GameManager.CheckHealth.RemoveListener(OnCheckHealth);
+    }
+
     /// <summary>Instantly move the unit to the given tile</summary>
     public void MoveToTile(Vector2Int tilePos)
     {
@@ -79,6 +103,28 @@ public abstract class Unit : NetworkBehaviour
     {
         yield return new WaitForSeconds(2);
         GameManager.Instance.CmdUnitAttackDone();
+    }
+
+    [Server]
+    private void OnAttackExecuted(Attack attack)
+    {
+        if(!attack.Tiles.Contains(TilePosition))
+            return;
+        
+        UpdateHealth(-attack.Damage);
+    }
+    
+    [Server]
+    private void UpdateHealth(int changeAmount)
+    {
+        _currentHealth = Mathf.Clamp(_currentHealth + changeAmount, 0, data.health);
+    }
+
+    [Server]
+    private void OnCheckHealth()
+    {
+        if(_currentHealth <= 0)
+            Die();
     }
 
     #region Networking
@@ -157,6 +203,14 @@ public abstract class Unit : NetworkBehaviour
     public void RPCExecuteAttack(Attack attack)
     {
         StartCoroutine(Attack(attack));
+    }
+
+    [ClientRpc]
+    protected virtual void Die()
+    {
+        GameManager.Instance.UnitDefeated(TilePosition);
+        GridManager.Instance.RemoveUnit(TilePosition);
+        Destroy(gameObject);
     }
 
     #endregion

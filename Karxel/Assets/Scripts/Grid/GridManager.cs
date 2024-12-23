@@ -32,7 +32,7 @@ public class GridManager : NetworkBehaviour
     private Dictionary<Vector2Int, TileData> _tiles = new();
     private Dictionary<Vector2Int, GameObject> _attackHighlights = new();
     
-    private int _readyPlayers = 0;
+    private int _readyPlayers;
 
     private void Awake()
     {
@@ -119,6 +119,12 @@ public class GridManager : NetworkBehaviour
         
         CmdUpdateTileUnit(startTile, null);
         CmdUpdateTileUnit(targetTile, unit);
+    }
+
+    /// <summary>Removes the reference to the unit from the given tile</summary>
+    public void RemoveUnit(Vector2Int unitPos)
+    {
+        CmdUpdateTileUnit(unitPos, null);
     }
 
     // TODO: Move to GridMouseInteraction

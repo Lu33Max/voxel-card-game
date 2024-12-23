@@ -86,6 +86,7 @@ public class GridMouseInteraction : MonoBehaviour
         }
         else
         {
+            HideAllLocalAttackTiles();
             _isHovering = false;
         }
     }
@@ -188,7 +189,7 @@ public class GridMouseInteraction : MonoBehaviour
     {
         var exist = _highlightedAttackTiles.TryGetValue(unit, out var previousTiles);
         
-        if(exist)
+        if(exist && previousTiles.Count > 0)
             for (int i = 0; i < previousTiles.Count; i++)
             {
                 if (i < tiles.Count)
@@ -196,6 +197,7 @@ public class GridMouseInteraction : MonoBehaviour
                         .GetWorldPosition(groundDistance);
                 else
                 {
+                    Debug.Log(previousTiles.Count + " | " + i);
                     _highlightedAttackTiles[unit].Remove(previousTiles[i]);
                     Destroy(previousTiles[i]);
                 }
