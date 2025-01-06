@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class GridMouseInteraction : MonoBehaviour
 {
@@ -24,7 +25,6 @@ public class GridMouseInteraction : MonoBehaviour
     private List<MoveCommand> _highlightedMoveTiles = new();
     private Attack _currentAttack;
     private Dictionary<Vector2Int, List<GameObject>> _highlightedAttackTiles = new();
-    
 
     private void Start()
     {
@@ -37,6 +37,8 @@ public class GridMouseInteraction : MonoBehaviour
     private void OnDestroy()
     {
         GameManager.PlayersReady.RemoveListener(OnPlayersReady);
+        GameManager.Instance.gameStateChanged.RemoveListener(OnGameStateChanged);
+        HandManager.Instance.CardDeselected.RemoveListener(OnCardDeselected);
     }
 
     private void Update()
@@ -48,7 +50,9 @@ public class GridMouseInteraction : MonoBehaviour
     // Gets the currently hovered tile and checks for player interaction in case of a mouse click
     private void CheckForHoveredTile()
     {
-        if (GameManager.Instance.gameState is GameState.Attack or GameState.Movement && 
+        // Checks for correct gamestate, whether the UI is being hovered and whether the board is being hovered
+        if (GameManager.Instance.gameState is GameState.Attack or GameState.Movement &&
+            !EventSystem.current.IsPointerOverGameObject() &&
             Physics.Raycast(_mainCamera.ScreenPointToRay(Input.mousePosition), out var hit, groundLayer))
         {
             Vector2 worldPosition = new Vector2(hit.point.x, hit.point.z);
@@ -70,8 +74,8 @@ public class GridMouseInteraction : MonoBehaviour
 
             if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
             {
-                // TODO: Replace with card values
-                var attack = _selectedUnit.GetValidAttackTiles(1, 1, hit.point, _prevMousePos, true, out bool hasChanged);
+                var cardValues = HandManager.Instance.SelectedCard.CardData;
+                var attack = _selectedUnit.GetValidAttackTiles(cardValues.attackRange, cardValues.attackDamage, hit.point, _prevMousePos, true, out bool hasChanged);
 
                 if (hasChanged)
                 {
@@ -94,8 +98,12 @@ public class GridMouseInteraction : MonoBehaviour
     // Used to handle the unit selection and highlight the reachable tiles
     private void CheckForMouseInteraction()
     {
-        if (!Input.GetMouseButtonDown(0)) 
+        // Interaction with units can only occur if a card is currently selected
+        if (!Input.GetMouseButtonDown(0) || HandManager.Instance.SelectedCard == null) 
             return;
+        
+        var cardValues = HandManager.Instance.SelectedCard.CardData;
+        var gameState = GameManager.Instance.gameState;
         
         // If the player has no unit selected, try selecting the hovered one and highlight its movement range
         if (_selectedUnit == null)
@@ -104,46 +112,57 @@ public class GridMouseInteraction : MonoBehaviour
             
             if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != player.team || _hoveredTile.Unit.isControlled)
                 return;
+
+            if (gameState == GameState.Attack && cardValues.cardType != CardType.Attack)
+            {
+                // TODO: Handle one-time effects that are applied immediately on click without the need for selection
+                return;
+            }
             
             // If the user tries to select a unit during the attack phase he already assigned an attack to
-            if (GameManager.Instance.gameState == GameState.Attack &&
-                _hoveredTile.Unit.AttackIntent.Exists(a => a.PlayerId == player.netId))
+            if (gameState == GameState.Attack && _hoveredTile.Unit.AttackIntent.Exists(a => a.PlayerId == player.netId))
                 return;
 
             _selectedUnit = _hoveredTile.Unit;
             _selectedUnit.CmdUpdateControlStatus(true);
 
-            switch (GameManager.Instance.gameState)
+            switch (gameState)
             {
                 // Player can only issue an attack command to a unit once per round
                 case GameState.Attack:
                     // If the unit was selected this frame it should always generate the highlight tiles
-                    // TODO: Replace with card values
-                    _currentAttack = _selectedUnit.GetValidAttackTiles(1, 1, _prevMousePos, _prevMousePos, false, out _);
+                    _currentAttack = _selectedUnit.GetValidAttackTiles(cardValues.attackRange, cardValues.attackDamage,
+                        _prevMousePos, _prevMousePos, false, out _);
                     HighlightAttackTilesLocal(_currentAttack.Tiles, _selectedUnit.TilePosition);
                     break;
                 case GameState.Movement:
-                    // TODO: Replace with card values
-                    _highlightedMoveTiles = _selectedUnit.GetValidMoves(2);
+                    _highlightedMoveTiles = _selectedUnit.GetValidMoves(cardValues.movementRange);
                     GridManager.Instance.HighlightMoveTiles(_highlightedMoveTiles, true);
                     break;
             }
             return;
         }
 
-        switch (GameManager.Instance.gameState)
+        switch (gameState)
         {
             case GameState.Movement:
-                // TODO: Replace with cards movement Range
-                var moveCommand = _selectedUnit.GetValidMoves(2)
+                var moveCommand = _selectedUnit.GetValidMoves(cardValues.movementRange)
                     .FirstOrDefault(move => move.TargetPosition == _hoveredTile.Position);
                 if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
+                {
                     _selectedUnit.CmdRegisterMoveIntent(moveCommand);
+                    HandManager.Instance.PlaySelectedCard();
+                }
+
                 break;
             case GameState.Attack:
                 // If the player clicked on a tile within the current attack radius
                 if (_currentAttack.Tiles.Contains(_hoveredTile.Position))
+                {
                     _selectedUnit.CmdRegisterAttackIntent(_currentAttack);
+                    HandManager.Instance.PlaySelectedCard();
+                }
+
                 break;
         }
         
@@ -197,7 +216,6 @@ public class GridMouseInteraction : MonoBehaviour
                         .GetWorldPosition(groundDistance);
                 else
                 {
-                    Debug.Log(previousTiles.Count + " | " + i);
                     _highlightedAttackTiles[unit].Remove(previousTiles[i]);
                     Destroy(previousTiles[i]);
                 }
@@ -236,6 +254,7 @@ public class GridMouseInteraction : MonoBehaviour
     {
         GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        HandManager.Instance.CardDeselected.AddListener(OnCardDeselected);
     }
 
     private void OnTurnSubmitted()
@@ -247,5 +266,10 @@ public class GridMouseInteraction : MonoBehaviour
     {
         if(newState == GameState.AttackExecution)
             HideAllLocalAttackTiles();
+    }
+    
+    private void OnCardDeselected()
+    {
+        DeselectUnit();
     }
 }

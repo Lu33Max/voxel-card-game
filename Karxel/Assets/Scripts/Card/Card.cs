@@ -1,42 +1,67 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 public class Card : MonoBehaviour
 {
-    [SerializeField] CardData cardData;
+    [SerializeField] private Image cardImage;
+    [SerializeField] private float selectedRaise;
+
+    public CardData CardData { get; private set; }
+    
+    private Vector3 _defaultPos;
+    private bool _isSelected;
+    
+    private RectTransform _transform;
+    
+    public void Initialize(CardData data, Vector2 startPos)
+    {
+        CardData = data;
+        
+        _transform = GetComponent<RectTransform>();
+        _transform.position = new Vector3(0, startPos.y, 0);
+
+        cardImage.sprite = CardData.cardSprite;
+    }
+
+    public void UpdatePosition(Vector2 newPos)
+    {
+        _defaultPos = new Vector3(newPos.x, newPos.y, 0);
+        _transform.position = new Vector3(newPos.x, _transform.position.y, transform.position.z);
+    }
 
     public void CardClickedButton()
     {
-        StartCoroutine(SelectFigure());
+        if(!CanBeSelected())
+            return;
+        
+        HandManager.Instance.CardClicked(this);
     }
 
-    IEnumerator SelectFigure()
+    public void SelectCard()
     {
-        while (true)
-        {
-            // Warte auf einen Mausklick
-            yield return new WaitUntil(() => Input.GetMouseButtonDown(0));
+        _isSelected = true;
+        _transform.position = new Vector3(_defaultPos.x, _defaultPos.y + selectedRaise, _defaultPos.z);
+    }
 
-            // Erstelle einen Ray von der Kamera durch die Mausposition
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
+    public void DeselectCard()
+    {
+        _isSelected = false;
+        _transform.position = _defaultPos;
+    }
 
-            // Überprüfe, ob der Ray ein 3D-Objekt trifft
-            if (Physics.Raycast(ray, out hit))
-            {
-                Debug.Log("Raycast getroffen! Objekt: " + hit.collider.name);
+    public void RemoveCard()
+    {
+        CardManager.Instance.AddCardToUsed(CardData);
+        Destroy(gameObject);
+    }
 
-                //Karte der Figur übergeben
-                //Im UI löschen
+    private bool CanBeSelected()
+    {
+        var gameState = GameManager.Instance.gameState;
 
-                break; // Schleife beenden
-            }
-            else
-            {
-                Debug.Log("Kein Treffer. Warte auf den nächsten Klick.");
-                yield return null;
-            }
-        }
+        return gameState == GameState.Movement && CardData.cardType == CardType.Move ||
+               gameState == GameState.Attack && CardData.cardType != CardType.Move;
     }
 }

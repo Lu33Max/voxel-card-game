@@ -4,14 +4,25 @@ using UnityEngine;
 public class CardData : ScriptableObject
 {
     public string cardName;
-
+    
     public CardType cardType;
-
-    public Sprite cardSprite;
+    public Rarity rarity;
+    
+    public Sprite cardSprite; 
+    
+    public int movementRange;
+    public int attackDamage;
+    public int attackRange;
 }
 
 public enum CardType
 {
     Attack,
     Move
+}
+
+public enum Rarity
+{
+    Common,
+    Rare
 }
