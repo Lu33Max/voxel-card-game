@@ -52,6 +52,9 @@ public class GameManager : NetworkBehaviour
     
     private int _redSubmit;
     private int _blueSubmit;
+
+    private int _unreadiedPlayers;
+    private int _playersToUnready;
     
     private int _readyPlayers;
     private int _unitsToMove;
@@ -424,6 +427,22 @@ public class GameManager : NetworkBehaviour
         StartAttackPhase();
     }
 
+    public void RestartGame()
+    {
+        if(!isServer)
+            return;
+        
+        // TODO: Restart game scene
+    }
+    
+    public void ReturnToLobby()
+    {
+        if(!isServer)
+            return;
+        
+        // TODO: Do lobby logic here
+    }
+
     private void StartAttackPhase()
     {
         _unitsDoneMoving = 0;
@@ -477,5 +496,11 @@ public class GameManager : NetworkBehaviour
     {
         gameOverScreen.SetActive(true);
         gameOverScreen.GetComponent<TextMeshProUGUI>().text = text;
+        
+        if(!isServer)
+            return;
+        
+        for(int i = 0; i < gameOverScreen.transform.childCount; i++)
+            gameOverScreen.transform.GetChild(i).gameObject.SetActive(true);
     }
 }
