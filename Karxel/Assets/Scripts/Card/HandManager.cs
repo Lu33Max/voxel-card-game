@@ -71,11 +71,20 @@ public class HandManager : MonoBehaviour
 
     public void PlaySelectedCard()
     {
+        ActionPointManager.Instance.UpdateActionPoints(-SelectedCard.CardData.cost);
+        
         SelectedCard.RemoveCard();
         _handCards.Remove(SelectedCard);
         SelectedCard = null;
         
         UpdateCardPositions();
+    }
+
+    public void DeselectCurrentCard()
+    {
+        SelectedCard.DeselectCard();
+        CardDeselected?.Invoke();
+        SelectedCard = null;
     }
 
     private void UpdateCardPositions()
@@ -93,8 +102,6 @@ public class HandManager : MonoBehaviour
         if(SelectedCard == null)
             return;
         
-        SelectedCard.DeselectCard();
-        CardDeselected?.Invoke();
-        SelectedCard = null;
+        DeselectCurrentCard();
     }
 }

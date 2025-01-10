@@ -4,6 +4,7 @@ using UnityEngine;
 public class CardData : ScriptableObject
 {
     public string cardName;
+    public int cost;
     
     public CardType cardType;
     public Rarity rarity;

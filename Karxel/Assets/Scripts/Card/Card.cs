@@ -59,6 +59,9 @@ public class Card : MonoBehaviour
 
     private bool CanBeSelected()
     {
+        if (ActionPointManager.ActionPoints - CardData.cost < 0)
+            return false;
+        
         var gameState = GameManager.Instance.gameState;
 
         return gameState == GameState.Movement && CardData.cardType == CardType.Move ||

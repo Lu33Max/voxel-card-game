@@ -7,6 +7,7 @@ public class CardManager : MonoBehaviour
     public static CardManager Instance { get; private set; }
 
     [SerializeField] private List<CardData> deck;
+    [SerializeField] private int drawCardCost = 1;
 
     private List<CardData> _usedCards = new();
     
@@ -22,6 +23,11 @@ public class CardManager : MonoBehaviour
 
     public void DrawCard()
     {
+        // Can only draw cards if the player has action points left this round
+        if (ActionPointManager.ActionPoints == 0)
+            return;
+            
+        // Reset all used cards back into the card pile
         if (deck.Count == 0)
         {
             if(_usedCards.Count == 0)
@@ -36,6 +42,7 @@ public class CardManager : MonoBehaviour
         deck.Remove(newCard);
         
         HandManager.Instance.AddCardToHand(newCard);
+        ActionPointManager.Instance.UpdateActionPoints(-drawCardCost);
     }
 
     public void AddCardToUsed(CardData card)
