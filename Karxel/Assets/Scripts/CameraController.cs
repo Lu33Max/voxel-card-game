@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -9,16 +10,20 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float maxZoom = 50f;
     [SerializeField] private LayerMask focusLayer;
 
+    [SerializeField] private Vector3 minPosition;
+    [SerializeField] private Vector3 maxPosition;
+    
     private Vector3 _focusPoint;
 
-    void Update()
+    private void Update()
     {
         HandleMovement();
         HandleRotation();
         HandleZoom();
+        ClampPosition();
     }
 
-    void UpdateFocusPoint()
+    private void UpdateFocusPoint()
     {
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hit;
@@ -46,13 +51,12 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    void HandleMovement()
+    private void HandleMovement()
     {
         // Bewegung auf der Ebene
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-
-
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+        
         if (horizontal == 0f && vertical == 0f)
             return;
         
@@ -65,20 +69,16 @@ public class CameraController : MonoBehaviour
         transform.position += direction.normalized * (moveSpeed * Time.deltaTime);
     }
 
-    void HandleRotation()
+    private void HandleRotation()
     {
         // Rotation um den Fokuspunkt
         if (Input.GetKey(KeyCode.Q))
-        {
             RotateAroundFocus(1);
-        }
         else if (Input.GetKey(KeyCode.E))
-        {
             RotateAroundFocus(-1);
-        }
     }
 
-    void RotateAroundFocus(float direction)
+    private void RotateAroundFocus(float direction)
     {
         UpdateFocusPoint();
         
@@ -90,9 +90,9 @@ public class CameraController : MonoBehaviour
         transform.LookAt(_focusPoint);
     }
 
-    void HandleZoom()
+    private void HandleZoom()
     {
-        // Zoom per Mausrad
+        // Zoom via Mouse Wheel
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0f)
         {
@@ -101,11 +101,19 @@ public class CameraController : MonoBehaviour
 
             var yPosition = newPosition.y;
             
-            // Begrenze den Zoom-Bereich
+            // Cap maximum/minimum zoom
             if (yPosition >= minZoom && yPosition <= maxZoom)
-            {
                 transform.position = newPosition;
-            }
         }
+    }
+
+    private void ClampPosition()
+    {
+        var pos = transform.position;
+        
+        transform.position = new Vector3(
+            Mathf.Clamp(pos.x, minPosition.x, maxPosition.x), Mathf.Clamp(pos.y, minPosition.y, maxPosition.y), 
+            Math.Clamp(pos.z, minPosition.z, maxPosition.z)
+        );
     }
 }
