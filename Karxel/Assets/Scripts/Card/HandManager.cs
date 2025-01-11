@@ -45,8 +45,10 @@ public class HandManager : MonoBehaviour
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
+        _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : -1);
 
         UpdateCardPositions();
+        newCard.SetActiveState(newCard.CanBeSelected());
     }
 
     /// <summary>Handle the logic for selecting and deselecting a card depending on whether it was already selected</summary>
@@ -97,9 +99,12 @@ public class HandManager : MonoBehaviour
     // Deselect cards on end of turn
     private void OnGameStateChanged(GameState newState)
     {
-        if(SelectedCard == null)
-            return;
-        
-        DeselectCurrentCard();
+        if(SelectedCard != null)
+            DeselectCurrentCard();
+
+        foreach (var handCard in _handCards)
+        {
+            handCard.SetActiveState(handCard.CanBeSelected());
+        }
     }
 }

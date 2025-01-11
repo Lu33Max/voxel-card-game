@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public enum GameState
 {
@@ -46,6 +47,11 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private int movementTime;
     [SerializeField] private int submitTime;
+
+    [Header("Phase Display")]
+    [SerializeField] private List<Image> phaseDisplays;
+    [SerializeField] private Sprite moveSprite;
+    [SerializeField] private Sprite attackSprite;
 
     [Header("Game Over")] 
     [SerializeField] private GameObject gameOverScreen;
@@ -487,6 +493,16 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void RPCInvokeStateUpdate(GameState newState)
     {
+        foreach (var display in phaseDisplays)
+        {
+            display.sprite = newState switch
+            {
+                GameState.Attack => attackSprite,
+                GameState.Movement => moveSprite,
+                _ => display.sprite
+            };
+        }
+        
         gameStateChanged?.Invoke(newState);
     }
 
