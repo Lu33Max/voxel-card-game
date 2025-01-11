@@ -19,10 +19,7 @@ public class ActionPointManager : MonoBehaviour
             return;
 
         Instance = this;
-    }
-
-    public override void OnStartLocalPlayer()
-    {
+        
         ActionPoints = startPoints;
         actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
     }
