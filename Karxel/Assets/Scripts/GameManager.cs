@@ -28,6 +28,8 @@ public class GameManager : NetworkBehaviour
     public static UnityEvent RoundTimerUp = new();
     public static UnityEvent<Attack> AttackExecuted = new();
     public static UnityEvent CheckHealth = new();
+    public static UnityEvent<int> NewRound = new();
+    
     [HideInInspector] public UnityEvent<GameState> gameStateChanged = new();
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
@@ -49,6 +51,8 @@ public class GameManager : NetworkBehaviour
 
     [SyncVar(hook = nameof(OnUpdateRedText))] private string _redPlayerText;
     [SyncVar(hook = nameof(OnUpdateBlueText))] private string _bluePlayerText;
+
+    private int _roundCounter = 1;
     
     private int _redSubmit;
     private int _blueSubmit;
@@ -288,6 +292,8 @@ public class GameManager : NetworkBehaviour
         if (!attacksToExecute.Any())
         {
             UpdateGameState(GameState.Movement);
+            _roundCounter++;
+            RPCInvokeNewRound(_roundCounter);
             
             _bluePlayerText = $"0/{bluePlayers.Count}";
             _redPlayerText = $"0/{redPlayers.Count}";
@@ -502,5 +508,11 @@ public class GameManager : NetworkBehaviour
         
         for(int i = 0; i < gameOverScreen.transform.childCount; i++)
             gameOverScreen.transform.GetChild(i).gameObject.SetActive(true);
+    }
+    
+    [ClientRpc]
+    private void RPCInvokeNewRound(int count)
+    {
+        NewRound?.Invoke(count);
     }
 }

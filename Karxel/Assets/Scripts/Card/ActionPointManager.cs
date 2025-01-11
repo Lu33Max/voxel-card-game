@@ -1,3 +1,4 @@
+using Mirror;
 using TMPro;
 using UnityEngine;
 
@@ -12,17 +13,15 @@ public class ActionPointManager : MonoBehaviour
 
     [SerializeField] private TextMeshProUGUI actionText;
 
-    private void Awake()
+    public void Initialize()
     {
         if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
             return;
-        }
+
         Instance = this;
     }
-    
-    private void Start()
+
+    public override void OnStartLocalPlayer()
     {
         ActionPoints = startPoints;
         actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
@@ -48,6 +47,12 @@ public class ActionPointManager : MonoBehaviour
         // If the cost of the currently selected card would be too high to play it after the point reduction deselect it
         if (handManager.SelectedCard != null && ActionPoints - handManager.SelectedCard.CardData.cost < 0)
             handManager.DeselectCurrentCard();
+    }
+
+    public void UpdateActionPointsOnPlay(int valueToAdd)
+    {
+        ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, maxPoints);
+        actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
     }
 
     private void OnGameStateChanged(GameState newState)

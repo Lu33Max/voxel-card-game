@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Mirror;
 using UnityEngine;
 
 public class CardManager : MonoBehaviour
@@ -11,13 +12,11 @@ public class CardManager : MonoBehaviour
 
     private List<CardData> _usedCards = new();
     
-    private void Awake()
+    public void Initialize()
     {
         if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
             return;
-        }
+
         Instance = this;
     }
 
@@ -36,7 +35,7 @@ public class CardManager : MonoBehaviour
             deck = _usedCards.ToList();
             _usedCards.Clear();
         }
-
+        
         // Get a random card from the deck and remove it
         CardData newCard = deck[Random.Range(0, deck.Count)];
         deck.Remove(newCard);

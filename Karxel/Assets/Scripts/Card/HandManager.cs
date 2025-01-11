@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -7,7 +8,7 @@ public class HandManager : MonoBehaviour
     public static HandManager Instance { get; private set; }
 
     public UnityEvent CardDeselected = new();
-
+    
     [SerializeField] private GameObject cardPrefab;
 
     [Header("Hand Positioning")] 
@@ -17,14 +18,11 @@ public class HandManager : MonoBehaviour
     private List<Card> _handCards = new();
 
     public Card SelectedCard { get; private set; }
-
-    private void Awake()
+    
+    public void Initialize()
     {
         if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
             return;
-        }
         
         Instance = this;
     }
@@ -71,7 +69,7 @@ public class HandManager : MonoBehaviour
 
     public void PlaySelectedCard()
     {
-        ActionPointManager.Instance.UpdateActionPoints(-SelectedCard.CardData.cost);
+        ActionPointManager.Instance.UpdateActionPointsOnPlay(-SelectedCard.CardData.cost);
         
         SelectedCard.RemoveCard();
         _handCards.Remove(SelectedCard);
