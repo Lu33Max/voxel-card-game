@@ -4,6 +4,7 @@ using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public enum GameState
 {
@@ -91,6 +92,9 @@ public class GameManager : NetworkBehaviour
         
         if(_timerActive)
             UpdateTimer();
+
+        if (Input.GetKeyDown(KeyCode.K))
+            _defeatedKings.Add(Team.Blue);
     }
 
     [Server]
@@ -438,7 +442,7 @@ public class GameManager : NetworkBehaviour
         if(!isServer)
             return;
         
-        // TODO: Restart game scene
+        NetworkManager.singleton.ServerChangeScene(SceneManager.GetActiveScene().name);
     }
     
     public void ReturnToLobby()
@@ -446,7 +450,8 @@ public class GameManager : NetworkBehaviour
         if(!isServer)
             return;
         
-        // TODO: Do lobby logic here
+        // TODO: Implement return to lobby logic
+        // NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
     private void StartAttackPhase()

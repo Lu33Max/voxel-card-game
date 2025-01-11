@@ -31,4 +31,27 @@ public class NetworkRoom : NetworkRoomManager
     {
         
     }
+    
+    public override void OnServerSceneChanged(string sceneName)
+    {
+        base.OnServerSceneChanged(sceneName);
+
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            if (conn.identity == null)
+            {
+                Transform startPosition = GetStartPosition();
+
+                if (startPosition == null) 
+                    continue;
+                
+                GameObject player = Instantiate(playerPrefab, startPosition.position, startPosition.rotation);
+                NetworkServer.ReplacePlayerForConnection(conn, player, true);
+            }
+            else
+            {
+                Debug.Log($"Player already exists for connection {conn.connectionId}");
+            }
+        }
+    }
 }
