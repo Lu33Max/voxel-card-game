@@ -289,12 +289,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 515fa7c0715731e4b88216a0ee7b9332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  startPoints: 5
-  maxPoints: 5
-  pointsPerRound: 3
+  startPoints: 10
+  maxPoints: 10
+  pointsPerRound: 5
   actionText: {fileID: 6078908742282275424}
 --- !u!114 &7051883379787249094
 MonoBehaviour:
@@ -308,9 +305,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa4a66f2dc349094aa9507cd2e985d10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
   deck:
   - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
   - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
@@ -368,13 +362,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62ff544f5a1147f40b7b6bc9c1d034b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
   CardDeselected:
     m_PersistentCalls:
       m_Calls: []
-  playerRef: {fileID: 8832583964284385238}
   cardPrefab: {fileID: 2066143520017698908, guid: 9d568b1b56277944ba309d70caa4c968,
     type: 3}
   cardWidth: 100
