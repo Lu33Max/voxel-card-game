@@ -10,42 +10,49 @@ using Mirror;
 /// </summary>
 public class NetworkRoomPlayerScript : NetworkRoomPlayer
 {
-    [SyncVar(hook = nameof(OnNameChanged))]
-    public string playerName;
+    [SyncVar(hook = nameof(OnTeamChanged))]
+    public Team team;
 
-    void OnNameChanged(string _Old, string _New)
+    [SyncVar(hook = nameof(OnReadyStatusChanged))]
+    public bool isReady;
+
+    public void SetTeam(Team newTeam)
     {
-        gameObject.name = playerName;
-    }
+        if (isReady)
+        {
+            Debug.LogWarning("Du kannst das Team nicht ändern, während du bereit bist.");
+            return;
+        }
 
-    public override void OnStartClient()
-    {
-
-    }
-
-    public override void OnClientEnterRoom()
-    {
-
-    }
-
-    public override void OnClientExitRoom()
-    {
-
-    }
-
-    public override void OnStartLocalPlayer()
-    {
-
+        CmdSetTeam(newTeam);
     }
 
     [Command]
-    void CMDChangePlayerName(string name)
+    private void CmdSetTeam(Team newTeam)
     {
-        playerName = name;
+        team = newTeam;
     }
 
+    private void OnTeamChanged(Team oldTeam, Team newTeam)
+    {
+        Debug.Log($"Team geändert: {oldTeam} -> {newTeam}");
+        // UI aktualisieren
+    }
+
+    public void SetReady(bool readyStatus)
+    {
+        CmdChangeReadyState(readyStatus);
+    }
+
+    private void OnReadyStatusChanged(bool oldStatus, bool newStatus)
+    {
+        Debug.Log($"Ready Status geändert: {oldStatus} -> {newStatus}");
+        // UI aktualisieren
+    }
+    
     public override void ReadyStateChanged(bool oldReadyState, bool newReadyState)
     {
-
+        base.ReadyStateChanged(oldReadyState, newReadyState);
+        isReady = newReadyState; // Synchronisiere unsere eigene Ready-Variable
     }
 }

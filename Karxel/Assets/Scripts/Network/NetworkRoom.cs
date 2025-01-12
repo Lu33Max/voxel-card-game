@@ -20,11 +20,16 @@ public class NetworkRoom : NetworkRoomManager
 
         NetworkClient.AddPlayer();
     }
+    
+    public override bool OnRoomServerSceneLoadedForPlayer(NetworkConnectionToClient conn, GameObject roomPlayer, GameObject gamePlayer)
+    {
+        gamePlayer.GetComponent<Player>().team = roomPlayer.GetComponent<NetworkRoomPlayerScript>().team;
+        return true;
+    }
 
     public override void OnRoomServerPlayersReady()
     {
-        //LoadGame
-        ServerChangeScene(GameplayScene);
+        Debug.Log("Alle Spieler sind bereit, aber der Host muss das Spiel starten.");
     }
 
     public override void OnRoomServerPlayersNotReady()

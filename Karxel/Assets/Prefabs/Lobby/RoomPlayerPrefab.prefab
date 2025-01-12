@@ -69,5 +69,5 @@ MonoBehaviour:
   showRoomGUI: 1
   readyToBegin: 0
   index: 0
-  team: 0
+  team: 2
   isReady: 0

@@ -1,25 +1,64 @@
 using System.Collections;
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 
 public class LobbyManager : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField] private NetworkRoom _roomManager;
+
+    private void Awake()
     {
-        
+        if (_roomManager == null)
+        {
+            _roomManager = FindObjectOfType<NetworkRoom>();
+        }
+
+        if (_roomManager == null)
+        {
+            Debug.LogError("CustomRoomManager konnte nicht gefunden werden!");
+        }
+    }
+    
+    public void StartGame()
+    {
+        if (_roomManager.allPlayersReady)
+        {
+            Debug.Log("Spiel startet!");
+            _roomManager.ServerChangeScene(_roomManager.GameplayScene);
+        }
+        else
+        {
+            Debug.LogWarning("Nicht alle Spieler sind bereit!");
+        }
+    }
+    
+    public void OnSelectTeamRed()
+    {
+        NetworkRoomPlayerScript localPlayer = NetworkClient.localPlayer.GetComponent<NetworkRoomPlayerScript>();
+        localPlayer.SetTeam(Team.Red);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void OnSelectTeamBlue()
     {
-        
+        NetworkRoomPlayerScript localPlayer = NetworkClient.localPlayer.GetComponent<NetworkRoomPlayerScript>();
+        localPlayer.SetTeam(Team.Blue);
     }
-
-    public void SelectTeamButton(int teamID)
+    
+    public void OnReadyButtonPressed()
     {
-        //CMD aufrufen, welcher Localplayer in teamID Team packt
-        //Data bearbeiten
-        //Spieler ready machen
+        NetworkRoomPlayerScript localPlayer = NetworkClient.localPlayer.GetComponent<NetworkRoomPlayerScript>();
+        
+        if(localPlayer.team != Team.None)
+            localPlayer.SetReady(true);
+    }
+    
+    public void UpdatePlayerList()
+    {
+        foreach (NetworkRoomPlayer player in _roomManager.roomSlots)
+        {
+            var customPlayer = (NetworkRoomPlayerScript) player;
+            // Update die Spielerliste mit customPlayer.team und customPlayer.isReady
+        }
     }
 }
