@@ -12,7 +12,7 @@ using System;
 /// </summary>
 public class SteamLobby : MonoBehaviour
 {
-    public static SteamLobby sinleton;
+    public static SteamLobby singleton;
 
     NetworkManager networkManager;
 
@@ -34,7 +34,7 @@ public class SteamLobby : MonoBehaviour
     void Start()
     {
         networkManager = GetComponent<NetworkManager>();
-        sinleton = this;
+        singleton = this;
 
         if (!SteamManager.Initialized)
         {

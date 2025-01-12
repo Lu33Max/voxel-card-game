@@ -451,7 +451,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Add Card
+  m_text: Draw
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e82c6d1359ace4a44bc19c2d5f58521a, type: 2}
   m_sharedMaterial: {fileID: 8446513022921677657, guid: e82c6d1359ace4a44bc19c2d5f58521a,

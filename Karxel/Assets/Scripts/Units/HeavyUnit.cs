@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -17,11 +15,19 @@ public class HeavyUnit : Unit
             new (1, -1), new (1, 1) , new (-1, 1), new (-1, -1)
         };
 
-        foreach (var direction in directions)
+        for (int i = 1; i <= movementRange; i++)
         {
-            var path = new List<Vector2Int>();
+            foreach (var direction in directions)
+            {
+                var path = new List<Vector2Int>();
+
+                for (int j = 1; j < i; j++)
+                {
+                    path.Add(startPosition + direction * j);
+                }
             
-            moves.Add(new MoveCommand { TargetPosition = startPosition + direction, Path = path });
+                moves.Add(new MoveCommand { TargetPosition = startPosition + direction * i, Path = path });
+            }
         }
         
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();

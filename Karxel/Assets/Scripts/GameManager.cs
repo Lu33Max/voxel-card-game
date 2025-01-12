@@ -469,7 +469,7 @@ public class GameManager : NetworkBehaviour
             return;
         
         // TODO: Implement return to lobby logic
-        // NetworkManager.singleton.ServerChangeScene("Lobby");
+        NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
     private void StartAttackPhase()

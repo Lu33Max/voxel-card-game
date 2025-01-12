@@ -291,8 +291,8 @@ MonoBehaviour:
   nameText: {fileID: 5994471555392716997}
   valueText: {fileID: 5027399888377862455}
   cardImage: {fileID: 908237563861211682}
-  selectedRaise: 20
-  inactiveLower: 40
+  selectedRaise: 40
+  inactiveLower: 60
 --- !u!1 &4125490374077451589
 GameObject:
   m_ObjectHideFlags: 0

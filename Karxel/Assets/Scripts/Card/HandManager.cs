@@ -48,7 +48,7 @@ public class HandManager : MonoBehaviour
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
-        _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : -1);
+        _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : c1.CardData.cardType == c2.CardData.cardType ? 0 : -1);
 
         for (int i = 0; i < _handCards.Count; i++)
         {
@@ -61,7 +61,7 @@ public class HandManager : MonoBehaviour
             null);
         
         UpdateCardPositions();
-        newCard.SetActiveState(newCard.CanBeSelected());
+        newCard.SetActiveState(newCard.IsCorrectPhase());
     }
 
     /// <summary>Handle the logic for selecting and deselecting a card depending on whether it was already selected</summary>

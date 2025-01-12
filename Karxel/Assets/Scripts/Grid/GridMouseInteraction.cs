@@ -26,6 +26,8 @@ public class GridMouseInteraction : MonoBehaviour
     private Attack _currentAttack;
     private Dictionary<Vector2Int, List<GameObject>> _highlightedAttackTiles = new();
 
+    private bool _hasSubmitted = false;
+
     private void Start()
     {
         _mainCamera = Camera.main;
@@ -86,7 +88,8 @@ public class GridMouseInteraction : MonoBehaviour
 
             _prevMousePos = hit.point;
             
-            CheckForMouseInteraction();
+            if(!_hasSubmitted)
+                CheckForMouseInteraction();
         }
         else
         {
@@ -267,11 +270,14 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnTurnSubmitted()
     {
+        _hasSubmitted = true;
         DeselectUnit();
     }
 
     private void OnGameStateChanged(GameState newState)
     {
+        _hasSubmitted = false;
+        
         if(newState == GameState.AttackExecution)
             HideAllLocalAttackTiles();
     }
