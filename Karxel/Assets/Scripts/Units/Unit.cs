@@ -186,6 +186,12 @@ public abstract class Unit : NetworkBehaviour
     }
 
     #region Networking
+    
+    [Command(requiresAuthority = false)]
+    public void CmdUpdateHealth(int changeAmount)
+    {
+        UpdateHealth(changeAmount);
+    }
 
     [Command(requiresAuthority = false)]
     private void CmdChangePosition(Vector3 position, Vector2Int tilePos)

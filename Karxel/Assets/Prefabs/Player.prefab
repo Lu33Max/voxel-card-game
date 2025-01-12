@@ -309,9 +309,24 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
   - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
   - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
+  - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
+  - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
+  - {fileID: 11400000, guid: 52b9c3036cd8aa04ab8a5eddbb6afaca, type: 2}
+  - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
+  - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
+  - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
+  - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
+  - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
   - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
   - {fileID: 11400000, guid: 4feadb28e4e62484cab42baca3c864ac, type: 2}
   - {fileID: 11400000, guid: 87c3a1af12daa4c48b1799c376b7a02d, type: 2}
+  - {fileID: 11400000, guid: 87c3a1af12daa4c48b1799c376b7a02d, type: 2}
+  - {fileID: 11400000, guid: 87c3a1af12daa4c48b1799c376b7a02d, type: 2}
+  - {fileID: 11400000, guid: 06eb6315fa323164a80b6efb15bf6af2, type: 2}
+  - {fileID: 11400000, guid: 06eb6315fa323164a80b6efb15bf6af2, type: 2}
+  - {fileID: 11400000, guid: 06eb6315fa323164a80b6efb15bf6af2, type: 2}
+  - {fileID: 11400000, guid: a537f6b0276386b46bee4aafad6a5804, type: 2}
+  - {fileID: 11400000, guid: a537f6b0276386b46bee4aafad6a5804, type: 2}
   drawCardCost: 1
 --- !u!1 &2269703296210228593
 GameObject:

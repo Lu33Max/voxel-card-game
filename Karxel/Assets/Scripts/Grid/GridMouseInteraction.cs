@@ -114,7 +114,10 @@ public class GridMouseInteraction : MonoBehaviour
 
             if (gameState == GameState.Movement && cardValues.cardType != CardType.Move)
             {
-                // TODO: Handle one-time effects that are applied immediately on click without the need for selection
+                if(cardValues.cardType == CardType.Heal)
+                    _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
+                
+                HandManager.Instance.PlaySelectedCard();
                 return;
             }
             

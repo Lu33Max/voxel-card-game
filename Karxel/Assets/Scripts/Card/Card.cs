@@ -78,7 +78,7 @@ public class Card : MonoBehaviour
         
         var gameState = GameManager.Instance.gameState;
 
-        return gameState != GameState.Attack && CardData.cardType == CardType.Move ||
-               gameState == GameState.Attack && CardData.cardType != CardType.Move;
+        return gameState == GameState.Movement && CardData.cardType != CardType.Attack ||
+               gameState == GameState.Attack && CardData.cardType == CardType.Attack;
     }
 }
