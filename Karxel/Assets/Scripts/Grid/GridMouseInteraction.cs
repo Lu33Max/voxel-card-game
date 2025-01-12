@@ -104,16 +104,15 @@ public class GridMouseInteraction : MonoBehaviour
         
         var cardValues = HandManager.Instance.SelectedCard.CardData;
         var gameState = GameManager.Instance.gameState;
+        var player = GameManager.Instance.localPlayer;
         
         // If the player has no unit selected, try selecting the hovered one and highlight its movement range
         if (_selectedUnit == null)
         {
-            var player = GameManager.Instance.localPlayer;
-            
             if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != player.team || _hoveredTile.Unit.isControlled)
                 return;
 
-            if (gameState == GameState.Attack && cardValues.cardType != CardType.Attack)
+            if (gameState == GameState.Movement && cardValues.cardType != CardType.Move)
             {
                 // TODO: Handle one-time effects that are applied immediately on click without the need for selection
                 return;
@@ -150,6 +149,9 @@ public class GridMouseInteraction : MonoBehaviour
                     .FirstOrDefault(move => move.TargetPosition == _hoveredTile.Position);
                 if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
                 {
+                    // Logging
+                    _selectedUnit.LogMovement(cardValues, moveCommand);
+                    
                     _selectedUnit.CmdRegisterMoveIntent(moveCommand);
                     HandManager.Instance.PlaySelectedCard();
                 }
@@ -159,6 +161,9 @@ public class GridMouseInteraction : MonoBehaviour
                 // If the player clicked on a tile within the current attack radius
                 if (_currentAttack.Tiles.Contains(_hoveredTile.Position))
                 {
+                    // Logging
+                    _selectedUnit.LogAttack(cardValues, _currentAttack);
+                    
                     _selectedUnit.CmdRegisterAttackIntent(_currentAttack);
                     HandManager.Instance.PlaySelectedCard();
                 }

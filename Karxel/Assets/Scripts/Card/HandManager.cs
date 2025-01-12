@@ -47,6 +47,11 @@ public class HandManager : MonoBehaviour
         _handCards.Add(newCard);
         _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : -1);
 
+        // Logging
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(),
+            GameManager.Instance.localPlayer.team.ToString(), "drawCard", $"[{newCardData.cardName}]", null, null, null,
+            null);
+        
         UpdateCardPositions();
         newCard.SetActiveState(newCard.CanBeSelected());
     }

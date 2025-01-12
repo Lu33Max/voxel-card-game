@@ -79,6 +79,20 @@ public abstract class Unit : NetworkBehaviour
         CmdStep(moveCommand);
         GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
     }
+
+    public void LogMovement(CardData cardValues, MoveCommand move)
+    {
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
+            owningTeam.ToString(), "move", $"[{cardValues.movementRange}]", move.TargetPosition.ToString(), 
+            gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+    }
+    
+    public void LogAttack(CardData cardValues, Attack attack)
+    {
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
+            owningTeam.ToString(), "attack", $"[{cardValues.attackRange},{cardValues.attackDamage}]", $"[{string.Join(",", attack.Tiles.Select(t => t.ToString()).ToList())}]", 
+            gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+    }
     
     // Move the unit along the given path from tile to tile
     private IEnumerator MoveToPositions(MoveCommand moveCommand)
@@ -134,13 +148,24 @@ public abstract class Unit : NetworkBehaviour
     private void UpdateHealth(int changeAmount)
     {
         _currentHealth = Mathf.Clamp(_currentHealth + changeAmount, 0, data.health);
+        
+        // Logging
+        if(changeAmount < 0)
+            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeAmount},{_currentHealth}]", 
+                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }
 
     [Server]
     protected void OnCheckHealth()
     {
-        if(_currentHealth <= 0)
-            Die();
+        if (_currentHealth > 0) 
+            return;
+        
+        //Logging
+        ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "died", null, 
+            null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+        
+        Die();
     }
 
     #region Networking
@@ -164,6 +189,7 @@ public abstract class Unit : NetworkBehaviour
             MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition, TilePosition);
 
         GameManager.Instance.RegisterMoveIntent(TilePosition, moveCommand);
+        
         RPCAddToMoveIntent(moveCommand);
     }
 

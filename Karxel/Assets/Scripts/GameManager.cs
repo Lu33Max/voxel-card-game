@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -340,6 +341,10 @@ public class GameManager : NetworkBehaviour
     private void UpdateGameState(GameState newState)
     {
         gameState = newState;
+        
+        if(gameState is GameState.Movement or GameState.Attack)
+            ActionLogger.Instance.LogAction("server", "server", "phaseSwitch", $"[{_roundCounter + (gameState == GameState.Movement ? 1 : 0)}]", null, null, null, null);
+        
         RPCInvokeStateUpdate(newState);
     }
 
@@ -353,6 +358,10 @@ public class GameManager : NetworkBehaviour
 
         _timeLeft = 0;
         _timerActive = false;
+        
+        // Logging
+        ActionLogger.Instance.LogAction("server", "server", "timeUp", null, null, null, null, null);
+        
         RPCInvokeTimerUp();
     }
 
@@ -420,6 +429,9 @@ public class GameManager : NetworkBehaviour
         _timerActive = false;
         _blueSubmit = 0;
         _redSubmit = 0;
+        
+        // Logging
+        ActionLogger.Instance.LogAction("server", "server", "allSubmit", $"[{_timeLeft}]", null, null, null, null);
         
         switch (gameState)
         {
@@ -535,5 +547,12 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokeNewRound(int count)
     {
         NewRound?.Invoke(count);
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdLogAction(string playerId, string team, string actionType, [CanBeNull] string actionValues,
+        [CanBeNull] string target, [CanBeNull] string unitId, [CanBeNull] string unitName, [CanBeNull] string startPos)
+    {
+        ActionLogger.Instance.LogAction(playerId, team, actionType, actionValues, target, unitId, unitName, startPos);
     }
 }
