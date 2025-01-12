@@ -21,6 +21,14 @@ public class NetworkRoom : NetworkRoomManager
         NetworkClient.AddPlayer();
     }
 
+    public override bool OnRoomServerSceneLoadedForPlayer(NetworkConnectionToClient conn, GameObject roomPlayer, GameObject gamePlayer)
+    {
+
+        gamePlayer.name = "HALLO_ICH_BIN_SUPER";
+
+        return true;
+    }
+
     public override void OnRoomServerPlayersReady()
     {
         //LoadGame
