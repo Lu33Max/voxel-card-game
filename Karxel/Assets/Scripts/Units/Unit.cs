@@ -3,18 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using TMPro;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
 {
-    [HideInInspector, SyncVar] public Team owningTeam;
+    [HideInInspector, SyncVar(hook = nameof(OnTeamUpdated))] public Team owningTeam = Team.None;
     [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
     [SerializeField] protected UnitData data;
     [SerializeField] private GameObject canvas;
     [SerializeField] private Slider healthSlider;
+    [SerializeField] private TextMeshProUGUI healthCounter;
     [SerializeField] protected Material outlineMaterial;
     
     public Vector2Int TilePosition { get; private set; }
@@ -137,6 +139,12 @@ public abstract class Unit : NetworkBehaviour
     private void OnHealthUpdated(int old, int newHealth)
     {
         healthSlider.value = (float)newHealth / data.health;
+        healthCounter.text = newHealth.ToString();
+    }
+
+    private void OnTeamUpdated(Team old, Team owner)
+    {
+        healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
     }
 
     private void OnControlStatusChanged(bool old, bool isNowSelected)

@@ -7,7 +7,8 @@ using UnityEngine.UI;
 public enum Team
 {
     Red = 0,
-    Blue = 1
+    Blue = 1,
+    None = 2
 }
 
 public class Player : NetworkBehaviour

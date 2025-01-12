@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Mirror;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,10 +11,13 @@ public class HandManager : MonoBehaviour
     [SerializeField] private GameObject cardPrefab;
 
     [Header("Hand Positioning")] 
-    [SerializeField] private float cardWidth = 100f;
-    [SerializeField] private float bottomDistance = 105f;
+    [SerializeField] private float cardWidth = 0.08f;
+    [SerializeField] private float bottomDistance = 80f;
+    [SerializeField] private float maxWidth = 0.8f;
 
     private List<Card> _handCards = new();
+
+    private float _cardWidth;
 
     public Card SelectedCard { get; private set; }
     
@@ -25,6 +27,7 @@ public class HandManager : MonoBehaviour
             return;
         
         Instance = this;
+        _cardWidth = cardWidth * Screen.width;
     }
 
     private void OnEnable()
@@ -46,6 +49,11 @@ public class HandManager : MonoBehaviour
         
         _handCards.Add(newCard);
         _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : -1);
+
+        for (int i = 0; i < _handCards.Count; i++)
+        {
+            _handCards[i].transform.SetSiblingIndex(i);
+        }
 
         // Logging
         GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(),
@@ -94,10 +102,25 @@ public class HandManager : MonoBehaviour
 
     private void UpdateCardPositions()
     {
-        var startPos = Screen.width / 2f - _handCards.Count / 2f * cardWidth + cardWidth / 2f;
-        for (int i = 0; i < _handCards.Count; i++)
+        // If there are so many cards, they need to be placed overlapping
+        if (_handCards.Count * _cardWidth > Screen.width * maxWidth)
         {
-            _handCards[i].UpdatePosition(new Vector2(startPos + i * cardWidth, bottomDistance));
+            var startPos = (1 - maxWidth) * Screen.width / 2 + _cardWidth / 2f;
+            var lastPos = Screen.width - (1 - maxWidth) * Screen.width / 2 - _cardWidth / 2f;
+            
+            _handCards[0].UpdatePosition(new Vector2(startPos, bottomDistance));
+            for (int i = 1; i < _handCards.Count; i++)
+            {
+                _handCards[i].UpdatePosition(new Vector2(Mathf.Lerp(startPos, lastPos, i / (_handCards.Count - 1f)), bottomDistance));
+            }   
+        }
+        else
+        {
+            var startPos = Screen.width / 2f - _handCards.Count / 2f * _cardWidth + _cardWidth / 2f;
+            for (int i = 0; i < _handCards.Count; i++)
+            {
+                _handCards[i].UpdatePosition(new Vector2(startPos + i * _cardWidth, bottomDistance));
+            }   
         }
     }
 
@@ -109,7 +132,7 @@ public class HandManager : MonoBehaviour
 
         foreach (var handCard in _handCards)
         {
-            handCard.SetActiveState(handCard.CanBeSelected());
+            handCard.SetActiveState(handCard.IsCorrectPhase());
         }
     }
 }

@@ -71,11 +71,16 @@ public class Card : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public bool CanBeSelected()
+    public bool CanBeSelected(GameState state = GameState.PreStart)
     {
         if (ActionPointManager.ActionPoints - CardData.cost < 0)
             return false;
-        
+
+        return IsCorrectPhase();
+    }
+
+    public bool IsCorrectPhase()
+    {
         var gameState = GameManager.Instance.gameState;
 
         return gameState == GameState.Movement && CardData.cardType != CardType.Attack ||
