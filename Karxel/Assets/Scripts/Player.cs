@@ -42,14 +42,8 @@ public class Player : NetworkBehaviour
         GameManager.Instance.CmdPlayerSpawned();
         
         GameManager.RoundTimerUp.AddListener(SubmitTurn);
-
-        var newTeam = NetworkServer.connections.Keys.ToList()
-            .FindIndex(i => i == connectionToClient.connectionId) % 2 == 0
-            ? Team.Blue
-            : Team.Red;
         
-        CmdUpdateTeam(newTeam);
-        CmdAddToPlayerList(newTeam);
+        CmdAddToPlayerList(team);
     }
     
     private void OnDestroy()
