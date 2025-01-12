@@ -36,8 +36,6 @@ public class ActionLogger : MonoBehaviour
             timestamp = DateTime.Now.ToString("o"),
         };
         
-        Debug.Log(JsonUtility.ToJson(action));
-
         File.AppendAllText(_logFilePath, JsonUtility.ToJson(action) + "\n");
         
         if (action.actionType == "phaseSwitch")

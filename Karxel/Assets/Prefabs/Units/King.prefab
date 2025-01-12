@@ -175,6 +175,7 @@ MonoBehaviour:
   data: {fileID: 11400000, guid: 2f9ec597530c7ba4bbb38fbd5fe2bde5, type: 2}
   canvas: {fileID: 5923697737953403872}
   healthSlider: {fileID: 7201704402833163745}
+  outlineMaterial: {fileID: 2100000, guid: 3e45ff9464f99514a9a1e4541d6e6d96, type: 2}
 --- !u!114 &6505779614707281561
 MonoBehaviour:
   m_ObjectHideFlags: 0

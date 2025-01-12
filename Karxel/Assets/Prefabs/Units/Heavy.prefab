@@ -446,6 +446,7 @@ MonoBehaviour:
   data: {fileID: 11400000, guid: d5c73cecae1eb2647a6c251a1b663295, type: 2}
   canvas: {fileID: 2864708386397120066}
   healthSlider: {fileID: 842352017254961672}
+  outlineMaterial: {fileID: 2100000, guid: 3e45ff9464f99514a9a1e4541d6e6d96, type: 2}
 --- !u!1 &6385326172972222106
 GameObject:
   m_ObjectHideFlags: 0
