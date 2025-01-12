@@ -7,26 +7,27 @@ public class HandManager : MonoBehaviour
     public static HandManager Instance { get; private set; }
 
     public UnityEvent CardDeselected = new();
-
+    
     [SerializeField] private GameObject cardPrefab;
 
     [Header("Hand Positioning")] 
-    [SerializeField] private float cardWidth = 100f;
-    [SerializeField] private float bottomDistance = 105f;
+    [SerializeField] private float cardWidth = 0.08f;
+    [SerializeField] private float bottomDistance = 80f;
+    [SerializeField] private float maxWidth = 0.8f;
 
     private List<Card> _handCards = new();
 
-    public Card SelectedCard { get; private set; }
+    private float _cardWidth;
 
-    private void Awake()
+    public Card SelectedCard { get; private set; }
+    
+    public void Initialize()
     {
         if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
             return;
-        }
         
         Instance = this;
+        _cardWidth = cardWidth * Screen.width;
     }
 
     private void OnEnable()
@@ -47,8 +48,20 @@ public class HandManager : MonoBehaviour
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
+        _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : -1);
 
+        for (int i = 0; i < _handCards.Count; i++)
+        {
+            _handCards[i].transform.SetSiblingIndex(i);
+        }
+
+        // Logging
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(),
+            GameManager.Instance.localPlayer.team.ToString(), "drawCard", $"[{newCardData.cardName}]", null, null, null,
+            null);
+        
         UpdateCardPositions();
+        newCard.SetActiveState(newCard.CanBeSelected());
     }
 
     /// <summary>Handle the logic for selecting and deselecting a card depending on whether it was already selected</summary>
@@ -71,6 +84,8 @@ public class HandManager : MonoBehaviour
 
     public void PlaySelectedCard()
     {
+        ActionPointManager.Instance.UpdateActionPointsOnPlay(-SelectedCard.CardData.cost);
+        
         SelectedCard.RemoveCard();
         _handCards.Remove(SelectedCard);
         SelectedCard = null;
@@ -78,23 +93,46 @@ public class HandManager : MonoBehaviour
         UpdateCardPositions();
     }
 
+    public void DeselectCurrentCard()
+    {
+        SelectedCard.DeselectCard();
+        CardDeselected?.Invoke();
+        SelectedCard = null;
+    }
+
     private void UpdateCardPositions()
     {
-        var startPos = Screen.width / 2f - _handCards.Count / 2f * cardWidth + cardWidth / 2f;
-        for (int i = 0; i < _handCards.Count; i++)
+        // If there are so many cards, they need to be placed overlapping
+        if (_handCards.Count * _cardWidth > Screen.width * maxWidth)
         {
-            _handCards[i].UpdatePosition(new Vector2(startPos + i * cardWidth, bottomDistance));
+            var startPos = (1 - maxWidth) * Screen.width / 2 + _cardWidth / 2f;
+            var lastPos = Screen.width - (1 - maxWidth) * Screen.width / 2 - _cardWidth / 2f;
+            
+            _handCards[0].UpdatePosition(new Vector2(startPos, bottomDistance));
+            for (int i = 1; i < _handCards.Count; i++)
+            {
+                _handCards[i].UpdatePosition(new Vector2(Mathf.Lerp(startPos, lastPos, i / (_handCards.Count - 1f)), bottomDistance));
+            }   
+        }
+        else
+        {
+            var startPos = Screen.width / 2f - _handCards.Count / 2f * _cardWidth + _cardWidth / 2f;
+            for (int i = 0; i < _handCards.Count; i++)
+            {
+                _handCards[i].UpdatePosition(new Vector2(startPos + i * _cardWidth, bottomDistance));
+            }   
         }
     }
 
     // Deselect cards on end of turn
     private void OnGameStateChanged(GameState newState)
     {
-        if(SelectedCard == null)
-            return;
-        
-        SelectedCard.DeselectCard();
-        CardDeselected?.Invoke();
-        SelectedCard = null;
+        if(SelectedCard != null)
+            DeselectCurrentCard();
+
+        foreach (var handCard in _handCards)
+        {
+            handCard.SetActiveState(handCard.IsCorrectPhase());
+        }
     }
 }

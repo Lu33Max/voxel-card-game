@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -42,20 +43,19 @@ public class HeavyUnit : Unit
         
         hasChanged = true;
 
-        Vector2Int tile = newAngle switch
+        List<Vector2Int> tiles = newAngle switch
         {
-            0 => Vector2Int.down,
-            1 => Vector2Int.right,
-            2 => Vector2Int.up,
-            3 => Vector2Int.left,
-            4 => Vector2Int.down,
-            _ => Vector2Int.up
+            0 => new() { Vector2Int.down, new Vector2Int(-1, -1), new Vector2Int(1, -1) },
+            1 => new() { Vector2Int.right, new Vector2Int(1, -1), new Vector2Int(1, 1) },
+            2 => new() { Vector2Int.up, new Vector2Int(-1, 1), new Vector2Int(1, 1) },
+            3 => new() { Vector2Int.left, new Vector2Int(-1, -1), new Vector2Int(-1, 1) },
+            _ => new() { Vector2Int.down, new Vector2Int(-1, -1), new Vector2Int(1, -1) },
         };
 
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector2Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
+            Tiles = tiles.Select(t => TilePosition + t).Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }

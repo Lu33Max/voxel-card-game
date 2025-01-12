@@ -3,25 +3,30 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using TMPro;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
 {
-    [HideInInspector, SyncVar] public Team owningTeam;
-    [HideInInspector, SyncVar] public bool isControlled;
+    [HideInInspector, SyncVar(hook = nameof(OnTeamUpdated))] public Team owningTeam = Team.None;
+    [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
     [SerializeField] protected UnitData data;
     [SerializeField] private GameObject canvas;
     [SerializeField] private Slider healthSlider;
+    [SerializeField] private TextMeshProUGUI healthCounter;
+    [SerializeField] protected Material outlineMaterial;
     
     public Vector2Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
     public List<Attack> AttackIntent { get; } = new();
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
+    
     private Transform _camera;
+    private MeshRenderer _renderer;
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -40,6 +45,7 @@ public abstract class Unit : NetworkBehaviour
     private void Start()
     {
         _camera = Camera.main.transform;
+        _renderer = GetComponentInChildren<MeshRenderer>();
 
         if(!isServer)
             return;
@@ -79,6 +85,20 @@ public abstract class Unit : NetworkBehaviour
         CmdStep(moveCommand);
         GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
     }
+
+    public void LogMovement(CardData cardValues, MoveCommand move)
+    {
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
+            owningTeam.ToString(), "move", $"[{cardValues.movementRange}]", move.TargetPosition.ToString(), 
+            gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+    }
+    
+    public void LogAttack(CardData cardValues, Attack attack)
+    {
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
+            owningTeam.ToString(), "attack", $"[{cardValues.attackRange},{cardValues.attackDamage}]", $"[{string.Join(",", attack.Tiles.Select(t => t.ToString()).ToList())}]", 
+            gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+    }
     
     // Move the unit along the given path from tile to tile
     private IEnumerator MoveToPositions(MoveCommand moveCommand)
@@ -95,7 +115,7 @@ public abstract class Unit : NetworkBehaviour
         GameManager.Instance.CmdUnitMovementDone();
     }
 
-    // MOve the unit to the given world position
+    // Move the unit to the given world position
     private IEnumerator Move(Vector3 targetPos)
     {
         float elapsedTime = 0;
@@ -119,6 +139,25 @@ public abstract class Unit : NetworkBehaviour
     private void OnHealthUpdated(int old, int newHealth)
     {
         healthSlider.value = (float)newHealth / data.health;
+        healthCounter.text = newHealth.ToString();
+    }
+
+    private void OnTeamUpdated(Team old, Team owner)
+    {
+        healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
+    }
+
+    private void OnControlStatusChanged(bool old, bool isNowSelected)
+    {
+        // Only display selection highlight for other team members
+        if(owningTeam != GameManager.Instance.localPlayer.team)
+            return;
+        
+        var newMaterials = isNowSelected
+            ? _renderer.materials.Append(outlineMaterial).ToArray()
+            : new[] { _renderer.materials.First() };
+        
+        _renderer.materials = newMaterials;
     }
 
     [Server]
@@ -134,16 +173,33 @@ public abstract class Unit : NetworkBehaviour
     private void UpdateHealth(int changeAmount)
     {
         _currentHealth = Mathf.Clamp(_currentHealth + changeAmount, 0, data.health);
+        
+        // Logging
+        if(changeAmount < 0)
+            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeAmount},{_currentHealth}]", 
+                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }
 
     [Server]
     protected void OnCheckHealth()
     {
-        if(_currentHealth <= 0)
-            Die();
+        if (_currentHealth > 0) 
+            return;
+        
+        //Logging
+        ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "died", null, 
+            null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+        
+        Die();
     }
 
     #region Networking
+    
+    [Command(requiresAuthority = false)]
+    public void CmdUpdateHealth(int changeAmount)
+    {
+        UpdateHealth(changeAmount);
+    }
 
     [Command(requiresAuthority = false)]
     private void CmdChangePosition(Vector3 position, Vector2Int tilePos)
@@ -164,6 +220,7 @@ public abstract class Unit : NetworkBehaviour
             MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition, TilePosition);
 
         GameManager.Instance.RegisterMoveIntent(TilePosition, moveCommand);
+        
         RPCAddToMoveIntent(moveCommand);
     }
 

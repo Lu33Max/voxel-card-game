@@ -21,14 +21,6 @@ public class NetworkRoom : NetworkRoomManager
         NetworkClient.AddPlayer();
     }
 
-    public override bool OnRoomServerSceneLoadedForPlayer(NetworkConnectionToClient conn, GameObject roomPlayer, GameObject gamePlayer)
-    {
-
-        gamePlayer.name = "HALLO_ICH_BIN_SUPER";
-
-        return true;
-    }
-
     public override void OnRoomServerPlayersReady()
     {
         //LoadGame
@@ -38,5 +30,28 @@ public class NetworkRoom : NetworkRoomManager
     public override void OnRoomServerPlayersNotReady()
     {
         
+    }
+    
+    public override void OnServerSceneChanged(string sceneName)
+    {
+        base.OnServerSceneChanged(sceneName);
+
+        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        {
+            if (conn.identity == null)
+            {
+                Transform startPosition = GetStartPosition();
+
+                if (startPosition == null) 
+                    continue;
+                
+                GameObject player = Instantiate(playerPrefab, startPosition.position, startPosition.rotation);
+                NetworkServer.ReplacePlayerForConnection(conn, player, true);
+            }
+            else
+            {
+                Debug.Log($"Player already exists for connection {conn.connectionId}");
+            }
+        }
     }
 }

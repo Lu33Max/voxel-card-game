@@ -7,7 +7,8 @@ using UnityEngine.UI;
 public enum Team
 {
     Red = 0,
-    Blue = 1
+    Blue = 1,
+    None = 2
 }
 
 public class Player : NetworkBehaviour
@@ -17,7 +18,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private GameObject hud;
     [SerializeField] private Button turnSubmitBtn;
 
-    public UnityEvent turnSubmitted = new();
+    [HideInInspector] public UnityEvent turnSubmitted = new();
 
     private bool _hasSubmitted;
     
@@ -30,6 +31,12 @@ public class Player : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
+
+        // Cursed Setup since Singleton Pattern inside Awake would always lead to the host being registered as Instance
+        GetComponentInChildren<HandManager>().Initialize();
+        GetComponentInChildren<CardManager>().Initialize();
+        GetComponentInChildren<ActionPointManager>().Initialize();
+        
         GameManager.Instance.localPlayer = this;
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         GameManager.Instance.CmdPlayerSpawned();
@@ -58,6 +65,11 @@ public class Player : NetworkBehaviour
         _hasSubmitted = true;
         turnSubmitBtn.interactable = false;
         turnSubmitted?.Invoke();
+        
+        // Logging
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), team.ToString(), "submit",
+            null, null, null, null, null);
+        
         GameManager.Instance.CmdSubmitTurn(team);
     }
 

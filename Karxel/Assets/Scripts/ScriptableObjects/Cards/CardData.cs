@@ -4,6 +4,7 @@ using UnityEngine;
 public class CardData : ScriptableObject
 {
     public string cardName;
+    public int cost;
     
     public CardType cardType;
     public Rarity rarity;
@@ -13,12 +14,14 @@ public class CardData : ScriptableObject
     public int movementRange;
     public int attackDamage;
     public int attackRange;
+    public int otherValue;
 }
 
 public enum CardType
 {
     Attack,
-    Move
+    Move,
+    Heal
 }
 
 public enum Rarity

@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public enum GameState
 {
@@ -28,6 +31,8 @@ public class GameManager : NetworkBehaviour
     public static UnityEvent RoundTimerUp = new();
     public static UnityEvent<Attack> AttackExecuted = new();
     public static UnityEvent CheckHealth = new();
+    public static UnityEvent<int> NewRound = new();
+    
     [HideInInspector] public UnityEvent<GameState> gameStateChanged = new();
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
@@ -44,11 +49,18 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private int movementTime;
     [SerializeField] private int submitTime;
 
+    [Header("Phase Display")]
+    [SerializeField] private List<Image> phaseDisplays;
+    [SerializeField] private Sprite moveSprite;
+    [SerializeField] private Sprite attackSprite;
+
     [Header("Game Over")] 
     [SerializeField] private GameObject gameOverScreen;
 
     [SyncVar(hook = nameof(OnUpdateRedText))] private string _redPlayerText;
     [SyncVar(hook = nameof(OnUpdateBlueText))] private string _bluePlayerText;
+
+    private int _roundCounter = 1;
     
     private int _redSubmit;
     private int _blueSubmit;
@@ -87,6 +99,9 @@ public class GameManager : NetworkBehaviour
         
         if(_timerActive)
             UpdateTimer();
+
+        if (Input.GetKeyDown(KeyCode.K))
+            _defeatedKings.Add(Team.Blue);
     }
 
     [Server]
@@ -288,6 +303,8 @@ public class GameManager : NetworkBehaviour
         if (!attacksToExecute.Any())
         {
             UpdateGameState(GameState.Movement);
+            _roundCounter++;
+            RPCInvokeNewRound(_roundCounter);
             
             _bluePlayerText = $"0/{bluePlayers.Count}";
             _redPlayerText = $"0/{redPlayers.Count}";
@@ -324,6 +341,10 @@ public class GameManager : NetworkBehaviour
     private void UpdateGameState(GameState newState)
     {
         gameState = newState;
+        
+        if(gameState is GameState.Movement or GameState.Attack)
+            ActionLogger.Instance.LogAction("server", "server", "phaseSwitch", $"[{_roundCounter + (gameState == GameState.Movement ? 1 : 0)}]", null, null, null, null);
+        
         RPCInvokeStateUpdate(newState);
     }
 
@@ -337,6 +358,10 @@ public class GameManager : NetworkBehaviour
 
         _timeLeft = 0;
         _timerActive = false;
+        
+        // Logging
+        ActionLogger.Instance.LogAction("server", "server", "timeUp", null, null, null, null, null);
+        
         RPCInvokeTimerUp();
     }
 
@@ -405,6 +430,9 @@ public class GameManager : NetworkBehaviour
         _blueSubmit = 0;
         _redSubmit = 0;
         
+        // Logging
+        ActionLogger.Instance.LogAction("server", "server", "allSubmit", $"[{_timeLeft}]", null, null, null, null);
+        
         switch (gameState)
         {
             case GameState.Movement:
@@ -432,7 +460,7 @@ public class GameManager : NetworkBehaviour
         if(!isServer)
             return;
         
-        // TODO: Restart game scene
+        NetworkManager.singleton.ServerChangeScene(SceneManager.GetActiveScene().name);
     }
     
     public void ReturnToLobby()
@@ -440,7 +468,8 @@ public class GameManager : NetworkBehaviour
         if(!isServer)
             return;
         
-        // TODO: Do lobby logic here
+        // TODO: Implement return to lobby logic
+        // NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
     private void StartAttackPhase()
@@ -476,6 +505,16 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void RPCInvokeStateUpdate(GameState newState)
     {
+        foreach (var display in phaseDisplays)
+        {
+            display.sprite = newState switch
+            {
+                GameState.Attack => attackSprite,
+                GameState.Movement => moveSprite,
+                _ => display.sprite
+            };
+        }
+        
         gameStateChanged?.Invoke(newState);
     }
 
@@ -502,5 +541,18 @@ public class GameManager : NetworkBehaviour
         
         for(int i = 0; i < gameOverScreen.transform.childCount; i++)
             gameOverScreen.transform.GetChild(i).gameObject.SetActive(true);
+    }
+    
+    [ClientRpc]
+    private void RPCInvokeNewRound(int count)
+    {
+        NewRound?.Invoke(count);
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdLogAction(string playerId, string team, string actionType, [CanBeNull] string actionValues,
+        [CanBeNull] string target, [CanBeNull] string unitId, [CanBeNull] string unitName, [CanBeNull] string startPos)
+    {
+        ActionLogger.Instance.LogAction(playerId, team, actionType, actionValues, target, unitId, unitName, startPos);
     }
 }
