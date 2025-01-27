@@ -291,8 +291,9 @@ MonoBehaviour:
   nameText: {fileID: 5994471555392716997}
   valueText: {fileID: 5027399888377862455}
   cardImage: {fileID: 908237563861211682}
-  selectedRaise: 40
-  inactiveLower: 60
+  cardBGRegular: {fileID: 21300000, guid: 055bcd40ce747574b9219138010b0f58, type: 3}
+  cardBGUnselected: {fileID: 21300000, guid: 98accbec983d37647a3b1f7719ce9d65, type: 3}
+  backgroundImage: {fileID: 3952947544106965672}
 --- !u!1 &4125490374077451589
 GameObject:
   m_ObjectHideFlags: 0

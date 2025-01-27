@@ -11,14 +11,11 @@ public class Card : MonoBehaviour
     [SerializeField] private TextMeshProUGUI valueText;
     [SerializeField] private Image cardImage;
 
-    [Header("Hand Position")]
-    [SerializeField] private float selectedRaise;
-    [SerializeField] private float inactiveLower = 50f;
+    [SerializeField] private Sprite cardBGRegular;
+    [SerializeField] private Sprite cardBGUnselected;
+    [SerializeField] private Image backgroundImage;
 
     public CardData CardData { get; private set; }
-    
-    private Vector3 _defaultPos;
-    private bool _isSelected;
     
     private RectTransform _transform;
     
@@ -32,12 +29,33 @@ public class Card : MonoBehaviour
         pointText.text = CardData.cost.ToString();
         nameText.text = CardData.cardName;
         cardImage.sprite = CardData.cardSprite;
+        
+        UpdateState();
+    }
+
+    private void OnEnable()
+    {
+        ActionPointManager.Instance.actionPointsUpdated.AddListener(OnActionPointsUpdated);
+    }
+
+    private void OnDisable()
+    {
+        ActionPointManager.Instance.actionPointsUpdated.RemoveListener(OnActionPointsUpdated);
     }
 
     public void UpdatePosition(Vector2 newPos)
     {
-        _defaultPos = new Vector3(newPos.x, newPos.y, 0);
-        _transform.position = new Vector3(newPos.x, _transform.position.y, transform.position.z);
+        _transform.anchoredPosition = new Vector3(newPos.x, newPos.y);
+    }
+    
+    public void UpdateYPosition(float newYPos)
+    {
+        _transform.anchoredPosition = new Vector3(_transform.anchoredPosition.x, newYPos);
+    }
+
+    public void UpdateState()
+    {
+        backgroundImage.sprite = CanBeSelected() ? cardBGRegular : cardBGUnselected;
     }
 
     public void CardClickedButton()
@@ -48,42 +66,26 @@ public class Card : MonoBehaviour
         HandManager.Instance.CardClicked(this);
     }
 
-    public void SelectCard()
-    {
-        _isSelected = true;
-        _transform.position = new Vector3(_defaultPos.x, _defaultPos.y + selectedRaise, _defaultPos.z);
-    }
-
-    public void DeselectCard()
-    {
-        _isSelected = false;
-        _transform.position = _defaultPos;
-    }
-
-    public void SetActiveState(bool isActive)
-    {
-        _transform.position = new Vector3(_defaultPos.x, _defaultPos.y - (isActive ? 0 : inactiveLower), _defaultPos.z);
-    }
-
     public void RemoveCard()
     {
         CardManager.Instance.AddCardToUsed(CardData);
         Destroy(gameObject);
     }
 
-    public bool CanBeSelected(GameState state = GameState.PreStart)
+    public bool IsCorrectPhase(GameState state)
     {
-        if (ActionPointManager.ActionPoints - CardData.cost < 0)
-            return false;
-
-        return IsCorrectPhase();
+        return state == GameState.Movement && CardData.cardType != CardType.Attack ||
+               state == GameState.Attack && CardData.cardType == CardType.Attack;
+    }
+    
+    private bool CanBeSelected()
+    {
+        return ActionPointManager.ActionPoints - CardData.cost >= 0 && IsCorrectPhase(GameManager.Instance.gameState);
     }
 
-    public bool IsCorrectPhase()
+    private void OnActionPointsUpdated(int newPoints)
     {
-        var gameState = GameManager.Instance.gameState;
-
-        return gameState == GameState.Movement && CardData.cardType != CardType.Attack ||
-               gameState == GameState.Attack && CardData.cardType == CardType.Attack;
+        if (CardData != null && newPoints < CardData.cost)
+            backgroundImage.sprite = cardBGUnselected;
     }
 }
