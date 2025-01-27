@@ -1,11 +1,14 @@
 using Mirror;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class ActionPointManager : MonoBehaviour
 {
     public static int ActionPoints { get; private set; }
     public static ActionPointManager Instance { get; private set; }
+
+    public UnityEvent<int> actionPointsUpdated = new();
     
     [SerializeField] private int startPoints;
     [SerializeField] private int maxPoints;
@@ -39,6 +42,8 @@ public class ActionPointManager : MonoBehaviour
         ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, maxPoints);
         actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
 
+        actionPointsUpdated.Invoke(ActionPoints);
+        
         var handManager = HandManager.Instance;
         
         // If the cost of the currently selected card would be too high to play it after the point reduction deselect it
