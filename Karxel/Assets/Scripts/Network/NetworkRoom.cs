@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 using System;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Own NetworkManager
@@ -31,32 +32,27 @@ public class NetworkRoom : NetworkRoomManager
     {
         Debug.Log("Alle Spieler sind bereit, aber der Host muss das Spiel starten.");
     }
-
-    public override void OnRoomServerPlayersNotReady()
-    {
-        
-    }
     
     public override void OnServerSceneChanged(string sceneName)
     {
         base.OnServerSceneChanged(sceneName);
 
-        foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
-        {
-            if (conn.identity == null)
-            {
-                Transform startPosition = GetStartPosition();
-
-                if (startPosition == null) 
-                    continue;
-                
-                GameObject player = Instantiate(playerPrefab, startPosition.position, startPosition.rotation);
-                NetworkServer.ReplacePlayerForConnection(conn, player, true);
-            }
-            else
-            {
-                Debug.Log($"Player already exists for connection {conn.connectionId}");
-            }
-        }
+        // foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+        // {
+        //     if (conn.identity == null)
+        //     {
+        //         Transform startPosition = GetStartPosition();
+        //
+        //         if (startPosition == null) 
+        //             continue;
+        //         
+        //         GameObject player = Instantiate(playerPrefab, startPosition.position, startPosition.rotation);
+        //         NetworkServer.ReplacePlayerForConnection(conn, player, true);
+        //     }
+        //     else
+        //     {
+        //         Debug.Log($"Player already exists for connection {conn.connectionId}");
+        //     }
+        // }
     }
 }

@@ -73,6 +73,9 @@ public class HandManager : MonoBehaviour
             GameManager.Instance.localPlayer.team.ToString(), "drawCard", $"[{newCardData.cardName}]", null, null, null,
             null);
         
+        if(SelectedCard != null)
+            DeselectCurrentCard();
+        
         UpdateCardPositions(GameManager.Instance.gameState);
     }
 
@@ -88,11 +91,7 @@ public class HandManager : MonoBehaviour
         // If the already selected card was clicked again, simply reset the card reference to null
         if (SelectedCard == clickedCard)
         {
-            cardDeselected?.Invoke();
-            SelectedCard.UpdateYPosition(cardRegularY);
-            SelectedCard = null;
-            
-            mouseFollower.ClearUIElement();
+            DeselectCurrentCard();
             return;
         }
         

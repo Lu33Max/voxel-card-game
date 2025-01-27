@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class ActionLogger : MonoBehaviour
 {
+    [SerializeField] private bool shouldLog = false;
+    
     public static ActionLogger Instance { get; private set; }
     
     private string _currentPhase = "attack";
@@ -23,6 +25,9 @@ public class ActionLogger : MonoBehaviour
     public void LogAction(string playerId, string team, string actionType, [CanBeNull] string actionValues,
         [CanBeNull] string target, [CanBeNull] string unitId, [CanBeNull] string unitName, [CanBeNull] string startPos)
     {
+        if(!shouldLog)
+            return;
+        
         var action = new PlayerAction
         {
             playerId = playerId,

@@ -135,6 +135,26 @@ public abstract class Unit : NetworkBehaviour
         yield return new WaitForSeconds(2);
         GameManager.Instance.CmdUnitAttackDone();
     }
+    
+    /// <summary>Used to generate path of MoveCommand inside of GetValidMoves</summary>
+    protected List<Vector2Int> GeneratePath(Vector2Int start, Vector2Int end)
+    {
+        var path = new List<Vector2Int>();
+        var current = start;
+
+        while (current != end)
+        {
+            var step = new Vector2Int(
+                current.x < end.x ? 1 : (current.x > end.x ? -1 : 0),
+                current.y < end.y ? 1 : (current.y > end.y ? -1 : 0)
+            );
+
+            current += step;
+            path.Add(current);
+        }
+
+        return path;
+    }
 
     private void OnHealthUpdated(int old, int newHealth)
     {

@@ -63,7 +63,7 @@ namespace Mirror
         public static bool ready;
 
         /// <summary>NetworkIdentity of the localPlayer </summary>
-        public static NetworkIdentity localPlayer { get; internal set; }
+        public static NetworkIdentity localPlayer { get; set; }
 
         // NetworkClient state
         internal static ConnectState connectState = ConnectState.None;
