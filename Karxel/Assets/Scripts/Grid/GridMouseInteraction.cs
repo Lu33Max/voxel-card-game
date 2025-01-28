@@ -12,13 +12,13 @@ public class GridMouseInteraction : MonoBehaviour
     private Camera _mainCamera;
     private TileData _hoveredTile;
     private Unit _selectedUnit;
-
-    private bool _isHovering;
+    
     private Vector3 _prevMousePos;
     private List<MoveCommand> _highlightedMoveTiles = new();
+    private List<Vector2Int> _previewTiles = new();
     private Attack _currentAttack;
 
-    private bool _hasSubmitted = false;
+    private bool _hasSubmitted;
     private string _playerId = "";
 
     private void Start()
@@ -56,79 +56,119 @@ public class GridMouseInteraction : MonoBehaviour
             {
                 if(_hoveredTile != null)
                     MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
+
+                if (GameManager.Instance.gameState == GameState.Movement)
+                    RemoveAllPreviewTiles();
                 
                 _hoveredTile = null;
-                _isHovering = false;
                 return;
             }
 
             // Check if a tile exists at the given position
             TileData newHoveredTile = GridManager.Instance.GetTileAtWorldPosition(new Vector2(hit.point.x, hit.point.z));
-
-            //// ATTACK LOGIC ////
+            
+            // Needs to be checked even if hovered tile has not changed
             if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
-            {
-                var cardValues = HandManager.Instance.SelectedCard.CardData;
-                var attack = _selectedUnit.GetValidAttackTiles(cardValues.attackRange, cardValues.attackDamage, hit.point, _prevMousePos, true, out bool hasChanged);
-
-                if (hasChanged)
-                {
-                    foreach (var tile in _currentAttack.Tiles)
-                        MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
-                    
-                    _currentAttack = attack;
-                    
-                    foreach (var tile in _currentAttack.Tiles)
-                    {
-                        MarkerManager.Instance.AddMarkerLocal(tile, new MarkerData
-                        {
-                            Type = MarkerType.Attack,
-                            MarkerColor = Color.red,
-                            Priority = 1,
-                            Visibility = _playerId
-                        });
-                    }
-                }
-            }
+                DisplayAttackTiles(hit.point, _hoveredTile == null);
             
             _prevMousePos = hit.point;
-            //// ----------- ////
 
             if (_hoveredTile == null || _hoveredTile.Position != hoveredPosition)
             {
-                //// HOVER HIGHLIGHTER ////
-                if(_hoveredTile != null)
-                    MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
+                if (GameManager.Instance.gameState == GameState.Movement && HandManager.Instance.SelectedCard != null)
+                    DisplayMovePreviewTiles(newHoveredTile);
                 
-                MarkerManager.Instance.AddMarkerLocal(hoveredPosition, new MarkerData
-                {
-                    Type = MarkerType.Hover,
-                    MarkerColor = Color.cyan,
-                    Priority = 0,
-                    Visibility = _playerId
-                });
-                //// ----------------- ////
-            
-                _isHovering = true;
+                UpdateHoverMarker(hoveredPosition);
                 _hoveredTile = newHoveredTile;
             }
             
             if(!_hasSubmitted)
                 CheckForMouseInteraction();
         }
+        // No interaction with the board happening
         else
         {
             if(_currentAttack != null)
                 foreach (var tile in _currentAttack.Tiles)
                     MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
             
-            _isHovering = false;
-            
             if(_hoveredTile == null)
                 return;
             
+            if (GameManager.Instance.gameState == GameState.Movement)
+                RemoveAllPreviewTiles();
+            
             MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
             _hoveredTile = null;
+        }
+    }
+
+    private void DisplayMovePreviewTiles(TileData newHoveredTile)
+    {
+        var card = HandManager.Instance.SelectedCard;
+        
+        RemoveAllPreviewTiles();
+
+        if (newHoveredTile == null || newHoveredTile.Unit == null || _selectedUnit != null ||
+            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team) 
+            return;
+        
+        foreach (var command in newHoveredTile.Unit.GetValidMoves(card.CardData.movementRange))
+        {
+            MarkerManager.Instance.AddMarkerLocal(command.TargetPosition, new MarkerData
+            {
+                Type = MarkerType.MovePreview,
+                MarkerColor = Color.white,
+                Priority = 1,
+                Visibility = _playerId
+            });
+                
+            _previewTiles.Add(command.TargetPosition);
+        }
+    }
+
+    private void RemoveAllPreviewTiles()
+    {
+        foreach (var tile in _previewTiles)
+            MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.MovePreview, _playerId);
+    }
+
+    private void UpdateHoverMarker(Vector2Int hoveredPosition)
+    {
+        if (_hoveredTile != null)
+            MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
+
+        MarkerManager.Instance.AddMarkerLocal(hoveredPosition, new MarkerData
+        {
+            Type = MarkerType.Hover,
+            MarkerColor = Color.cyan,
+            Priority = 0,
+            Visibility = _playerId
+        });
+    }
+
+    private void DisplayAttackTiles(Vector3 hit, bool prevNotHovered)
+    {
+        var cardValues = HandManager.Instance.SelectedCard.CardData;
+        var attack = _selectedUnit.GetValidAttackTiles(cardValues.attackRange, cardValues.attackDamage, hit,
+            _prevMousePos, false, out bool hasChanged);
+
+        if (!hasChanged && !prevNotHovered) return;
+        
+        foreach (var tile in _currentAttack.Tiles)
+            MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
+
+        _currentAttack = attack;
+
+        foreach (var tile in _currentAttack.Tiles)
+        {
+            MarkerManager.Instance.AddMarkerLocal(tile, new MarkerData
+            {
+                Type = MarkerType.Attack,
+                MarkerColor = Color.red,
+                Priority = 1,
+                Visibility = _playerId
+            });
         }
     }
 
@@ -164,6 +204,7 @@ public class GridMouseInteraction : MonoBehaviour
 
             _selectedUnit = _hoveredTile.Unit;
             _selectedUnit.CmdUpdateControlStatus(true);
+            RemoveAllPreviewTiles();
 
             switch (gameState)
             {
@@ -280,16 +321,18 @@ public class GridMouseInteraction : MonoBehaviour
         {
             case GameState.Attack or GameState.Movement:
                 _hasSubmitted = false;
+                RemoveAllPreviewTiles();
                 break;
             case GameState.AttackExecution:
-            {
                 if(_currentAttack != null)
                     foreach (var tile in _currentAttack.Tiles)
                         MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
 
                 _currentAttack = null;
                 break;
-            }
+            case GameState.MovementExecution:
+                RemoveAllPreviewTiles();
+                break;
         }
     }
     
