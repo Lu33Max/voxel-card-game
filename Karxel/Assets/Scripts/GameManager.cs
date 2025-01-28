@@ -145,7 +145,16 @@ public class GameManager : NetworkBehaviour
         else
             AttackIntents.Add(unitPos, new List<Attack>{ newAttack });
         
-        GridManager.Instance.ShowAttackTilesTeam(team, newAttack.Tiles);
+        foreach (var tile in newAttack.Tiles)
+        {
+            MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
+            {
+                Type = MarkerType.Attack,
+                Priority = 1,
+                MarkerColor = Color.red,
+                Visibility = team == Team.Blue ? "Blue" : "Red"
+            });
+        }
     }
 
     [Server]
@@ -285,13 +294,22 @@ public class GameManager : NetworkBehaviour
     {
         UpdateGameState(GameState.AttackExecution);
         _attackRound = 0;
+        
+        // Hide all previous local tiles
+        MarkerManager.Instance.RPCClearAllMarkers();
+        
         ExecuteCurrentAttackRound();
     }
 
     [Server]
     private void ExecuteCurrentAttackRound()
     {
-        GridManager.Instance.HideAttackTiles();
+        // Hide all previous' rounds attack tiles
+        foreach (var tile in from attacks in AttackIntents.Values from attack in attacks from tile in attack.Tiles select tile)
+        {
+            MarkerManager.Instance.RPCRemoveMarker(tile, MarkerType.Attack, "All");
+        }
+        
         var attacksToExecute = AttackIntents.Where(a => a.Value.Count > _attackRound).ToList();
 
         if (_defeatedKings.Count > 0)
@@ -326,7 +344,17 @@ public class GameManager : NetworkBehaviour
         {
             var currentAttack = attackIntent.Value[_attackRound];
             
-            GridManager.Instance.ShowAttackTilesGlobal(currentAttack.Tiles);
+            foreach (var tile in currentAttack.Tiles)
+            {
+                MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
+                {
+                    Type = MarkerType.Attack,
+                    MarkerColor = Color.red,
+                    Priority = 1,
+                    Visibility = "All"
+                });
+            }
+            
             AttackExecuted?.Invoke(currentAttack);
 
             _unitsToAttack = attacksToExecute.Count * NetworkServer.connections.Count;

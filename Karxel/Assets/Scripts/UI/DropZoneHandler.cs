@@ -10,7 +10,6 @@ public class DropZoneHandler : MonoBehaviour, IDropHandler
         if (droppedCard == null) 
             return;
         
-        Debug.Log("Karte abgelegt: " + droppedCard.name);
         droppedCard.transform.SetParent(transform);
             
         HandManager.Instance.DiscardCard(droppedCard.GetComponent<Card>());

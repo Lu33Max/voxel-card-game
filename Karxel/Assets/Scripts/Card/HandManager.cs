@@ -179,7 +179,7 @@ public class HandManager : MonoBehaviour
                 cardRow[0].transform.SetSiblingIndex(cardCount);
                 cardCount++;
                 
-                cardRow[0].UpdateState();
+                cardRow[0].UpdateState(state);
                 continue;
             }
         
@@ -191,7 +191,7 @@ public class HandManager : MonoBehaviour
                 cardRow[i].transform.SetSiblingIndex(cardCount);
                 cardCount++;
                 
-                cardRow[i].UpdateState();
+                cardRow[i].UpdateState(state);
             }  
         }
     }

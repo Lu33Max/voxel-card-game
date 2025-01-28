@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class GridManager : NetworkBehaviour
 {
@@ -19,10 +20,9 @@ public class GridManager : NetworkBehaviour
     private float layerHeight = 0.5f;
     [SerializeField] private LayerMask groundLayer;
 
+    [FormerlySerializedAs("highlightHoverHeight")]
     [Header("Highlighting")]
-    [SerializeField] private Transform highlightParent;
-    [SerializeField] private GameObject moveTileHighlighter;
-    [SerializeField] private float highlightHoverHeight = 0.001f;
+    [SerializeField] private float markerHeight = 0.001f;
     
     [Header("Unit Setup")]
     [SerializeField] private Transform unitParent;
@@ -30,7 +30,6 @@ public class GridManager : NetworkBehaviour
     public float GridResolution => gridResolution;
     
     private Dictionary<Vector2Int, TileData> _tiles = new();
-    private Dictionary<Vector2Int, GameObject> _attackHighlights = new();
     
     private int _readyPlayers;
 
@@ -127,67 +126,6 @@ public class GridManager : NetworkBehaviour
         CmdUpdateTileUnit(unitPos, null);
     }
 
-    // TODO: Move to GridMouseInteraction
-    /// <summary>Shows or hides the highlights to display move</summary>
-    public void HighlightMoveTiles(List<MoveCommand> moves, bool shouldHighlight)
-    {
-        if (!shouldHighlight)
-        {
-            for(int i = highlightParent.childCount - 1; i >= 0; i--)
-                Destroy(highlightParent.GetChild(i).gameObject);
-            
-            return;
-        }
-        
-        List<Vector2Int> tiles = moves.SelectMany(c => c.Path.Append(c.TargetPosition)).ToHashSet().ToList();
-
-        foreach (var tile in tiles)
-        {
-            var highlighter = Instantiate(moveTileHighlighter, highlightParent);
-            highlighter.transform.position = GetTileAtGridPosition(tile).GetWorldPosition(highlightHoverHeight);
-            highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
-        }
-    }
-
-    [ClientRpc]
-    public void ShowAttackTilesGlobal(List<Vector2Int> tiles)
-    {
-        InstantiateAttackTiles(tiles);
-    }
-
-    [ClientRpc]
-    public void ShowAttackTilesTeam(Team team, List<Vector2Int> tiles)
-    {
-        if(team != GameManager.Instance.localPlayer.team)
-            return;
-        
-        InstantiateAttackTiles(tiles);
-    }
-
-    private void InstantiateAttackTiles(List<Vector2Int> tiles)
-    {
-        foreach (var tile in tiles)
-        {
-            if(_attackHighlights.TryGetValue(tile, out _))
-                continue;
-                
-            var highlighter = Instantiate(moveTileHighlighter, highlightParent);
-            highlighter.transform.position = GetTileAtGridPosition(tile).GetWorldPosition(highlightHoverHeight);
-            highlighter.transform.localScale = new Vector3(gridResolution, gridResolution, gridResolution);
-                
-            _attackHighlights.Add(tile, highlighter);
-        }
-    }
-
-    [ClientRpc]
-    public void HideAttackTiles()
-    {
-        foreach (var highlight in _attackHighlights.Values)
-            Destroy(highlight);
-        
-        _attackHighlights.Clear();
-    }
-
     // Calculates all tile positions of the board by doing a raycast at each one of them
     // With this method, even uneven play fields can be correctly mapped
     private void CalculateTilePositions()
@@ -208,6 +146,10 @@ public class GridManager : NetworkBehaviour
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
                 
                 _tiles.Add(gridPos, tile);
+
+                var worldPos = hitInfo.point;
+                worldPos.y += markerHeight;
+                MarkerManager.Instance.RegisterTile(gridPos, worldPos, gridResolution);
             }
         }
         

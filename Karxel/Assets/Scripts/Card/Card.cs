@@ -30,7 +30,7 @@ public class Card : MonoBehaviour
         nameText.text = CardData.cardName;
         cardImage.sprite = CardData.cardSprite;
         
-        UpdateState();
+        UpdateState(GameManager.Instance.gameState);
     }
 
     private void OnEnable()
@@ -53,14 +53,14 @@ public class Card : MonoBehaviour
         _transform.anchoredPosition = new Vector3(_transform.anchoredPosition.x, newYPos);
     }
 
-    public void UpdateState()
+    public void UpdateState(GameState state)
     {
-        backgroundImage.sprite = CanBeSelected() ? cardBGRegular : cardBGUnselected;
+        backgroundImage.sprite = CanBeSelected(state) ? cardBGRegular : cardBGUnselected;
     }
 
     public void CardClickedButton()
     {
-        if(!CanBeSelected())
+        if(!CanBeSelected(GameManager.Instance.gameState))
             return;
         
         HandManager.Instance.CardClicked(this);
@@ -78,9 +78,9 @@ public class Card : MonoBehaviour
                state == GameState.Attack && CardData.cardType == CardType.Attack;
     }
     
-    private bool CanBeSelected()
+    private bool CanBeSelected(GameState state)
     {
-        return ActionPointManager.ActionPoints - CardData.cost >= 0 && IsCorrectPhase(GameManager.Instance.gameState);
+        return ActionPointManager.ActionPoints - CardData.cost >= 0 && IsCorrectPhase(state);
     }
 
     private void OnActionPointsUpdated(int newPoints)
