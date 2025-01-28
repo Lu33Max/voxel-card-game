@@ -123,9 +123,9 @@ public class HandManager : MonoBehaviour
         mouseFollower.ClearUIElement();
     }
 
-    public void DiscardSelectedCard()
+    public void DiscardCard(Card card)
     {
-        if(SelectedCard == null)
+        if(card == null)
             return;
 
         _discardCount++;
@@ -138,15 +138,16 @@ public class HandManager : MonoBehaviour
 
         discardSlider.value = (float)_discardCount / discardForActionCount;
         
-        if(SelectedCard == null)
-            return;
-        
-        cardDeselected?.Invoke();
-        SelectedCard.RemoveCard();
-        _handCards.Remove(SelectedCard);
-        SelectedCard = null;
-        
-        mouseFollower.ClearUIElement();
+        card.RemoveCard();
+        _handCards.Remove(card);
+
+        if (card == SelectedCard)
+        {
+            cardDeselected?.Invoke();
+            SelectedCard = null;   
+            
+            mouseFollower.ClearUIElement();
+        }
         
         UpdateCardPositions(GameManager.Instance.gameState);
     }
