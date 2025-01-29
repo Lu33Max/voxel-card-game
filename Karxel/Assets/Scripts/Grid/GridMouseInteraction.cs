@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Mirror;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -75,7 +73,7 @@ public class GridMouseInteraction : MonoBehaviour
 
             if (_hoveredTile == null || _hoveredTile.Position != hoveredPosition)
             {
-                if (GameManager.Instance.gameState == GameState.Movement && HandManager.Instance.SelectedCard != null)
+                if (GameManager.Instance.gameState == GameState.Movement && HandManager.Instance != null && HandManager.Instance.SelectedCard != null)
                     DisplayMovePreviewTiles(newHoveredTile);
                 
                 UpdateHoverMarker(hoveredPosition);
@@ -135,6 +133,9 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void UpdateHoverMarker(Vector2Int hoveredPosition)
     {
+        if(MarkerManager.Instance == null)
+            return;
+        
         if (_hoveredTile != null)
             MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
 
@@ -194,7 +195,7 @@ public class GridMouseInteraction : MonoBehaviour
                 if(cardValues.cardType == CardType.Heal)
                     _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
                 
-                if(cardValues.cardType == CardType.Shield)
+                else if (cardValues.cardType == CardType.Shield)
                     _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
                 
                 HandManager.Instance.PlaySelectedCard();

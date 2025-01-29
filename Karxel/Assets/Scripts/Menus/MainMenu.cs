@@ -28,7 +28,7 @@ public class MainMenu : MonoBehaviour
         
         // Steam lobby will be null for testing with localhost
         if(lobby != null)
-            lobby.onGetLobbyData += DisplayLobbies;
+            lobby.LobbyDataUpdated += DisplayLobbies;
     }
 
     public void DisplayLobbies(List<CSteamID> _lobbyIDs, LobbyDataUpdate_t _callback)

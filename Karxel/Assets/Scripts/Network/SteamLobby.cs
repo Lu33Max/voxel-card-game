@@ -12,43 +12,39 @@ using System;
 /// </summary>
 public class SteamLobby : MonoBehaviour
 {
-    public static SteamLobby singleton;
+    NetworkManager _networkManager;
 
-    NetworkManager networkManager;
+    protected Callback<LobbyCreated_t> LobbyCreated;
+    protected Callback<GameLobbyJoinRequested_t> GameLobbyJoinRequested;
+    protected Callback<LobbyEnter_t> LobbyEntered;
+    protected Callback<LobbyMatchList_t> LobbyList;
+    protected Callback<LobbyDataUpdate_t> LobbyDataUpdate;
+    protected Callback<P2PSessionConnectFail_t> ConnectingFailed;
 
-    protected Callback<LobbyCreated_t> lobbyCreated;
-    protected Callback<GameLobbyJoinRequested_t> gameLobbyJoinRequested;
-    protected Callback<LobbyEnter_t> lobbyEntered;
-    protected Callback<LobbyMatchList_t> lobbyList;
-    protected Callback<LobbyDataUpdate_t> lobbyDataUpdate;
-
-    protected Callback<P2PSessionConnectFail_t> connectingFailed;
-
-    public List<CSteamID> lobbyIDs = new List<CSteamID>();
+    public List<CSteamID> lobbyIDs = new();
 
     public ulong currentLobbyID;
 
-    public Action<List<CSteamID>, LobbyDataUpdate_t> onGetLobbyData;
+    public Action<List<CSteamID>, LobbyDataUpdate_t> LobbyDataUpdated;
 
     // Start is called before the first frame update
     void Start()
     {
-        networkManager = GetComponent<NetworkManager>();
-        singleton = this;
-
         if (!SteamManager.Initialized)
         {
             Debug.LogWarning("Steam is not initialized");
             return;
         }
+        
+        _networkManager = GetComponent<NetworkManager>();
 
-        lobbyCreated = Callback<LobbyCreated_t>.Create(OnLobbyCreated);
-        gameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create(OnLobbyJoinRequested);
-        lobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
-        lobbyList = Callback<LobbyMatchList_t>.Create(OnGetLobbyList);
-        lobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(OnGetLobbyData);
+        LobbyCreated = Callback<LobbyCreated_t>.Create(OnLobbyCreated);
+        GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create(OnLobbyJoinRequested);
+        LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
+        LobbyList = Callback<LobbyMatchList_t>.Create(OnGetLobbyList);
+        LobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(OnGetLobbyData);
 
-        connectingFailed = Callback<P2PSessionConnectFail_t>.Create(OnConnectingFailed);
+        ConnectingFailed = Callback<P2PSessionConnectFail_t>.Create(OnConnectingFailed);
 
         MainMenu.Singleton.OnCreatingLobby += JoinGameHost;
         MainMenu.Singleton.OnGetSteamLobbyList += GetLobbiesList;
@@ -56,8 +52,7 @@ public class SteamLobby : MonoBehaviour
 
     public void JoinGameHost()
     {
-        SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, networkManager.maxConnections);
-
+        SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, _networkManager.maxConnections);
         Debug.Log("Lobby created");
     }
 
@@ -71,42 +66,48 @@ public class SteamLobby : MonoBehaviour
         SteamMatchmaking.AddRequestLobbyListResultCountFilter(50);
         SteamMatchmaking.RequestLobbyList();
     }
+    
+    public void JoinLobby(CSteamID lobbyID)
+    {
+        SteamMatchmaking.JoinLobby(lobbyID);
+    }
 
-    void OnLobbyCreated(LobbyCreated_t callback)
+    private void OnLobbyCreated(LobbyCreated_t callback)
     {
         currentLobbyID = callback.m_ulSteamIDLobby;
         Debug.Log("LOBBY - ID: " + currentLobbyID);
 
-        if (callback.m_eResult != EResult.k_EResultOK)   //Wenn Lobby createn nicht funktioniert hat
+        if (callback.m_eResult != EResult.k_EResultOK)
         {
             Debug.LogWarning("Lobby creating not worked!");
             return;
         }
 
-        networkManager.StartHost();
-
+        _networkManager.StartHost();
+        
         SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "HostAddress", SteamUser.GetSteamID().ToString());
-        SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "name", SteamFriends.GetPersonaName().ToString() + "'s Lobby");
+        SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "name", SteamFriends.GetPersonaName() + "'s Lobby");
     }
 
-    void OnLobbyJoinRequested(GameLobbyJoinRequested_t callback)
+    private void OnLobbyJoinRequested(GameLobbyJoinRequested_t callback)
     {
         SteamMatchmaking.JoinLobby(callback.m_steamIDLobby);
     }
 
-    void OnLobbyEntered(LobbyEnter_t callback)
+    private void OnLobbyEntered(LobbyEnter_t callback)
     {
-        if (NetworkServer.active) return;
-
-        string hostAddress = SteamMatchmaking.GetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "HostAddress");
-
-        networkManager.networkAddress = hostAddress;
-        networkManager.StartClient();
-
         currentLobbyID = callback.m_ulSteamIDLobby;
+        
+        if (NetworkServer.active) 
+            return;
+
+        var hostAddress = SteamMatchmaking.GetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "HostAddress");
+
+        _networkManager.networkAddress = hostAddress;
+        _networkManager.StartClient();
     }
 
-    void OnGetLobbyList(LobbyMatchList_t callback)
+    private void OnGetLobbyList(LobbyMatchList_t callback)
     {
         Debug.Log("Found " + callback.m_nLobbiesMatching + " lobbies!");
 
@@ -119,21 +120,16 @@ public class SteamLobby : MonoBehaviour
         }
     }
 
-    void OnGetLobbyData(LobbyDataUpdate_t callback)
+    private void OnGetLobbyData(LobbyDataUpdate_t callback)
     {
         if (Utils.IsSceneActive(NetworkManager.singleton.offlineScene))
         {
             //MainMenu.instance.DisplayLobbies(lobbyIDs, callback);
-            onGetLobbyData?.Invoke(lobbyIDs, callback);
+            LobbyDataUpdated?.Invoke(lobbyIDs, callback);
         }
     }
 
-    public void JoinLobby(CSteamID _lobbyID)
-    {
-        SteamMatchmaking.JoinLobby(_lobbyID);
-    }
-
-    void OnConnectingFailed(P2PSessionConnectFail_t callback)
+    private void OnConnectingFailed(P2PSessionConnectFail_t callback)
     {
         Debug.LogWarning("Steam connection Error!");
     }
@@ -142,13 +138,13 @@ public class SteamLobby : MonoBehaviour
     {
         Debug.LogWarning("OnDisable");
         //QuitLobby();
-        lobbyCreated.Unregister();
-        gameLobbyJoinRequested.Unregister();
-        lobbyEntered.Unregister();
-        lobbyList.Unregister();
-        lobbyDataUpdate.Unregister();
+        LobbyCreated.Unregister();
+        GameLobbyJoinRequested.Unregister();
+        LobbyEntered.Unregister();
+        LobbyList.Unregister();
+        LobbyDataUpdate.Unregister();
 
-        connectingFailed.Unregister();
+        ConnectingFailed.Unregister();
     }
 
     public void QuitLobby()
@@ -162,11 +158,11 @@ public class SteamLobby : MonoBehaviour
     {
         if (NetworkClient.activeHost)
         {
-            networkManager.StopHost();
+            _networkManager.StopHost();
         }
         else
         {
-            networkManager.StopClient();
+            _networkManager.StopClient();
         }
     }
 }

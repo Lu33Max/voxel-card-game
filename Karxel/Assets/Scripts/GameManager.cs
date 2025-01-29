@@ -482,14 +482,6 @@ public class GameManager : NetworkBehaviour
         
         StartAttackPhase();
     }
-
-    public void RestartGame()
-    {
-        if(!isServer)
-            return;
-        
-        NetworkManager.singleton.ServerChangeScene(SceneManager.GetActiveScene().name);
-    }
     
     public void ReturnToLobby()
     {
@@ -549,6 +541,13 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void RPCInvokePlayersReady()
     {
+        // Mirror does not dispose of old RoomPlayers and only replaces their reference
+        var roomPlayers = FindObjectsOfType<NetworkRoomPlayerScript>();
+        foreach (var player in roomPlayers)
+        {
+            Destroy(player.gameObject);
+        }
+        
         PlayersReady?.Invoke();
     }
 

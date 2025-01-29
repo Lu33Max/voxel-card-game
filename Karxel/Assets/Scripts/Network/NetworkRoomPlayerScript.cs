@@ -1,7 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using Mirror;
+using Steamworks;
 
 /// <summary>
 /// Custom Room Player for Lobby
@@ -13,46 +11,78 @@ public class NetworkRoomPlayerScript : NetworkRoomPlayer
     [SyncVar(hook = nameof(OnTeamChanged))]
     public Team team;
 
+    [SyncVar(hook = nameof(OnNameChanged))] 
+    public string playerName;
+
     [SyncVar(hook = nameof(OnReadyStatusChanged))]
     public bool isReady;
 
+    private LobbyManager _lobby;
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        _lobby = FindObjectOfType<LobbyManager>();
+    }
+    
+    public override void OnStartLocalPlayer()
+    {
+        base.OnStartLocalPlayer();
+        
+        if (!SteamManager.Initialized)
+            CmdSetName(NetworkClient.localPlayer.netId.ToString());
+        else
+            CmdSetName(SteamFriends.GetPersonaName());
+    }
+
     public void SetTeam(Team newTeam)
     {
+        // Cannot change team while ready
         if (isReady)
-        {
-            Debug.LogWarning("Du kannst das Team nicht ändern, während du bereit bist.");
             return;
-        }
 
         CmdSetTeam(newTeam);
     }
+    
+    public void SetReady(bool readyStatus)
+    {
+        CmdChangeReadyState(readyStatus);
+        CmdSetReady(readyStatus);
+    }
 
-    [Command]
+    [Command(requiresAuthority = false)]
     private void CmdSetTeam(Team newTeam)
     {
         team = newTeam;
     }
 
-    private void OnTeamChanged(Team oldTeam, Team newTeam)
+    [Command(requiresAuthority = false)]
+    private void CmdSetName(string newName)
     {
-        Debug.Log($"Team geändert: {oldTeam} -> {newTeam}");
-        // UI aktualisieren
+        playerName = newName;
     }
 
-    public void SetReady(bool readyStatus)
+    [Command(requiresAuthority = false)]
+    private void CmdSetReady(bool newState)
     {
-        CmdChangeReadyState(readyStatus);
+        isReady = newState;
+    }
+
+    private void OnTeamChanged(Team oldTeam, Team newTeam)
+    {
+        if(_lobby)
+            _lobby.UpdatePlayerList();
     }
 
     private void OnReadyStatusChanged(bool oldStatus, bool newStatus)
     {
-        Debug.Log($"Ready Status geändert: {oldStatus} -> {newStatus}");
-        // UI aktualisieren
+        if(_lobby)
+            _lobby.UpdatePlayerList();
     }
-    
-    public override void ReadyStateChanged(bool oldReadyState, bool newReadyState)
+
+    private void OnNameChanged(string old, string newName)
     {
-        base.ReadyStateChanged(oldReadyState, newReadyState);
-        isReady = newReadyState; // Synchronisiere unsere eigene Ready-Variable
+        if(isLocalPlayer)
+            _lobby.SetupOnConnect(this);
     }
 }

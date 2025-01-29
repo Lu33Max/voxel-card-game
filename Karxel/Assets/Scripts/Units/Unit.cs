@@ -18,9 +18,15 @@ public abstract class Unit : NetworkBehaviour
     
     [Header("Visualization")]
     [SerializeField] private GameObject canvas;
+    [SerializeField] protected Material outlineMaterial;
+    
+    [Header("Health Visualization")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthCounter;
-    [SerializeField] protected Material outlineMaterial;
+
+    [Header("Shieldd Visualization")]
+    [SerializeField] private Slider shieldSlider;
+    [SerializeField] private TextMeshProUGUI shieldCounter;
 
     [Header("Unit Action Display")]
     [SerializeField] private Transform actionDisplayParent;
@@ -182,15 +188,25 @@ public abstract class Unit : NetworkBehaviour
         healthCounter.text = newHealth.ToString();
     }
     
-    private void OnShieldUpdated(int old, int newHealth)
+    private void OnShieldUpdated(int old, int newShield)
     {
-        // TODO
+        if (newShield <= 0)
+        {
+            shieldSlider.gameObject.SetActive(false);
+            return;
+        }
+            
+        shieldSlider.gameObject.SetActive(true);
+
+        shieldSlider.value = (float)newShield / data.health;
+        shieldCounter.text = newShield.ToString();
     }
 
     private void OnTeamUpdated(Team old, Team owner)
     {
         UpdateActionDisplayOnStateUpdate(GameState.Movement);
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
+        shieldSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
     }
 
     private void OnControlStatusChanged(bool old, bool isNowSelected)
@@ -239,7 +255,8 @@ public abstract class Unit : NetworkBehaviour
 
     private void UpdateActionDisplayOnStateUpdate(GameState newState)
     {
-        if(owningTeam != GameManager.Instance.localPlayer.team)
+        if(GameManager.Instance != null && GameManager.Instance.localPlayer != null &&
+           owningTeam != GameManager.Instance.localPlayer.team)
             return;
         
         ClearActionDisplay();
@@ -281,17 +298,18 @@ public abstract class Unit : NetworkBehaviour
         {
             if (_currentShield >= changeAmount)
             {
-                _currentShield -= changeAmount;
-                ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentHealth}]", 
+                _currentShield += changeAmount;
+                ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentShield}]", 
                     null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+                
                 return;
             }
-
-            changeLeft = changeAmount - _currentShield;
-            _currentShield = 0;
             
-            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentHealth}]", 
+            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{_currentShield},{_currentHealth}]", 
                 null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+
+            changeLeft = changeAmount + _currentShield;
+            _currentShield = 0;
         }
         
         _currentHealth = Mathf.Clamp(_currentHealth + changeLeft, 0, data.health);

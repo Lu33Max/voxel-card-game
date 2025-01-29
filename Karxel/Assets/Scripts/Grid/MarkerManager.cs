@@ -86,6 +86,9 @@ public class MarkerManager : NetworkBehaviour
 
     private bool ShouldIgnore(string visibility)
     {
+        if (GameManager.Instance == null || GameManager.Instance.localPlayer == null || visibility == null)
+            return true;
+        
         var player = GameManager.Instance.localPlayer;
 
         return visibility != "All" && ((visibility == "Blue" && player.team != Team.Blue) ||
