@@ -1,11 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using TMPro;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
@@ -13,11 +11,20 @@ public abstract class Unit : NetworkBehaviour
     [HideInInspector, SyncVar(hook = nameof(OnTeamUpdated))] public Team owningTeam = Team.None;
     [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
+    [Header("UnitData")]
     [SerializeField] protected UnitData data;
+    [SerializeField] private int moveLimit = 3;
+    [SerializeField] private int attackLimit = 1;
+    
+    [Header("Visualization")]
     [SerializeField] private GameObject canvas;
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthCounter;
     [SerializeField] protected Material outlineMaterial;
+
+    [Header("Unit Action Display")]
+    [SerializeField] private Transform actionDisplayParent;
+    [SerializeField] private GameObject actionImagePrefab;
     
     public Vector2Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
@@ -46,6 +53,8 @@ public abstract class Unit : NetworkBehaviour
     {
         _camera = Camera.main.transform;
         _renderer = GetComponentInChildren<MeshRenderer>();
+        
+        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
 
         if(!isServer)
             return;
@@ -63,6 +72,7 @@ public abstract class Unit : NetworkBehaviour
     private void OnDestroy()
     {
         StopAllCoroutines();
+        GameManager.Instance.gameStateChanged.RemoveListener(OnGameStateChanged);
         
         if(!isServer)
             return;
@@ -98,6 +108,15 @@ public abstract class Unit : NetworkBehaviour
         GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
             owningTeam.ToString(), "attack", $"[{cardValues.attackRange},{cardValues.attackDamage}]", $"[{string.Join(",", attack.Tiles.Select(t => t.ToString()).ToList())}]", 
             gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+    }
+
+    public bool CanBeSelected(GameState? state)
+    {
+        if (state == null)
+            state = GameManager.Instance.gameState;
+        
+        return (state == GameState.Attack && AttackIntent.Count < attackLimit) ||
+               (state == GameState.Movement && MoveIntent.Count < moveLimit);
     }
     
     // Move the unit along the given path from tile to tile
@@ -164,6 +183,7 @@ public abstract class Unit : NetworkBehaviour
 
     private void OnTeamUpdated(Team old, Team owner)
     {
+        UpdateActionDisplayOnStateUpdate(GameState.Movement);
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
     }
 
@@ -178,6 +198,63 @@ public abstract class Unit : NetworkBehaviour
             : new[] { _renderer.materials.First() };
         
         _renderer.materials = newMaterials;
+    }
+
+    private void UpdateActionDisplayAfterAction()
+    {
+        if(owningTeam != GameManager.Instance.localPlayer.team)
+            return;
+        
+        var displayCount = actionDisplayParent.childCount;
+        
+        if(GameManager.Instance.gameState == GameState.Movement)
+            for(int i = 0; i < displayCount - (moveLimit - MoveIntent.Count); i++)
+            {
+                Destroy(actionDisplayParent.GetChild(i).gameObject);
+            }
+        
+        else if(GameManager.Instance.gameState == GameState.Attack)
+            for(int i = 0; i < displayCount - (attackLimit - AttackIntent.Count); i++)
+            {
+                Destroy(actionDisplayParent.GetChild(i).gameObject);
+                displayCount--;
+            }
+    }
+
+    private void ClearActionDisplay()
+    {
+        var childCount = actionDisplayParent.childCount;
+        
+        for(int i = 0; i < childCount; i++)
+        {
+            Destroy(actionDisplayParent.GetChild(i).gameObject);
+        }
+    }
+
+    private void UpdateActionDisplayOnStateUpdate(GameState newState)
+    {
+        if(owningTeam != GameManager.Instance.localPlayer.team)
+            return;
+        
+        ClearActionDisplay();
+        
+        if(newState == GameState.Movement)
+            for(var i = 0; i < moveLimit; i++)
+            {
+                var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
+                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(true);
+            }
+        else if(newState == GameState.Attack)
+            for(var i = 0; i < attackLimit; i++)
+            {
+                var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
+                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(false);
+            }
+    }
+
+    private void OnGameStateChanged(GameState newState)
+    {
+        UpdateActionDisplayOnStateUpdate(newState);
     }
 
     [Server]
@@ -284,12 +361,14 @@ public abstract class Unit : NetworkBehaviour
     private void RPCAddToMoveIntent(MoveCommand moveCommand)
     {
         MoveIntent.Add(moveCommand);
+        UpdateActionDisplayAfterAction();
     }
 
     [ClientRpc]
     private void RPCAddToAttackIntent(Attack newAttack)
     {
         AttackIntent.Add(newAttack);
+        UpdateActionDisplayAfterAction();
     }
 
     [ClientRpc]

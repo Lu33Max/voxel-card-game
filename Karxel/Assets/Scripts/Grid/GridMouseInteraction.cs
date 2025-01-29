@@ -105,13 +105,13 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void DisplayMovePreviewTiles(TileData newHoveredTile)
     {
-        var card = HandManager.Instance.SelectedCard;
-        
         RemoveAllPreviewTiles();
 
         if (newHoveredTile == null || newHoveredTile.Unit == null || _selectedUnit != null ||
-            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team) 
+            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team || !newHoveredTile.Unit.CanBeSelected(null)) 
             return;
+        
+        var card = HandManager.Instance.SelectedCard;
         
         foreach (var command in newHoveredTile.Unit.GetValidMoves(card.CardData.movementRange))
         {
@@ -198,8 +198,8 @@ public class GridMouseInteraction : MonoBehaviour
                 return;
             }
             
-            // If the user tries to select a unit during the attack phase he already assigned an attack to
-            if (gameState == GameState.Attack && _hoveredTile.Unit.AttackIntent.Exists(a => a.PlayerId == player.netId))
+            // Check if the unit has no attack registered / is not over the move limit
+            if (!_hoveredTile.Unit.CanBeSelected(null))
                 return;
 
             _selectedUnit = _hoveredTile.Unit;
