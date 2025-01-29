@@ -31,6 +31,7 @@ public abstract class Unit : NetworkBehaviour
     public List<Attack> AttackIntent { get; } = new();
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
+    [SyncVar(hook = nameof(OnShieldUpdated))] private int _currentShield;
     
     private Transform _camera;
     private MeshRenderer _renderer;
@@ -180,6 +181,11 @@ public abstract class Unit : NetworkBehaviour
         healthSlider.value = (float)newHealth / data.health;
         healthCounter.text = newHealth.ToString();
     }
+    
+    private void OnShieldUpdated(int old, int newHealth)
+    {
+        // TODO
+    }
 
     private void OnTeamUpdated(Team old, Team owner)
     {
@@ -269,12 +275,37 @@ public abstract class Unit : NetworkBehaviour
     [Server]
     private void UpdateHealth(int changeAmount)
     {
-        _currentHealth = Mathf.Clamp(_currentHealth + changeAmount, 0, data.health);
+        var changeLeft = changeAmount;
+
+        if (_currentShield > 0 && changeAmount < 0)
+        {
+            if (_currentShield >= changeAmount)
+            {
+                _currentShield -= changeAmount;
+                ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentHealth}]", 
+                    null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+                return;
+            }
+
+            changeLeft = changeAmount - _currentShield;
+            _currentShield = 0;
+            
+            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentHealth}]", 
+                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+        }
+        
+        _currentHealth = Mathf.Clamp(_currentHealth + changeLeft, 0, data.health);
         
         // Logging
         if(changeAmount < 0)
-            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeAmount},{_currentHealth}]", 
+            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeLeft},{_currentHealth}]", 
                 null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+    }
+
+    [Server]
+    private void AddShield(int shieldToAdd)
+    {
+        _currentShield = Mathf.Clamp(_currentShield + shieldToAdd, 0, data.health);
     }
 
     [Server]
@@ -296,6 +327,12 @@ public abstract class Unit : NetworkBehaviour
     public void CmdUpdateHealth(int changeAmount)
     {
         UpdateHealth(changeAmount);
+    }
+    
+    [Command(requiresAuthority = false)]
+    public void CmdUpdateShield(int changeAmount)
+    {
+        AddShield(changeAmount);
     }
 
     [Command(requiresAuthority = false)]

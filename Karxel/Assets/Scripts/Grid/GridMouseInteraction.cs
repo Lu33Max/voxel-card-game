@@ -194,6 +194,9 @@ public class GridMouseInteraction : MonoBehaviour
                 if(cardValues.cardType == CardType.Heal)
                     _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
                 
+                if(cardValues.cardType == CardType.Shield)
+                    _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
+                
                 HandManager.Instance.PlaySelectedCard();
                 return;
             }

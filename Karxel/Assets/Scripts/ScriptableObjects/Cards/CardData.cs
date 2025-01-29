@@ -21,7 +21,8 @@ public enum CardType
 {
     Attack,
     Move,
-    Heal
+    Heal,
+    Shield
 }
 
 public enum Rarity
