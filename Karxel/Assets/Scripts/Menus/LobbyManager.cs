@@ -69,6 +69,7 @@ public class LobbyManager : NetworkBehaviour
 
         redJoinBtn.interactable = false;
         blueJoinBtn.interactable = true;
+        readyBtn.interactable = true;
     }
 
     public void OnSelectTeamBlue()
@@ -82,6 +83,7 @@ public class LobbyManager : NetworkBehaviour
         
         redJoinBtn.interactable = true;
         blueJoinBtn.interactable = false;
+        readyBtn.interactable = true;
     }
     
     public void OnReadyButtonPressed()
