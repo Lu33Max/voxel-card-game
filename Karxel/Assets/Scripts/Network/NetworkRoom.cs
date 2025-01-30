@@ -21,7 +21,7 @@ public class NetworkRoom : NetworkRoomManager
     public override bool OnRoomServerSceneLoadedForPlayer(NetworkConnectionToClient conn, GameObject roomPlayer,
         GameObject gamePlayer)
     {
-        gamePlayer.GetComponent<Player>().team = roomPlayer.GetComponent<NetworkRoomPlayerScript>().team;
+        gamePlayer.GetComponent<Player>().team = roomPlayer.GetComponent<CustomRoomPlayer>().team;
         return true;
     }
 

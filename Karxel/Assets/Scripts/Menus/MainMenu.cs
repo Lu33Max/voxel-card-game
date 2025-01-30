@@ -31,31 +31,34 @@ public class MainMenu : MonoBehaviour
             lobby.LobbyDataUpdated += DisplayLobbies;
     }
 
-    public void DisplayLobbies(List<CSteamID> _lobbyIDs, LobbyDataUpdate_t _callback)
+    public void DisplayLobbies(List<CSteamID> lobbyIDs, LobbyDataUpdate_t callback)
     {
-        for (int i = 0; i < _lobbyIDs.Count; i++)
+        for(int i = 0; i < lobbyListContent.transform.childCount; i++)
+            Destroy(lobbyListContent.transform.GetChild(i).gameObject);
+        
+        for (int i = 0; i < lobbyIDs.Count; i++)
         {
-            if (_lobbyIDs[i].m_SteamID == _callback.m_ulSteamIDLobby)
-            {
+            if (lobbyIDs[i].m_SteamID != callback.m_ulSteamIDLobby) 
+                continue;
+            
+            GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
+            var lobbyCard = createdItem.GetComponent<LobbyDataEntry>();
 
-                GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
+            lobbyCard.lobbyID = (CSteamID)lobbyIDs[i].m_SteamID;
+            lobbyCard.lobbyName = SteamMatchmaking.GetLobbyData((CSteamID)lobbyIDs[i].m_SteamID, "name");
+            lobbyCard.SetLobbyData();
 
-                createdItem.GetComponent<LobbyDataEntry>().lobbyID = (CSteamID)_lobbyIDs[i].m_SteamID;
-                createdItem.GetComponent<LobbyDataEntry>().lobbyName = SteamMatchmaking.GetLobbyData((CSteamID)_lobbyIDs[i].m_SteamID, "name");
-                createdItem.GetComponent<LobbyDataEntry>().SetLobbyData();
+            createdItem.transform.localScale = Vector3.one;
 
-                createdItem.transform.localScale = Vector3.one;
-
-                _listOfLobbies.Add(createdItem);
-            }
+            _listOfLobbies.Add(createdItem);
         }
     }
+    
     public void CreateLobbyButton()
     {
         OnCreatingLobby?.Invoke();
     }
-
-
+    
     public void GetListOfLobbiesButton()
     {
         OnGetSteamLobbyList?.Invoke();

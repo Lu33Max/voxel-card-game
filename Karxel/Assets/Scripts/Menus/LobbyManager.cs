@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using Steamworks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,10 +26,14 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private Transform blueTeamList;
     [SerializeField] private Transform redTeamList;
     
+    [Header("Selection Phases")]
+    [SerializeField] private GameObject teamSelection;
+    [SerializeField] private GameObject mapSelection;
+    
     private NetworkRoom _roomManager;
 
-    private List<NetworkRoomPlayerScript> _bluePlayers = new();
-    private List<NetworkRoomPlayerScript> _redPlayers = new();
+    private List<CustomRoomPlayer> _bluePlayers = new();
+    private List<CustomRoomPlayer> _redPlayers = new();
     
     private void Awake()
     {
@@ -42,7 +47,7 @@ public class LobbyManager : NetworkBehaviour
         startBtn.gameObject.SetActive(true);
     }
 
-    public void SetupOnConnect(NetworkRoomPlayerScript localPlayer)
+    public void SetupOnConnect(CustomRoomPlayer localPlayer)
     {
         redJoinBtn.interactable = !localPlayer.isReady;
         blueJoinBtn.interactable = !localPlayer.isReady;
@@ -50,17 +55,24 @@ public class LobbyManager : NetworkBehaviour
         CmdUpdatePlayerList();
     }
 
+    public void SwitchToMapSelection()
+    {
+        if (!_roomManager.allPlayersReady)
+            return;
+        
+        // TODO: Update Joinable upon switchung to map selection
+        //SteamMatchmaking.SetLobbyJoinable()
+        RpcSwitchToMapSelection();
+    }
+
     public void StartGame()
     {
-        if (_roomManager.allPlayersReady)
-            _roomManager.ServerChangeScene(_roomManager.GameplayScene);
-        else
-            Debug.LogWarning("Nicht alle Spieler sind bereit!");
+        _roomManager.ServerChangeScene(_roomManager.GameplayScene);
     }
     
     public void OnSelectTeamRed()
     {
-        NetworkRoomPlayerScript localPlayer = NetworkClient.localPlayer.GetComponent<NetworkRoomPlayerScript>();
+        var localPlayer = NetworkClient.localPlayer.GetComponent<CustomRoomPlayer>();
         
         if(localPlayer.isReady)
             return;
@@ -74,7 +86,7 @@ public class LobbyManager : NetworkBehaviour
 
     public void OnSelectTeamBlue()
     {
-        NetworkRoomPlayerScript localPlayer = NetworkClient.localPlayer.GetComponent<NetworkRoomPlayerScript>();
+        var localPlayer = NetworkClient.localPlayer.GetComponent<CustomRoomPlayer>();
         
         if(localPlayer.isReady)
             return;
@@ -88,8 +100,8 @@ public class LobbyManager : NetworkBehaviour
     
     public void OnReadyButtonPressed()
     {
-        NetworkRoomPlayerScript localPlayer = NetworkClient.localPlayer.GetComponent<NetworkRoomPlayerScript>();
-
+        var localPlayer = NetworkClient.localPlayer.GetComponent<CustomRoomPlayer>();
+        
         if (localPlayer.team == Team.None)
             return;
         
@@ -112,7 +124,7 @@ public class LobbyManager : NetworkBehaviour
         RemoveAllChildren(blueTeamList);
         RemoveAllChildren(redTeamList);
         
-        foreach (var customPlayer in _roomManager.roomSlots.Cast<NetworkRoomPlayerScript>())
+        foreach (var customPlayer in _roomManager.roomSlots.Cast<CustomRoomPlayer>())
         {
             switch (customPlayer.team)
             {
@@ -150,6 +162,14 @@ public class LobbyManager : NetworkBehaviour
     private void CmdUpdatePlayerList()
     {
         RpcUpdatePlayerList();
+    }
+
+    [ClientRpc]
+    private void RpcSwitchToMapSelection()
+    {
+        teamSelection.SetActive(false);
+        mapSelection.SetActive(true);
+        mapSelection.GetComponentInParent<MapSelection>().StartTimer();
     }
 
     [ClientRpc]

@@ -6,7 +6,7 @@ using Steamworks;
 /// Mirror overrides for custom functionality
 /// Joining and Leaving Lobby and Ready State
 /// </summary>
-public class NetworkRoomPlayerScript : NetworkRoomPlayer
+public class CustomRoomPlayer : NetworkRoomPlayer
 {
     [SyncVar(hook = nameof(OnTeamChanged))]
     public Team team;

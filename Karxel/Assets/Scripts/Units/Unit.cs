@@ -155,7 +155,7 @@ public abstract class Unit : NetworkBehaviour
         
         while (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 5 * Time.deltaTime);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 8 * Time.deltaTime);
             yield return new WaitForEndOfFrame();
         }
         transform.rotation = targetRotation;

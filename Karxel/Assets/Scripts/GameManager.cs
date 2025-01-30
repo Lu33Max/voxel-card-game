@@ -90,6 +90,7 @@ public class GameManager : NetworkBehaviour
         }
         
         Instance = this;
+        Debug.Log(SceneData.MapIndex);
     }
     
     private void Update()
@@ -542,7 +543,7 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokePlayersReady()
     {
         // Mirror does not dispose of old RoomPlayers and only replaces their reference
-        var roomPlayers = FindObjectsOfType<NetworkRoomPlayerScript>();
+        var roomPlayers = FindObjectsOfType<CustomRoomPlayer>();
         foreach (var player in roomPlayers)
         {
             Destroy(player.gameObject);

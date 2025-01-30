@@ -28,7 +28,7 @@ public class SteamLobby : MonoBehaviour
     public Action<List<CSteamID>, LobbyDataUpdate_t> LobbyDataUpdated;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         if (!SteamManager.Initialized)
         {
@@ -41,6 +41,7 @@ public class SteamLobby : MonoBehaviour
         LobbyCreated = Callback<LobbyCreated_t>.Create(OnLobbyCreated);
         GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create(OnLobbyJoinRequested);
         LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
+        
         LobbyList = Callback<LobbyMatchList_t>.Create(OnGetLobbyList);
         LobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(OnGetLobbyData);
 
@@ -50,20 +51,18 @@ public class SteamLobby : MonoBehaviour
         MainMenu.Singleton.OnGetSteamLobbyList += GetLobbiesList;
     }
 
-    public void JoinGameHost()
+    private void JoinGameHost()
     {
         SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, _networkManager.maxConnections);
-        Debug.Log("Lobby created");
     }
 
-    public void GetLobbiesList()
+    private void GetLobbiesList()
     {
         if (lobbyIDs.Count > 0)
-        {
             lobbyIDs.Clear();
-        }
 
         SteamMatchmaking.AddRequestLobbyListResultCountFilter(50);
+        SteamMatchmaking.AddRequestLobbyListStringFilter("RandomIdThingamajig", "69420", ELobbyComparison.k_ELobbyComparisonEqual);
         SteamMatchmaking.RequestLobbyList();
     }
     
@@ -75,7 +74,6 @@ public class SteamLobby : MonoBehaviour
     private void OnLobbyCreated(LobbyCreated_t callback)
     {
         currentLobbyID = callback.m_ulSteamIDLobby;
-        Debug.Log("LOBBY - ID: " + currentLobbyID);
 
         if (callback.m_eResult != EResult.k_EResultOK)
         {
@@ -87,6 +85,7 @@ public class SteamLobby : MonoBehaviour
         
         SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "HostAddress", SteamUser.GetSteamID().ToString());
         SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "name", SteamFriends.GetPersonaName() + "'s Lobby");
+        SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), "RandomIdThingamajig", "69420");
     }
 
     private void OnLobbyJoinRequested(GameLobbyJoinRequested_t callback)
@@ -149,8 +148,7 @@ public class SteamLobby : MonoBehaviour
 
     public void QuitLobby()
     {
-        SteamMatchmaking.LeaveLobby(new CSteamID(currentLobbyID)); //Die Zeile wirft Error OnDisable
-
+        SteamMatchmaking.LeaveLobby(new CSteamID(currentLobbyID));
         Invoke(nameof(DisconnectPlayer), 0.2f);
     }
 
