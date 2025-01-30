@@ -172,12 +172,10 @@ public class GridManager : NetworkBehaviour
             
             unit.gameObject.SetActive(true);
             unitScript.MoveToTile(gridPos);
-            
-            unitScript.owningTeam = unitPosition.x < (gridSizeX / 2f) * gridResolution ? Team.Blue : Team.Red;
 
             var newTile = _tiles[gridPos];
             newTile.Unit = unitScript;
-            RPCUpdateTiles(gridPos, newTile);
+            RPCUpdateTile(gridPos, newTile);
         }
     }
 
@@ -186,7 +184,7 @@ public class GridManager : NetworkBehaviour
     {
         var tile = _tiles[gridPos];
         tile.Unit = unit;
-        RPCUpdateTiles(gridPos, tile);
+        RPCUpdateTile(gridPos, tile);
     }
 
     [Command(requiresAuthority = false)]
@@ -199,7 +197,7 @@ public class GridManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void RPCUpdateTiles(Vector2Int pos, TileData newTile)
+    private void RPCUpdateTile(Vector2Int pos, TileData newTile)
     {
         _tiles[pos] = newTile;
     }

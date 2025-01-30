@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
 {
-    [HideInInspector, SyncVar(hook = nameof(OnTeamUpdated))] public Team owningTeam = Team.None;
+    [SyncVar] public Team owningTeam = Team.None;
     [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
     [Header("UnitData")]
@@ -62,6 +62,9 @@ public abstract class Unit : NetworkBehaviour
         _renderer = GetComponentInChildren<MeshRenderer>();
         
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        
+        healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
+        shieldSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
 
         if(!isServer)
             return;
@@ -144,8 +147,21 @@ public abstract class Unit : NetworkBehaviour
     // Move the unit to the given world position
     private IEnumerator Move(Vector3 targetPos)
     {
-        float elapsedTime = 0;
         Vector3 startingPos = transform.position;
+        Vector3 direction = targetPos - startingPos;
+        direction.y = 0;
+        
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        
+        while (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
+        {
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 5 * Time.deltaTime);
+            yield return new WaitForEndOfFrame();
+        }
+        transform.rotation = targetRotation;
+        
+        float elapsedTime = 0;
+        
         while (elapsedTime < data.stepDuration)
         {
             transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / data.stepDuration);
@@ -176,7 +192,9 @@ public abstract class Unit : NetworkBehaviour
             );
 
             current += step;
-            path.Add(current);
+            
+            if(current != end)
+                path.Add(current);
         }
 
         return path;
@@ -200,13 +218,6 @@ public abstract class Unit : NetworkBehaviour
 
         shieldSlider.value = (float)newShield / data.health;
         shieldCounter.text = newShield.ToString();
-    }
-
-    private void OnTeamUpdated(Team old, Team owner)
-    {
-        UpdateActionDisplayOnStateUpdate(GameState.Movement);
-        healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
-        shieldSlider.GetComponent<HealthSlider>().SetupSliderColor(owner);
     }
 
     private void OnControlStatusChanged(bool old, bool isNowSelected)
@@ -248,14 +259,12 @@ public abstract class Unit : NetworkBehaviour
         var childCount = actionDisplayParent.childCount;
         
         for(int i = 0; i < childCount; i++)
-        {
             Destroy(actionDisplayParent.GetChild(i).gameObject);
-        }
     }
 
     private void UpdateActionDisplayOnStateUpdate(GameState newState)
     {
-        if(GameManager.Instance != null && GameManager.Instance.localPlayer != null &&
+        if(GameManager.Instance == null || GameManager.Instance.localPlayer == null ||
            owningTeam != GameManager.Instance.localPlayer.team)
             return;
         
