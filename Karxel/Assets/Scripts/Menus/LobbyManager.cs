@@ -67,7 +67,7 @@ public class LobbyManager : NetworkBehaviour
 
     public void StartGame()
     {
-        _roomManager.ServerChangeScene(_roomManager.GameplayScene);
+        _roomManager.ServerChangeScene($"Game{SceneData.MapIndex}");
     }
     
     public void OnSelectTeamRed()

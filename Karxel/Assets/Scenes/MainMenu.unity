@@ -7751,7 +7751,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 2
+  m_Intensity: 1.5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -21733,7 +21733,9 @@ MonoBehaviour:
     type: 3}
   autoCreatePlayer: 1
   playerSpawnMethod: 0
-  spawnPrefabs: []
+  spawnPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
   exceptionsDisconnect: 0
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -21754,7 +21756,7 @@ MonoBehaviour:
   roomPlayerPrefab: {fileID: 1271043052132975523, guid: 70dc3ef0fc092fa4b890adfa36056340,
     type: 3}
   RoomScene: Assets/Scenes/Lobby.unity
-  GameplayScene: Assets/Scenes/Game.unity
+  GameplayScene: 
   _allPlayersReady: 0
   roomSlots: []
   clientIndex: 0
@@ -34031,7 +34033,7 @@ MonoBehaviour:
   roomPlayerPrefab: {fileID: 1271043052132975523, guid: 70dc3ef0fc092fa4b890adfa36056340,
     type: 3}
   RoomScene: Assets/Scenes/Lobby.unity
-  GameplayScene: Assets/Scenes/Game.unity
+  GameplayScene: 
   _allPlayersReady: 0
   roomSlots: []
   clientIndex: 0

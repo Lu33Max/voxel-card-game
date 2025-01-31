@@ -24,7 +24,7 @@ public class ActionPointManager : MonoBehaviour
         Instance = this;
         
         ActionPoints = startPoints;
-        actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
+        actionText.text = $"{ActionPoints}/{maxPoints}";
     }
 
     private void OnEnable()
@@ -40,7 +40,7 @@ public class ActionPointManager : MonoBehaviour
     public void UpdateActionPoints(int valueToAdd)
     {
         ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, maxPoints);
-        actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
+        actionText.text = $"{ActionPoints}/{maxPoints}";
 
         actionPointsUpdated.Invoke(ActionPoints);
         
@@ -54,7 +54,7 @@ public class ActionPointManager : MonoBehaviour
     public void UpdateActionPointsOnPlay(int valueToAdd)
     {
         ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, maxPoints);
-        actionText.text = $"Actions: {ActionPoints}/{maxPoints}";
+        actionText.text = $"{ActionPoints}/{maxPoints}";
     }
 
     private void OnGameStateChanged(GameState newState)
