@@ -9,6 +9,9 @@ public class GridManager : NetworkBehaviour
 {
     public static GridManager Instance { get; private set; }
 
+    [Header("Map Setup")] 
+    [SerializeField] private List<MapData> mapList;
+    
     [Header("Grid Setup")]
     [SerializeField, Tooltip("Max number of tiles in x-Direction")] 
     private int gridSizeX = 10;
@@ -130,6 +133,25 @@ public class GridManager : NetworkBehaviour
     // With this method, even uneven play fields can be correctly mapped
     private void CalculateTilePositions()
     {
+        if (SceneData.MapIndex >= mapList.Count)
+        {
+            Debug.LogWarning($"Map Index of {SceneData.MapIndex} was out of range for available maps");
+            SceneData.MapIndex = 0;
+        }
+
+        var mapToPlace = mapList[SceneData.MapIndex];
+        gridSizeX = mapToPlace.MapSize.x;
+        gridSizeZ = mapToPlace.MapSize.y;
+
+        var map = Instantiate(mapToPlace.MapPrefab);
+        map.transform.position = new Vector3(gridSizeX * gridResolution / 2, 0, gridSizeZ * gridResolution / 2);
+        
+        // Map first needs time to move to its new position before raycasts can actually collide with it at the new position
+        Invoke(nameof(SetupTiles), 0.2f);
+    }
+
+    private void SetupTiles()
+    {
         for (int x = 0; x < gridSizeX; x++)
         {
             for (int y = 0; y < gridSizeZ; y++)
@@ -137,14 +159,21 @@ public class GridManager : NetworkBehaviour
                 Ray ray = new Ray(
                     new Vector3(x * gridResolution + gridResolution / 2, 200, y * gridResolution + gridResolution / 2),
                     Vector3.down);
-                
+
+                Debug.DrawRay(
+                    new Vector3(x * gridResolution + gridResolution / 2, 10, y * gridResolution + gridResolution / 2),
+                    Vector3.down * 10, Color.blue, 1000, false);
+
                 if (!Physics.Raycast(ray, out RaycastHit hitInfo, 250, groundLayer))
+                {
+                    Debug.Log($"Not found on {x},{y}");
                     continue;
+                }
                 
                 var gridPos = new Vector2Int(x, y);
                 var tile = new TileData
                     { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
-                
+                Debug.Log($"Found grid pos {gridPos}");
                 _tiles.Add(gridPos, tile);
 
                 var worldPos = hitInfo.point;
@@ -152,7 +181,7 @@ public class GridManager : NetworkBehaviour
                 MarkerManager.Instance.RegisterTile(gridPos, worldPos, gridResolution);
             }
         }
-        
+
         CmdSetupReady();
     }
 

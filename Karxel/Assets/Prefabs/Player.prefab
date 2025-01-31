@@ -277,7 +277,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.99607843, g: 0.54901963, b: 0.19215687, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -510,9 +510,9 @@ MonoBehaviour:
   actionPointsUpdated:
     m_PersistentCalls:
       m_Calls: []
-  startPoints: 10
-  maxPoints: 10
-  pointsPerRound: 5
+  startPoints: 20
+  maxPoints: 20
+  pointsPerRound: 10
   actionText: {fileID: 6078908742282275424}
 --- !u!114 &7051883379787249094
 MonoBehaviour:
@@ -793,15 +793,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.12941177}
+  m_Color: {r: 0.99607843, g: 0.54901963, b: 0.19215687, a: 0.3019608}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 0}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1056,7 +1056,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.99607843, g: 0.54901963, b: 0.19215687, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1166,7 +1166,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.18521118, y: -13.509247}
+  m_AnchoredPosition: {x: 0, y: -20}
   m_SizeDelta: {x: 140, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4125890234926907203
@@ -1208,7 +1208,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 2020336093797472109}
   m_FillRect: {fileID: 3519810097435209632}
   m_HandleRect: {fileID: 6947094254328506951}
@@ -1422,7 +1422,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Actions: 15/10'
+  m_text: 20/20
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e82c6d1359ace4a44bc19c2d5f58521a, type: 2}
   m_sharedMaterial: {fileID: 8446513022921677657, guid: e82c6d1359ace4a44bc19c2d5f58521a,
@@ -1551,7 +1551,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

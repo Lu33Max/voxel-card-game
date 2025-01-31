@@ -7,6 +7,7 @@ public class DragDropHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private RectTransform _rectTransform;
     private CanvasGroup _canvasGroup;
     private Transform _originalParent;
+    private Vector2 _originalPosition;
 
     private void Awake()
     {
@@ -18,6 +19,8 @@ public class DragDropHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public void OnBeginDrag(PointerEventData eventData)
     {
         _originalParent = transform.parent;
+        _originalPosition = _rectTransform.anchoredPosition;
+        
         _canvasGroup.alpha = 0.6f;
         _canvasGroup.blocksRaycasts = false;
     }
@@ -31,8 +34,11 @@ public class DragDropHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         _canvasGroup.alpha = 1f;
         _canvasGroup.blocksRaycasts = true;
+
+        if (transform.parent != _originalParent) 
+            return;
         
-        if (transform.parent == _originalParent)
-            _rectTransform.SetParent(_originalParent);
+        _rectTransform.SetParent(_originalParent);
+        _rectTransform.anchoredPosition = _originalPosition;
     }
 }
