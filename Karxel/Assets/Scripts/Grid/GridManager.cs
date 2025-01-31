@@ -170,6 +170,9 @@ public class GridManager : NetworkBehaviour
                 new Vector2Int(Mathf.RoundToInt((unitPosition.x - (gridResolution / 2)) / gridResolution),
                     Mathf.RoundToInt((unitPosition.z - (gridResolution / 2)) / gridResolution));
             
+            if(!IsValidGridPosition(gridPos))
+                continue;
+            
             unit.gameObject.SetActive(true);
             unitScript.MoveToTile(gridPos);
 

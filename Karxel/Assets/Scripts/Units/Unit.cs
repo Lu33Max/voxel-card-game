@@ -305,7 +305,7 @@ public abstract class Unit : NetworkBehaviour
 
         if (_currentShield > 0 && changeAmount < 0)
         {
-            if (_currentShield >= changeAmount)
+            if (_currentShield >= Mathf.Abs(changeAmount))
             {
                 _currentShield += changeAmount;
                 ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentShield}]", 
