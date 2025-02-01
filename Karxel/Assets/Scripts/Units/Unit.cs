@@ -35,6 +35,7 @@ public abstract class Unit : NetworkBehaviour
     public Vector2Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
     public List<Attack> AttackIntent { get; } = new();
+    public UnitData Data => data;
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
     [SyncVar(hook = nameof(OnShieldUpdated))] private int _currentShield;

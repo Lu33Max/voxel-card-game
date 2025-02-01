@@ -152,15 +152,11 @@ public class SteamLobby : MonoBehaviour
         Invoke(nameof(DisconnectPlayer), 0.2f);
     }
 
-    void DisconnectPlayer()
+    private void DisconnectPlayer()
     {
         if (NetworkClient.activeHost)
-        {
             _networkManager.StopHost();
-        }
         else
-        {
             _networkManager.StopClient();
-        }
     }
 }

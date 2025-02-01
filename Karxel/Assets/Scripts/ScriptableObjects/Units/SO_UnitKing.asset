@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecbda1fd69ce69942bdeddd9b45cce5e, type: 3}
   m_Name: SO_UnitKing
   m_EditorClassIdentifier: 
-  unitName: 
+  unitName: KING
+  unitDescription: 'WEAK IN EVERY REGARD.
+
+    DEFEATING THE ENEMY KING RESULTS IN
+    WINNING THE MATCH'
   health: 7
   moveAmount: 1
   attackDamage: 2

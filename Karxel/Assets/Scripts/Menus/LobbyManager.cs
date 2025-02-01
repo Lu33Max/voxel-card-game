@@ -30,15 +30,18 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private GameObject teamSelection;
     [SerializeField] private GameObject mapSelection;
     
+    NetworkManager _networkManager;
     private NetworkRoom _roomManager;
+    private SteamLobby _steamLobby;
 
     private List<CustomRoomPlayer> _bluePlayers = new();
     private List<CustomRoomPlayer> _redPlayers = new();
     
     private void Awake()
     {
-        if (_roomManager == null)
-            _roomManager = FindObjectOfType<NetworkRoom>();
+        _roomManager = FindObjectOfType<NetworkRoom>();
+        _networkManager = FindObjectOfType<NetworkManager>();
+        _steamLobby = FindObjectOfType<SteamLobby>();
     }
 
     public override void OnStartServer()
@@ -109,9 +112,16 @@ public class LobbyManager : NetworkBehaviour
         blueJoinBtn.interactable = localPlayer.isReady && localPlayer.team != Team.Blue;
         
         localPlayer.SetReady(!localPlayer.isReady);
-        readyBtn.GetComponentInChildren<TextMeshProUGUI>().text = localPlayer.isReady ? "Ready" : "Unready";
+        readyBtn.GetComponentInChildren<TextMeshProUGUI>().text = localPlayer.isReady ? "READY" : "UNREADY";
     }
 
+    public void OnLeaveButtonPressed()
+    {
+        if (_steamLobby == null) 
+            return;
+        
+        _steamLobby.QuitLobby();
+    }
     
     [Client]
     public void UpdatePlayerList()

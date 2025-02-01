@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecbda1fd69ce69942bdeddd9b45cce5e, type: 3}
   m_Name: SO_UnitArcher
   m_EditorClassIdentifier: 
-  unitName: 
+  unitName: ARCHER
+  unitDescription: 'LONG RANGE UNIT BOTH IN ATTACK  AND MOVEMENT RANGE.
+
+    WEAK
+    ATTACKS AND LOW HEALTH'
   health: 3
   moveAmount: 1
   attackDamage: 2

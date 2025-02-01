@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecbda1fd69ce69942bdeddd9b45cce5e, type: 3}
   m_Name: SO_UnitHealer
   m_EditorClassIdentifier: 
-  unitName: Healer
+  unitName: HEALER
+  unitDescription: 'UNIT CANNOT ATTACK BUT ONLY HEAL.
+
+    PLAYING AN ATTACK CARD
+    ON IT LETS IT HEAL OTHER UNITS'
   health: 5
   moveAmount: 1
   attackDamage: -2

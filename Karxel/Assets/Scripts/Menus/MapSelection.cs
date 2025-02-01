@@ -1,6 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -20,6 +19,8 @@ public class MapSelection : NetworkBehaviour
     private List<int> _playerVotes = new();
 
     private float _timeLeft;
+    private bool _selected;
+    private int _selectedCount;
     
     private void Start()
     {
@@ -58,9 +59,11 @@ public class MapSelection : NetworkBehaviour
     private void OnTogglePressed(int toggleIndex)
     {
         if (_toggles[toggleIndex].isOn)
-            CmdUpdateVotes(toggleIndex, 1);
+            CmdUpdateVotes(toggleIndex, 1, _selected);
         else
-            CmdUpdateVotes(toggleIndex, -1);
+            CmdUpdateVotes(toggleIndex, -1, _selected);
+        
+        _selected = true;
     }
 
     [Command(requiresAuthority = false)]
@@ -89,9 +92,16 @@ public class MapSelection : NetworkBehaviour
     
 
     [Command(requiresAuthority = false)]
-    private void CmdUpdateVotes(int toggleIndex, int change)
+    private void CmdUpdateVotes(int toggleIndex, int change, bool hadAlreadySelected)
     {
         RpcUpdateVotes(toggleIndex, change);
+        
+        if(hadAlreadySelected)
+            return;
+        
+        _selectedCount++;
+        if (_selectedCount == NetworkServer.connections.Count)
+            RpcSkipTimer();
     }
     
     [ClientRpc]
@@ -111,6 +121,13 @@ public class MapSelection : NetworkBehaviour
             for (int i = 0; i < voteDiff; i++)
                 Instantiate(voteIcon, _voteGroups[toggleIndex]);
         }
+    }
+
+    [ClientRpc]
+    private void RpcSkipTimer()
+    {
+        if(_timeLeft > 2f)
+            _timeLeft = 1.99f;
     }
 
     [ClientRpc]

@@ -10,12 +10,13 @@ public class GridMouseInteraction : MonoBehaviour
     private Camera _mainCamera;
     private TileData _hoveredTile;
     private Unit _selectedUnit;
+    private UnitStatDisplay _statDisplay;
     
     private Vector3 _prevMousePos;
     private List<MoveCommand> _highlightedMoveTiles = new();
     private List<Vector2Int> _previewTiles = new();
     private Attack _currentAttack;
-
+    
     private bool _hasSubmitted;
     private string _playerId = "";
 
@@ -55,6 +56,8 @@ public class GridMouseInteraction : MonoBehaviour
                 if(_hoveredTile != null)
                     MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
 
+                HideUnitDisplay();
+                
                 if (GameManager.Instance.gameState == GameState.Movement)
                     RemoveAllPreviewTiles();
                 
@@ -78,6 +81,8 @@ public class GridMouseInteraction : MonoBehaviour
                 
                 UpdateHoverMarker(hoveredPosition);
                 _hoveredTile = newHoveredTile;
+                
+                CheckForUnitHovered();
             }
             
             if(!_hasSubmitted)
@@ -89,6 +94,9 @@ public class GridMouseInteraction : MonoBehaviour
             if(_currentAttack != null)
                 foreach (var tile in _currentAttack.Tiles)
                     MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
+
+            if(!EventSystem.current.IsPointerOverGameObject())
+                HideUnitDisplay();
             
             if(_hoveredTile == null)
                 return;
@@ -173,11 +181,37 @@ public class GridMouseInteraction : MonoBehaviour
         }
     }
 
+    private void HideUnitDisplay()
+    {
+        if(_statDisplay == null)
+            return;
+        
+        _statDisplay.UpdateVisibility(false);
+    }
+
+    private void CheckForUnitHovered()
+    {
+        if(_statDisplay == null)
+            return;
+        
+        if (_hoveredTile.Unit == null)
+        {
+            HideUnitDisplay();
+            return;
+        }
+        
+        _statDisplay.UpdateVisibility(true);
+        _statDisplay.UpdateDisplayText(_hoveredTile.Unit.Data);
+    }
+
     // Used to handle the unit selection and highlight the reachable tiles
     private void CheckForMouseInteraction()
     {
         // Interaction with units can only occur if a card is currently selected
-        if (!Input.GetMouseButtonDown(0) || HandManager.Instance.SelectedCard == null) 
+        if (!Input.GetMouseButtonDown(0)) 
+            return;
+        
+        if(HandManager.Instance.SelectedCard == null)
             return;
         
         var cardValues = HandManager.Instance.SelectedCard.CardData;
@@ -308,6 +342,7 @@ public class GridMouseInteraction : MonoBehaviour
     {
         GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
         _playerId = GameManager.Instance.localPlayer.netId.ToString();
+        _statDisplay = FindObjectOfType<UnitStatDisplay>();
         
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         HandManager.Instance.cardDeselected.AddListener(OnCardDeselected);

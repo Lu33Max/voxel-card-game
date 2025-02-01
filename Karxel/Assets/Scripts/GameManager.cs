@@ -90,7 +90,6 @@ public class GameManager : NetworkBehaviour
         }
         
         Instance = this;
-        Debug.Log(SceneData.MapIndex);
     }
     
     private void Update()
