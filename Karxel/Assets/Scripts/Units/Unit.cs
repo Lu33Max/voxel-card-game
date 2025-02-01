@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
@@ -15,6 +17,9 @@ public abstract class Unit : NetworkBehaviour
     [SerializeField] protected UnitData data;
     [SerializeField] private int moveLimit = 3;
     [SerializeField] private int attackLimit = 1;
+    
+    [Header("Movement")] 
+    [SerializeField] private float moveArcHeight = 0.1f;
     
     [Header("Visualization")]
     [SerializeField] private GameObject canvas;
@@ -154,21 +159,28 @@ public abstract class Unit : NetworkBehaviour
         
         Quaternion targetRotation = Quaternion.LookRotation(direction);
         
-        while (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-        {
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 8 * Time.deltaTime);
-            yield return new WaitForEndOfFrame();
-        }
-        transform.rotation = targetRotation;
-        
         float elapsedTime = 0;
         
         while (elapsedTime < data.stepDuration)
         {
-            transform.position = Vector3.Lerp(startingPos, targetPos, elapsedTime / data.stepDuration);
+            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+            }
+            
+            var progression = elapsedTime / data.stepDuration;
+            var newPos = Vector3.Lerp(startingPos, targetPos, progression);
+
+            var baseHeight = Mathf.Lerp(startingPos.y, targetPos.y, progression);
+            float height = 4 * moveArcHeight * progression * (1 - progression);  // Parabel: maximale Höhe bei t=0.5
+            newPos.y = baseHeight + height;
+
+            transform.position = newPos;
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
+        
+        transform.rotation = targetRotation;
         transform.position = targetPos;
     }
 
