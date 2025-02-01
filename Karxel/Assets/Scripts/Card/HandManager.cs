@@ -11,6 +11,7 @@ public class HandManager : MonoBehaviour
     public UnityEvent cardDeselected = new();
     
     [SerializeField] private GameObject cardPrefab;
+    [SerializeField] private AudioClip drawCardSound;
 
     [Header("Canvas Ref")]
     [SerializeField] private float canvasWidth = 1920;
@@ -75,6 +76,8 @@ public class HandManager : MonoBehaviour
         
         if(SelectedCard != null)
             DeselectCurrentCard();
+        else
+            AudioManager.Instance.PlaySFX(drawCardSound);
         
         UpdateCardPositions(GameManager.Instance.gameState);
     }
@@ -95,6 +98,10 @@ public class HandManager : MonoBehaviour
             return;
         }
         
+        AudioManager.Instance.PlaySFX(drawCardSound);
+        
+        cardDeselected.Invoke();
+        
         SelectedCard = clickedCard;
         SelectedCard.UpdateYPosition(cardRaisedY);
         
@@ -111,11 +118,14 @@ public class HandManager : MonoBehaviour
         
         mouseFollower.ClearUIElement();
         
+        AudioManager.Instance.PlaySFX(drawCardSound);
         UpdateCardPositions(GameManager.Instance.gameState);
     }
 
     public void DeselectCurrentCard()
     {
+        AudioManager.Instance.PlaySFX(drawCardSound);
+        
         cardDeselected?.Invoke();
         SelectedCard.UpdateYPosition(cardRegularY);
         SelectedCard = null;

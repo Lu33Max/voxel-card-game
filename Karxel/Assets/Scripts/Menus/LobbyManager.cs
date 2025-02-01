@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
@@ -30,7 +31,6 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private GameObject teamSelection;
     [SerializeField] private GameObject mapSelection;
     
-    NetworkManager _networkManager;
     private NetworkRoom _roomManager;
     private SteamLobby _steamLobby;
 
@@ -40,8 +40,9 @@ public class LobbyManager : NetworkBehaviour
     private void Awake()
     {
         _roomManager = FindObjectOfType<NetworkRoom>();
-        _networkManager = FindObjectOfType<NetworkManager>();
         _steamLobby = FindObjectOfType<SteamLobby>();
+        
+        AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
     }
 
     public override void OnStartServer()

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -48,6 +49,8 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private int movementTime;
     [SerializeField] private int submitTime;
+    [SerializeField] private AudioClip timerRegular;
+    [SerializeField] private AudioClip timerEnding;
 
     [Header("Phase Display")]
     [SerializeField] private List<Image> phaseDisplays;
@@ -59,7 +62,7 @@ public class GameManager : NetworkBehaviour
 
     [SyncVar(hook = nameof(OnUpdateRedText))] private string _redPlayerText;
     [SyncVar(hook = nameof(OnUpdateBlueText))] private string _bluePlayerText;
-
+    
     private int _roundCounter = 1;
     
     private int _redSubmit;
@@ -77,6 +80,7 @@ public class GameManager : NetworkBehaviour
     private int _unitsDoneAttacking;
 
     private HashSet<Team> _defeatedKings = new();
+    private AudioSource _timerAudio;
 
     private bool _timerActive;
     [SyncVar(hook = nameof(UpdateTimerText))] private float _timeLeft;
@@ -90,8 +94,15 @@ public class GameManager : NetworkBehaviour
         }
         
         Instance = this;
+        _timerAudio = gameObject.AddComponent<AudioSource>();
+        _timerAudio.playOnAwake = false;
     }
-    
+
+    private void Start()
+    {
+        AudioManager.Instance.PlayMusic(AudioManager.Instance.CombatMusic);
+    }
+
     private void Update()
     {
         if(!isServer)
@@ -408,8 +419,16 @@ public class GameManager : NetworkBehaviour
         var totalSeconds = Mathf.FloorToInt(newTime);
         var minuteDisplay = Mathf.FloorToInt(totalSeconds / 60f);
         var secondDisplay = (totalSeconds - minuteDisplay * 60).ToString().PadLeft(2, '0');
+        var newText = $"{minuteDisplay}:{secondDisplay}";
 
-        timerText.text = $"{minuteDisplay}:{secondDisplay}";
+        if (_timeLeft <= submitTime + 1 && timerText.text != newText)
+        {
+            var pitch = 1 + (submitTime - totalSeconds) * 0.02f;
+            AudioManager.PlaySFX(_timerAudio, _timeLeft >= 4 ? timerRegular : timerEnding, pitch, pitch);
+        }
+        
+        timerText.color = _timeLeft > submitTime + 1 ? Color.white : Color.red;
+        timerText.text = newText;
     }
 
     private void OnUpdateRedText(string old, string newText)

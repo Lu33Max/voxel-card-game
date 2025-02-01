@@ -573,7 +573,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.735849, g: 0.735849, b: 0.735849, a: 0.2784314}
+  m_Color: {r: 0.735849, g: 0.735849, b: 0.735849, a: 0.5803922}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -741,6 +741,7 @@ MonoBehaviour:
       m_Calls: []
   cardPrefab: {fileID: 2066143520017698908, guid: 9d568b1b56277944ba309d70caa4c968,
     type: 3}
+  drawCardSound: {fileID: 8300000, guid: 43976fc52470dbe43ab58b7d7ca29219, type: 3}
   canvasWidth: 1080
   canvasHeight: 607
   cardWidth: 100

@@ -20,6 +20,7 @@ public abstract class Unit : NetworkBehaviour
     
     [Header("Movement")] 
     [SerializeField] private float moveArcHeight = 0.1f;
+    [SerializeField] private AudioClip moveSFX;
     
     [Header("Visualization")]
     [SerializeField] private GameObject canvas;
@@ -47,6 +48,7 @@ public abstract class Unit : NetworkBehaviour
     
     private Transform _camera;
     private MeshRenderer _renderer;
+    private AudioSource _sfxSource;
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -66,6 +68,7 @@ public abstract class Unit : NetworkBehaviour
     {
         _camera = Camera.main.transform;
         _renderer = GetComponentInChildren<MeshRenderer>();
+        _sfxSource = GetComponent<AudioSource>();
         
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         
@@ -158,21 +161,21 @@ public abstract class Unit : NetworkBehaviour
         direction.y = 0;
         
         Quaternion targetRotation = Quaternion.LookRotation(direction);
+        AudioManager.PlaySFX(_sfxSource, moveSFX);
         
         float elapsedTime = 0;
         
         while (elapsedTime < data.stepDuration)
         {
             if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-            {
                 transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
-            }
             
             var progression = elapsedTime / data.stepDuration;
             var newPos = Vector3.Lerp(startingPos, targetPos, progression);
-
+            
+            // Parabolic movement
             var baseHeight = Mathf.Lerp(startingPos.y, targetPos.y, progression);
-            float height = 4 * moveArcHeight * progression * (1 - progression);  // Parabel: maximale Höhe bei t=0.5
+            var height = 4 * moveArcHeight * progression * (1 - progression);
             newPos.y = baseHeight + height;
 
             transform.position = newPos;

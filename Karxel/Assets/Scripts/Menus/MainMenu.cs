@@ -25,6 +25,7 @@ public class MainMenu : MonoBehaviour
     private void Start()
     {
         SteamLobby lobby = NetworkManager.singleton.GetComponent<SteamLobby>();
+        AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
         
         // Steam lobby will be null for testing with localhost
         if(lobby != null)

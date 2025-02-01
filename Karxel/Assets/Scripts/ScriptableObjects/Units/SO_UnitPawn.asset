@@ -19,5 +19,5 @@ MonoBehaviour:
     ATTACKER'
   health: 5
   moveAmount: 1
-  attackDamage: 3
+  attackDamage: 2
   stepDuration: 0.15
