@@ -5,7 +5,6 @@ using System.Linq;
 using Mirror;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
@@ -20,7 +19,6 @@ public abstract class Unit : NetworkBehaviour
     
     [Header("Movement")] 
     [SerializeField] private float moveArcHeight = 0.1f;
-    [SerializeField] private AudioClip moveSFX;
     
     [Header("Visualization")]
     [SerializeField] private GameObject canvas;
@@ -161,7 +159,7 @@ public abstract class Unit : NetworkBehaviour
         direction.y = 0;
         
         Quaternion targetRotation = Quaternion.LookRotation(direction);
-        AudioManager.PlaySFX(_sfxSource, moveSFX);
+        AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitMove);
         
         float elapsedTime = 0;
         
@@ -190,7 +188,29 @@ public abstract class Unit : NetworkBehaviour
     /// <summary>Used to play animations, sfx etc.</summary>
     protected virtual IEnumerator Attack(Attack attack)
     {
-        yield return new WaitForSeconds(2);
+        Vector3 startingPos = transform.position;
+        Vector3 direction = GridManager.Instance.GridToWorldPosition(attack.Tiles[0]) - startingPos;
+        direction.y = 0;
+        
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        
+        var elapsedTime = 0f;
+
+        while (elapsedTime < data.stepDuration)
+        {
+            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+
+            var newPos = transform.position;
+            var progression = elapsedTime / data.stepDuration;
+            newPos.y = startingPos.y + 4 * moveArcHeight * progression * (1 - progression);
+            
+            transform.position = newPos;
+            
+            elapsedTime += Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        
         GameManager.Instance.CmdUnitAttackDone();
     }
     
@@ -258,16 +278,11 @@ public abstract class Unit : NetworkBehaviour
         
         if(GameManager.Instance.gameState == GameState.Movement)
             for(int i = 0; i < displayCount - (moveLimit - MoveIntent.Count); i++)
-            {
                 Destroy(actionDisplayParent.GetChild(i).gameObject);
-            }
         
         else if(GameManager.Instance.gameState == GameState.Attack)
             for(int i = 0; i < displayCount - (attackLimit - AttackIntent.Count); i++)
-            {
                 Destroy(actionDisplayParent.GetChild(i).gameObject);
-                displayCount--;
-            }
     }
 
     private void ClearActionDisplay()
@@ -327,6 +342,7 @@ public abstract class Unit : NetworkBehaviour
                 ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentShield}]", 
                     null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
                 
+                AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitHurt);
                 return;
             }
             
@@ -338,6 +354,9 @@ public abstract class Unit : NetworkBehaviour
         }
         
         _currentHealth = Mathf.Clamp(_currentHealth + changeLeft, 0, data.health);
+        
+        if(changeAmount < 0)
+            AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitHurt);
         
         // Logging
         if(changeAmount < 0)

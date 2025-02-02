@@ -15,11 +15,19 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip buttonPressed;
     [SerializeField] private AudioClip menuMusic;
     [SerializeField] private AudioClip combatMusic;
+    
+    [Header("Unit Sounds")]
+    [SerializeField] private AudioClip unitMove;
+    [SerializeField] private AudioClip unitAttack;
+    [SerializeField] private AudioClip unitHurt;
 
     public AudioClip ButtonHover => buttonHover;
     public AudioClip ButtonPressed => buttonPressed;
     public AudioClip MenuMusic => menuMusic;
     public AudioClip CombatMusic => combatMusic;
+    public AudioClip UnitMove => unitMove;
+    public AudioClip UnitAttack => unitAttack;
+    public AudioClip UnitHurt => unitHurt;
 
     public static float SfxVolume { get; private set; } = 1f;
     public static float MusicVolume { get; private set; } = 1f;

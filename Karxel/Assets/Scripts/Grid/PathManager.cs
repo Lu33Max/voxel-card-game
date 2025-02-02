@@ -9,7 +9,7 @@ public class PathManager : NetworkBehaviour
     
     [SerializeField] private GameObject pathPrefab;
     
-    private List<GameObject> _activePaths = new();
+    private Dictionary<Vector2Int, PathRenderer> _activePaths = new();
     
     private void Awake()
     {
@@ -45,19 +45,10 @@ public class PathManager : NetworkBehaviour
     
     public void ClearAllPaths()
     {
-        foreach (GameObject path in _activePaths)
-            Destroy(path);
+        foreach (PathRenderer path in _activePaths.Values)
+            Destroy(path.gameObject);
         
         _activePaths.Clear();
-    }
-    
-    public void RemovePath(GameObject path)
-    {
-        if (_activePaths.Contains(path))
-        {
-            _activePaths.Remove(path);
-            Destroy(path);
-        }
     }
     
     [Server]
@@ -75,11 +66,17 @@ public class PathManager : NetworkBehaviour
         // Do not show the path to players of the opposing team
         if(unit == null || GameManager.Instance.localPlayer.team != unit.owningTeam)
             return;
+
+        if (_activePaths.TryGetValue(unitPosition, out var path))
+        {
+            path.AppendToPath(moveCommand);
+            return;
+        }
         
         GameObject newPath = Instantiate(pathPrefab, Vector3.zero, Quaternion.identity, transform);
-        _activePaths.Add(newPath);
-        
         PathRenderer pathRenderer = newPath.GetComponent<PathRenderer>();
+        
+        _activePaths.Add(start, pathRenderer);
         
         if (pathRenderer != null)
             pathRenderer.DrawPath(moveCommand, start);

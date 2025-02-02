@@ -21,7 +21,7 @@ public class PathRenderer : NetworkBehaviour
         {
             var tilePos = GridManager.Instance.GridToWorldPosition(tile);
 
-            if (Math.Abs(tilePos.y - positions.Last().y) > 0.01)
+            if (Math.Abs(tilePos.y - positions.Last().y) > 0.1)
             {
                 var previous = positions.Last();
                 var diffVec = tilePos - previous;
@@ -38,6 +38,38 @@ public class PathRenderer : NetworkBehaviour
         
         lineRenderer.positionCount = positions.Count;
         lineRenderer.SetPositions(positions.ToArray());
+        lineRenderer.generateLightingData = false;
+        lineRenderer.widthMultiplier = 0.05f;
+    }
+
+    public void AppendToPath(MoveCommand command)
+    {
+        List<Vector3> positions = new();
+        positions.Add(lineRenderer.GetPosition(lineRenderer.positionCount - 1));
+        
+        foreach (var tile in command.Path.Append(command.TargetPosition))
+        {
+            var tilePos = GridManager.Instance.GridToWorldPosition(tile);
+
+            if (Math.Abs(tilePos.y - positions.Last().y) > 0.01)
+            {
+                var previous = positions.Last();
+                var diffVec = tilePos - previous;
+
+                positions.Add(new Vector3(previous.x + diffVec.x / 2 + Sign(diffVec.x) * groundOffset,
+                    previous.y + groundOffset, previous.z + diffVec.z / 2 + Sign(diffVec.z) * groundOffset));
+                positions.Add(new Vector3(previous.x + diffVec.x / 2 + Sign(diffVec.x) * groundOffset,
+                    tilePos.y + groundOffset, previous.z + diffVec.z / 2 + Sign(diffVec.z) * groundOffset));
+            }
+
+            tilePos.y += groundOffset;
+            positions.Add(tilePos);
+
+            var positionCount = lineRenderer.positionCount;
+            positionCount++;
+            lineRenderer.positionCount = positionCount;
+            lineRenderer.SetPosition(positionCount - 1, tilePos);
+        }
     }
 
     private float Sign(float num)

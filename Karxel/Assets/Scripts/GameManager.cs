@@ -331,7 +331,9 @@ public class GameManager : NetworkBehaviour
         
         if (!attacksToExecute.Any())
         {
+            RPCPlayRoundChangeSound();
             UpdateGameState(GameState.Movement);
+            
             _roundCounter++;
             RPCInvokeNewRound(_roundCounter);
             
@@ -421,7 +423,7 @@ public class GameManager : NetworkBehaviour
         var secondDisplay = (totalSeconds - minuteDisplay * 60).ToString().PadLeft(2, '0');
         var newText = $"{minuteDisplay}:{secondDisplay}";
 
-        if (_timeLeft <= submitTime + 1 && timerText.text != newText)
+        if (_timeLeft <= submitTime + 1 && _timeLeft > 0 && timerText.text != newText)
         {
             var pitch = 1 + (submitTime - totalSeconds) * 0.02f;
             AudioManager.PlaySFX(_timerAudio, _timeLeft >= 4 ? timerRegular : timerEnding, pitch, pitch);
@@ -522,6 +524,7 @@ public class GameManager : NetworkBehaviour
         _timeLeft = movementTime;
         _timerActive = true;
 
+        RPCPlayRoundChangeSound();
         UpdateGameState(GameState.Attack);
     }
 
@@ -593,6 +596,13 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokeNewRound(int count)
     {
         NewRound?.Invoke(count);
+    }
+
+    [ClientRpc]
+    private void RPCPlayRoundChangeSound()
+    {
+        AudioManager.PlaySFX(_timerAudio, timerEnding, 1.2f, 1.2f);
+        AudioManager.PlaySFX(_timerAudio, timerEnding, 1.22f, 1.22f);
     }
 
     [Command(requiresAuthority = false)]

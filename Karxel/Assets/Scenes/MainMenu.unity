@@ -14315,7 +14315,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb76f14396f3b8e45bc01017de102b93, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicVol: 0.4
+  musicVol: 1
   sfxVol: 1
   musicSource: {fileID: 1256858801}
   sfxSource: {fileID: 1897636234}
@@ -14323,6 +14323,9 @@ MonoBehaviour:
   buttonPressed: {fileID: 8300000, guid: af764a643b17df145b204cfc6a45a330, type: 3}
   menuMusic: {fileID: 8300000, guid: 1938a7fc990e33c489f5455de6cbf624, type: 3}
   combatMusic: {fileID: 8300000, guid: e64c602995cf3eb4092e2ef787d7785f, type: 3}
+  unitMove: {fileID: 8300000, guid: d1418f18eca4d5a41a15148e46848f85, type: 3}
+  unitAttack: {fileID: 8300000, guid: ad85e2d10122c9c4d8de7c9aff8c8702, type: 3}
+  unitHurt: {fileID: 8300000, guid: 96cea2a5b6e609847a961de6e690ef69, type: 3}
 --- !u!4 &775857365
 Transform:
   m_ObjectHideFlags: 0
