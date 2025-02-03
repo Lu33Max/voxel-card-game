@@ -78,9 +78,11 @@ public class GridMouseInteraction : MonoBehaviour
             {
                 if (HandManager.Instance != null && HandManager.Instance.SelectedCard != null)
                 {
-                    if(GameManager.Instance.gameState == GameState.Movement)
+                    var cardData = HandManager.Instance.SelectedCard.CardData;
+                    
+                    if(GameManager.Instance.gameState == GameState.Movement && cardData.cardType == CardType.Move)
                         DisplayMovePreviewTiles(newHoveredTile);
-                    else if(GameManager.Instance.gameState == GameState.Attack)
+                    else if(GameManager.Instance.gameState == GameState.Attack && cardData.cardType == CardType.Attack)
                         DisplayAttackPreviewTiles(newHoveredTile);
                 }
                 
@@ -119,7 +121,9 @@ public class GridMouseInteraction : MonoBehaviour
         RemoveAllPreviewTiles();
 
         if (newHoveredTile == null || newHoveredTile.Unit == null || _selectedUnit != null ||
-            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team || !newHoveredTile.Unit.CanBeSelected()) 
+            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team ||
+            !newHoveredTile.Unit.CanBeSelected() || HandManager.Instance.SelectedCard == null ||
+            HandManager.Instance.SelectedCard.CardData.cardType != CardType.Move) 
             return;
         
         var card = HandManager.Instance.SelectedCard;
@@ -143,7 +147,9 @@ public class GridMouseInteraction : MonoBehaviour
         RemoveAllPreviewTiles();
         
         if (newHoveredTile == null || newHoveredTile.Unit == null || _selectedUnit != null ||
-            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team || !newHoveredTile.Unit.CanBeSelected()) 
+            newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team ||
+            !newHoveredTile.Unit.CanBeSelected() || HandManager.Instance.SelectedCard == null ||
+            HandManager.Instance.SelectedCard.CardData.cardType != CardType.Attack) 
             return;
         
         var card = HandManager.Instance.SelectedCard;
@@ -250,16 +256,32 @@ public class GridMouseInteraction : MonoBehaviour
         // If the player has no unit selected, try selecting the hovered one and highlight its movement range
         if (_selectedUnit == null)
         {
-            if(_hoveredTile.Unit == null || _hoveredTile.Unit.owningTeam != player.team || _hoveredTile.Unit.isControlled)
+            if(_hoveredTile.Unit == null)
                 return;
 
-            if (gameState == GameState.Movement && cardValues.cardType != CardType.Move)
+            if (cardValues.cardType == CardType.Stun && _hoveredTile.Unit.owningTeam != player.team && !_hoveredTile.Unit.SetForSkip)
             {
-                if(cardValues.cardType == CardType.Heal)
-                    _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
-                
-                else if (cardValues.cardType == CardType.Shield)
-                    _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
+                _hoveredTile.Unit.CmdUpdateTurnSkip();
+                HandManager.Instance.PlaySelectedCard();
+                return;
+            }
+            
+            if(_hoveredTile.Unit.owningTeam != player.team || _hoveredTile.Unit.isControlled)
+                return;
+
+            if (cardValues.cardType != CardType.Move && cardValues.cardType != CardType.Attack)
+            {
+                switch (cardValues.cardType)
+                {
+                    case CardType.Heal:
+                        _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
+                        break;
+                    case CardType.Shield:
+                        _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
+                        break;
+                    default:
+                        return;
+                }
                 
                 HandManager.Instance.PlaySelectedCard();
                 return;

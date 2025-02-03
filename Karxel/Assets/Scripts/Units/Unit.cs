@@ -40,9 +40,11 @@ public abstract class Unit : NetworkBehaviour
     protected List<MoveCommand> MoveIntent { get; } = new();
     public List<Attack> AttackIntent { get; } = new();
     public UnitData Data => data;
+    public bool SetForSkip => _turnToSkip != GameState.Empty;
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
     [SyncVar(hook = nameof(OnShieldUpdated))] private int _currentShield;
+    [SyncVar(hook = nameof(OnTurnSkipUpdated))] private GameState _turnToSkip = GameState.Empty;
     
     private Transform _camera;
     private MeshRenderer _renderer;
@@ -133,8 +135,8 @@ public abstract class Unit : NetworkBehaviour
     {
         var state = GameManager.Instance.gameState;
         
-        return (state == GameState.Attack && AttackIntent.Count < attackLimit) ||
-               (state == GameState.Movement && MoveIntent.Count < moveLimit);
+        return ((state == GameState.Attack && AttackIntent.Count < attackLimit) ||
+               (state == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip == GameState.Empty;
     }
     
     // Move the unit along the given path from tile to tile
@@ -304,24 +306,64 @@ public abstract class Unit : NetworkBehaviour
             return;
         
         ClearActionDisplay();
-        
-        if(newState == GameState.Movement)
+
+        if (_turnToSkip != GameState.Empty)
+        {
+            var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
+            newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Stun);
+        }
+        else if(newState == GameState.Movement)
             for(var i = 0; i < moveLimit; i++)
             {
                 var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
-                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(true);
+                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Move);
             }
         else if(newState == GameState.Attack)
             for(var i = 0; i < attackLimit; i++)
             {
                 var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
-                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(false);
+                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Attack);
             }
     }
 
     private void OnGameStateChanged(GameState newState)
     {
+        if(isServer)
+            CheckForSkipMove(newState);
+        
         UpdateActionDisplayOnStateUpdate(newState);
+    }
+
+    [Server]
+    private void CheckForSkipMove(GameState newState)
+    {
+        if(newState != GameState.Attack && newState != GameState.Movement)
+            return;
+        
+        if (newState == _turnToSkip)
+            return;
+        
+        _turnToSkip = GameState.Empty;
+    }
+
+    private void OnTurnSkipUpdated(GameState old, GameState newTurnToSkip)
+    {
+        if (owningTeam == GameManager.Instance.localPlayer.team)
+        {
+            if (newTurnToSkip == GameState.Empty)
+                UpdateActionDisplayOnStateUpdate(GameManager.Instance.gameState);
+            
+            return;
+        }
+
+        if (newTurnToSkip == GameState.Empty && actionDisplayParent.childCount > 0)
+        {
+            Destroy(actionDisplayParent.GetChild(0).gameObject); 
+            return;
+        }
+
+        var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
+        newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Stun);
     }
 
     [Server]
@@ -435,6 +477,12 @@ public abstract class Unit : NetworkBehaviour
     public void CmdUpdateControlStatus(bool newState)
     {
         isControlled = newState;
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdUpdateTurnSkip()
+    {
+        _turnToSkip = GameManager.Instance.gameState == GameState.Movement ? GameState.Attack : GameState.Movement;
     }
     
     [ClientRpc]

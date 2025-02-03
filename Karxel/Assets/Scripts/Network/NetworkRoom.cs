@@ -27,6 +27,7 @@ public class NetworkRoom : NetworkRoomManager
 
     public override void OnRoomServerPlayersReady()
     {
-        Debug.Log("All players ready. Host can start the game now.");
+        //Debug.Log("All players ready. Host can start the game now.");
+        // TODO: StartGameButton interactable
     }
 }

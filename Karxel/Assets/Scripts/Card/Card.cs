@@ -75,7 +75,7 @@ public class Card : MonoBehaviour
     public bool IsCorrectPhase(GameState state)
     {
         return state == GameState.Movement && CardData.cardType != CardType.Attack ||
-               state == GameState.Attack && CardData.cardType == CardType.Attack;
+               state == GameState.Attack && CardData.cardType != CardType.Move;
     }
     
     private bool CanBeSelected(GameState state)

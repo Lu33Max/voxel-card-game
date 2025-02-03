@@ -16,7 +16,8 @@ public enum GameState
     MovementExecution,
     AttackExecution,
     PreStart,
-    Win
+    Win,
+    Empty
 }
 
 public class GameManager : NetworkBehaviour

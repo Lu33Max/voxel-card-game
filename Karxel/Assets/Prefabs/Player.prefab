@@ -644,9 +644,9 @@ MonoBehaviour:
   actionPointsUpdated:
     m_PersistentCalls:
       m_Calls: []
-  startPoints: 20
-  maxPoints: 20
-  pointsPerRound: 10
+  startPoints: 16
+  maxPoints: 16
+  pointsPerRound: 8
   actionText: {fileID: 6078908742282275424}
 --- !u!114 &7051883379787249094
 MonoBehaviour:
@@ -685,7 +685,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7a57b73b9772c4f4bbda34e0857482fa, type: 2}
   - {fileID: 11400000, guid: 7a57b73b9772c4f4bbda34e0857482fa, type: 2}
   - {fileID: 11400000, guid: 7a57b73b9772c4f4bbda34e0857482fa, type: 2}
-  - {fileID: 11400000, guid: 7a57b73b9772c4f4bbda34e0857482fa, type: 2}
+  - {fileID: 11400000, guid: dd9e26e1a743d1149afdae396209138d, type: 2}
+  - {fileID: 11400000, guid: dd9e26e1a743d1149afdae396209138d, type: 2}
   drawCardCost: 1
 --- !u!1 &2269703296210228593
 GameObject:

@@ -91,3 +91,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveIcon: {fileID: 21300000, guid: 48107ef0ecbdbf949b36c0efff39ee48, type: 3}
   attackIcon: {fileID: 21300000, guid: 0d153de8076d59240b511ca4fc86bd39, type: 3}
+  stunIcon: {fileID: 21300000, guid: b845656376334c045939320691063b7d, type: 3}
