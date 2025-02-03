@@ -28,7 +28,19 @@ public class ArcherUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override Attack GetValidAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
+    public override List<Vector2Int> GetValidAttackTiles(int attackRange)
+    {
+        var directions = new List<Vector2Int> { new(-1, -1), new(1, -1), new(1, 1), new(-1, 1) };
+        var tiles = new List<Vector2Int>();
+
+        foreach (var dir in directions)
+            tiles.AddRange(new List<Vector2Int> { TilePosition + dir * 3, TilePosition + dir * 2, TilePosition + dir }
+                .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList());
+
+        return tiles;
+    }
+
+    public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
         Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
     {
         var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition);

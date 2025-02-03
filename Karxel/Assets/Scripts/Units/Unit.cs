@@ -52,6 +52,8 @@ public abstract class Unit : NetworkBehaviour
     /// <param name="movementRange">The movement range given by the played card</param>
     public abstract List<MoveCommand> GetValidMoves(int movementRange);
 
+    public abstract List<Vector2Int> GetValidAttackTiles(int attackRange);
+
     /// <summary>Get all tiles that would be effected by an attack. Only includes valid tiles.</summary>
     /// <param name="attackRange">The attack range given by the played card</param>
     /// <param name="damageMultiplier">The damage multiplier given by the played card</param>
@@ -59,7 +61,7 @@ public abstract class Unit : NetworkBehaviour
     /// <param name="previousPosition">Previous Mouse position on the board</param>
     /// <param name="shouldBreak">Whether the method should return early in case of the same calc results</param>
     /// <param name="hasChanged">Whether the effected tiles have changed because of mouse movements compared to the last calculation</param>
-    public abstract Attack GetValidAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
+    public abstract Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
         Vector3 previousPosition, bool shouldBreak, out bool hasChanged);
 
     private void Start()
@@ -127,10 +129,9 @@ public abstract class Unit : NetworkBehaviour
             gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }
 
-    public bool CanBeSelected(GameState? state)
+    public bool CanBeSelected()
     {
-        if (state == null)
-            state = GameManager.Instance.gameState;
+        var state = GameManager.Instance.gameState;
         
         return (state == GameState.Attack && AttackIntent.Count < attackLimit) ||
                (state == GameState.Movement && MoveIntent.Count < moveLimit);
@@ -210,6 +211,9 @@ public abstract class Unit : NetworkBehaviour
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
+
+        transform.position = startingPos;
+        transform.rotation = targetRotation;
         
         GameManager.Instance.CmdUnitAttackDone();
     }
@@ -342,7 +346,7 @@ public abstract class Unit : NetworkBehaviour
                 ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentShield}]", 
                     null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
                 
-                AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitHurt);
+                PlayHurtSound();
                 return;
             }
             
@@ -354,9 +358,9 @@ public abstract class Unit : NetworkBehaviour
         }
         
         _currentHealth = Mathf.Clamp(_currentHealth + changeLeft, 0, data.health);
-        
-        if(changeAmount < 0)
-            AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitHurt);
+
+        if (changeAmount < 0)
+            PlayHurtSound();
         
         // Logging
         if(changeAmount < 0)
@@ -474,6 +478,12 @@ public abstract class Unit : NetworkBehaviour
     public void RPCExecuteAttack(Attack attack)
     {
         StartCoroutine(Attack(attack));
+    }
+
+    [ClientRpc]
+    private void PlayHurtSound()
+    {
+        AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitHurt);
     }
 
     [ClientRpc]

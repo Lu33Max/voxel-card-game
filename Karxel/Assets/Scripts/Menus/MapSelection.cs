@@ -13,6 +13,8 @@ public class MapSelection : NetworkBehaviour
 
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private int timerDuration = 10;
+
+    [SerializeField] private AudioClip timerRegular;
     
     private List<Toggle> _toggles = new();
     private List<Transform> _voteGroups = new();
@@ -48,7 +50,12 @@ public class MapSelection : NetworkBehaviour
         if(_timeLeft <= 0 && isServer)
             CmdSelectMap();
 
-        timerText.text = Mathf.FloorToInt(_timeLeft + 1).ToString();
+        var newTime = Mathf.FloorToInt(_timeLeft + 1).ToString();
+
+        if(newTime != timerText.text && _timeLeft < 3)
+            AudioManager.Instance.PlaySFX(timerRegular);
+        
+        timerText.text = newTime;
     }
 
     public void StartTimer()
@@ -112,15 +119,11 @@ public class MapSelection : NetworkBehaviour
         var voteDiff = _playerVotes[toggleIndex] - _voteGroups[toggleIndex].childCount;
 
         if (voteDiff < 0)
-        {
             for (int i = 0; i < Mathf.Abs(voteDiff); i++)
                 Destroy(_voteGroups[toggleIndex].GetChild(i).gameObject);
-        }
         else if (voteDiff > 0)
-        {
             for (int i = 0; i < voteDiff; i++)
                 Instantiate(voteIcon, _voteGroups[toggleIndex]);
-        }
     }
 
     [ClientRpc]

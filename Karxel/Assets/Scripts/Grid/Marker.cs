@@ -75,7 +75,8 @@ public enum MarkerType
     Hover,
     Attack,
     Move,
-    MovePreview
+    MovePreview,
+    AttackPreview
 }
 
 public enum Visibility

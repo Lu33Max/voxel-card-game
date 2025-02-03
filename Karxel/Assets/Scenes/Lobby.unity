@@ -5746,6 +5746,7 @@ MonoBehaviour:
     type: 3}
   timerText: {fileID: 2144066616}
   timerDuration: 10
+  timerRegular: {fileID: 8300000, guid: 6ae92b92612ae3c44a9929bc3fe1181b, type: 3}
 --- !u!114 &291161935
 MonoBehaviour:
   m_ObjectHideFlags: 0
