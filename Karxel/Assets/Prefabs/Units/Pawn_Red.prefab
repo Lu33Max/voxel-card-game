@@ -141,7 +141,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7334153133749704322}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -207,7 +207,6 @@ RectTransform:
   - {fileID: 3259690755904501809}
   - {fileID: 5701004704306569729}
   - {fileID: 825205170841591871}
-  - {fileID: 2453956238619462450}
   m_Father: {fileID: 7334153133749704322}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -707,7 +706,6 @@ MonoBehaviour:
   moveLimit: 3
   attackLimit: 1
   moveArcHeight: 0.1
-  moveSFX: {fileID: 8300000, guid: d1418f18eca4d5a41a15148e46848f85, type: 3}
   canvas: {fileID: 8832811658037376735}
   outlineMaterial: {fileID: 2100000, guid: 3e45ff9464f99514a9a1e4541d6e6d96, type: 2}
   healthSlider: {fileID: 3573873325174700861}
@@ -857,17 +855,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6518011584807965773}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: -1, y: 1, z: 1}
+  m_LocalScale: {x: -0.005, y: 0.005, z: 0.005}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 4929863950695493710}
-  m_RootOrder: 3
+  m_Father: {fileID: 7334153133749704322}
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 25, y: 0}
+  m_AnchoredPosition: {x: 0.125, y: -0.03999999}
   m_SizeDelta: {x: 30, y: 15}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8522930060086942530
@@ -1349,6 +1347,7 @@ RectTransform:
   m_Children:
   - {fileID: 4929863950695493710}
   - {fileID: 8179846980987822391}
+  - {fileID: 2453956238619462450}
   - {fileID: 125750468521461596}
   m_Father: {fileID: 1160365348562669108}
   m_RootOrder: 1

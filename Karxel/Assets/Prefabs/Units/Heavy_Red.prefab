@@ -182,7 +182,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8160294986897397668}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -361,6 +361,7 @@ RectTransform:
   m_Children:
   - {fileID: 7040297625802663443}
   - {fileID: 1524892426434145000}
+  - {fileID: 5392365572247988920}
   - {fileID: 354041762295050373}
   m_Father: {fileID: 1160365348562669108}
   m_RootOrder: 1
@@ -534,15 +535,15 @@ RectTransform:
   m_GameObject: {fileID: 4266014064374077865}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: -1, y: 1, z: 1}
+  m_LocalScale: {x: -0.005, y: 0.005, z: 0.005}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7040297625802663443}
-  m_RootOrder: 3
+  m_Father: {fileID: 8160294986897397668}
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 25, y: 0}
+  m_AnchoredPosition: {x: 0.125, y: -0.02000001}
   m_SizeDelta: {x: 30, y: 15}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2602269116715041730
@@ -979,7 +980,6 @@ MonoBehaviour:
   moveLimit: 3
   attackLimit: 1
   moveArcHeight: 0.1
-  moveSFX: {fileID: 8300000, guid: d1418f18eca4d5a41a15148e46848f85, type: 3}
   canvas: {fileID: 2864708386397120066}
   outlineMaterial: {fileID: 2100000, guid: 3e45ff9464f99514a9a1e4541d6e6d96, type: 2}
   healthSlider: {fileID: 842352017254961672}
@@ -1202,7 +1202,6 @@ RectTransform:
   - {fileID: 6612332695330087023}
   - {fileID: 8499114230570524733}
   - {fileID: 6221687666912796308}
-  - {fileID: 5392365572247988920}
   m_Father: {fileID: 8160294986897397668}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
