@@ -136,7 +136,7 @@ public abstract class Unit : NetworkBehaviour
         var state = GameManager.Instance.gameState;
         
         return ((state == GameState.Attack && AttackIntent.Count < attackLimit) ||
-               (state == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip == GameState.Empty;
+               (state == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip != state;
     }
     
     // Move the unit along the given path from tile to tile
