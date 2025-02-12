@@ -931,6 +931,7 @@ MonoBehaviour:
   moveSprite: {fileID: 21300000, guid: 48107ef0ecbdbf949b36c0efff39ee48, type: 3}
   attackSprite: {fileID: 21300000, guid: 0d153de8076d59240b511ca4fc86bd39, type: 3}
   gameOverScreen: {fileID: 2667252882882763245}
+  attackMarker: {fileID: 21300000, guid: 99ebf46eb6f87b044bbca537bcac7363, type: 3}
 --- !u!114 &2667252884235818846
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using UnityEngine;
 
 public class Marker : MonoBehaviour
 {
+    [SerializeField] private List<MarkerSprite> spriteMap;
+    
     private List<MarkerData> _activeMarkers = new();
     private MarkerData _currentMarker;
     private SpriteRenderer _renderer;
@@ -57,9 +60,21 @@ public class Marker : MonoBehaviour
     
     private void ApplyVisuals(MarkerData markerData)
     {
-        _renderer.color = markerData.MarkerColor;
-        // GetComponentInChildren<SpriteRenderer>().sprite = marker.MarkerIcon;
+        // if(markerData.MarkerIcon == null)
+        //     _renderer.color = markerData.MarkerColor;
+        // else
+        // {
+            _renderer.sprite = spriteMap.First(m => m.Type == markerData.Type).Sprite;
+            _renderer.color = new Color(1, 1, 1, 1);
+        // }
     }
+}
+
+[Serializable]
+public class MarkerSprite
+{
+    public MarkerType Type;
+    public Sprite Sprite;
 }
 
 public class MarkerData
@@ -77,12 +92,4 @@ public enum MarkerType
     Move,
     MovePreview,
     AttackPreview
-}
-
-public enum Visibility
-{
-    Player,
-    Blue,
-    Red,
-    All
 }
