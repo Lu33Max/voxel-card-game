@@ -30,7 +30,7 @@ public class MapSelection : NetworkBehaviour
         {
             var index = i;
             var toggle = mapIconParent.GetChild(i).GetComponent<Toggle>();
-            var group = toggle.GetComponentInChildren<LayoutGroup>().transform;
+            var group = toggle.GetComponentInChildren<HorizontalLayoutGroup>().transform;
             
             toggle.onValueChanged.AddListener(delegate { OnTogglePressed(index);});
             
