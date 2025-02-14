@@ -11,7 +11,7 @@ public class HealerUnit : Unit
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
         
-        var radius = movementRange * baseRange;
+        var radius = movementRange * baseRange + 1;
         
         for (var x = -radius; x <= radius; x++)
         {
@@ -61,7 +61,7 @@ public class HealerUnit : Unit
                 {
                     TilePosition + Vector2Int.up, TilePosition + Vector2Int.left, TilePosition + Vector2Int.down, 
                     TilePosition + Vector2Int.right, TilePosition + new Vector2Int(1, 1), TilePosition + new Vector2Int(-1, 1), 
-                    TilePosition + new Vector2Int(1, -1), TilePosition + new Vector2Int(-1, -1)
+                    TilePosition + new Vector2Int(1, -1), TilePosition + new Vector2Int(-1, -1), TilePosition
                 }
                 .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId

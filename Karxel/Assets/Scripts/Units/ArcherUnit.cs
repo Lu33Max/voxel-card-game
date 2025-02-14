@@ -30,11 +30,15 @@ public class ArcherUnit : Unit
 
     public override List<Vector2Int> GetValidAttackTiles(int attackRange)
     {
-        var directions = new List<Vector2Int> { new(-1, -1), new(1, -1), new(1, 1), new(-1, 1) };
+        List<Vector2Int> directions = new()
+        {
+            new(-1, -3), new(-2, -3), new(-3, -2), new(-3, -1), new(-3, 1), new(-3, 2), new(-2, 3), new(-1, 3),
+            new(1, 3), new(2, 3), new(3, 2), new(3, 1), new(3, -1), new(3, -2), new(2, -3), new(1, -3)
+        };
         var tiles = new List<Vector2Int>();
 
         foreach (var dir in directions)
-            tiles.AddRange(new List<Vector2Int> { TilePosition + dir * 3, TilePosition + dir * 2, TilePosition + dir }
+            tiles.AddRange(new List<Vector2Int> { TilePosition + dir }
                 .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList());
 
         return tiles;
@@ -45,10 +49,10 @@ public class ArcherUnit : Unit
     {
         var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition);
 
-        var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(new(1, 1),
-            new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
-        var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(new(1, 1),
-            new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
+        var newAngle = Mathf.FloorToInt((int)(Vector2.SignedAngle(new(0, 1),
+            new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 22.5f);
+        var oldAngle = Mathf.FloorToInt((int)(Vector2.SignedAngle(new(0, 1),
+            new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 22.5f);
         
         if (newAngle == oldAngle && shouldBreak)
         {
@@ -60,17 +64,29 @@ public class ArcherUnit : Unit
 
         Vector2Int tile = newAngle switch
         {
-            0 => new(-1, -1),
-            1 => new(1, -1),
-            2 => new(1, 1),
-            3 => new(-1, 1),
-            _ => new(-1, -1),
+            15 => new(-1, -3),
+            14 => new(-2, -3),
+            13 => new(-3, -2),
+            12 => new(-3, -1),
+            11=> new(-3, 1),
+            10 => new(-3, 2),
+            9 => new(-2, 3),
+            8 => new(-1, 3),
+            7 => new(1, 3),
+            6 => new(2, 3),
+            5 => new(3, 2),
+            4 => new(3, 1),
+            3 => new(3, -1),
+            2 => new(3, -2),
+            1 => new(2, -3),
+            0 => new(1, -3),
+            _ => new(1, -3),
         };
-
+        
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector2Int> { TilePosition + tile * 3, TilePosition + tile * 2, TilePosition + tile }
+            Tiles = new List<Vector2Int> { TilePosition + tile }
                 .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };

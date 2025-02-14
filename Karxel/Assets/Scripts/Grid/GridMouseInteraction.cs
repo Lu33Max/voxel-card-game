@@ -79,11 +79,18 @@ public class GridMouseInteraction : MonoBehaviour
                 if (HandManager.Instance != null && HandManager.Instance.SelectedCard != null)
                 {
                     var cardData = HandManager.Instance.SelectedCard.CardData;
-                    
-                    if(GameManager.Instance.gameState == GameState.Movement && cardData.cardType == CardType.Move)
+
+                    if (GameManager.Instance.gameState == GameState.Movement && cardData.cardType == CardType.Move)
+                    {
+                        RemoveAllPreviewTiles();
                         DisplayMovePreviewTiles(newHoveredTile);
-                    else if(GameManager.Instance.gameState == GameState.Attack && cardData.cardType == CardType.Attack)
+                    }
+                    else if (GameManager.Instance.gameState == GameState.Attack && cardData.cardType == CardType.Attack)
+                    {
+                        if(_selectedUnit == null)
+                            RemoveAllPreviewTiles();
                         DisplayAttackPreviewTiles(newHoveredTile);
+                    }
                 }
                 
                 UpdateHoverMarker(hoveredPosition);
@@ -108,7 +115,8 @@ public class GridMouseInteraction : MonoBehaviour
             if(_hoveredTile == null)
                 return;
             
-            if (GameManager.Instance.gameState is GameState.Movement or GameState.Attack)
+            if (GameManager.Instance.gameState == GameState.Movement ||
+                (GameManager.Instance.gameState == GameState.Attack && _selectedUnit == null))
                 RemoveAllPreviewTiles();
             
             MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
@@ -118,8 +126,6 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void DisplayMovePreviewTiles(TileData newHoveredTile)
     {
-        RemoveAllPreviewTiles();
-
         if (newHoveredTile == null || newHoveredTile.Unit == null || _selectedUnit != null ||
             newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team ||
             !newHoveredTile.Unit.CanBeSelected() || HandManager.Instance.SelectedCard == null ||
@@ -144,8 +150,6 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void DisplayAttackPreviewTiles(TileData newHoveredTile)
     {
-        RemoveAllPreviewTiles();
-        
         if (newHoveredTile == null || newHoveredTile.Unit == null || _selectedUnit != null ||
             newHoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team ||
             !newHoveredTile.Unit.CanBeSelected() || HandManager.Instance.SelectedCard == null ||
@@ -293,7 +297,6 @@ public class GridMouseInteraction : MonoBehaviour
 
             _selectedUnit = _hoveredTile.Unit;
             _selectedUnit.CmdUpdateControlStatus(true);
-            RemoveAllPreviewTiles();
 
             switch (gameState)
             {
@@ -378,12 +381,14 @@ public class GridMouseInteraction : MonoBehaviour
             case GameState.Movement:
                 foreach (var command in _highlightedMoveTiles)
                     MarkerManager.Instance.RemoveMarkerLocal(command.TargetPosition, MarkerType.Move, _playerId);
+                RemoveAllPreviewTiles();
                 DisplayMovePreviewTiles(_hoveredTile);
                 break;
             case GameState.Attack:
                 if(_currentAttack != null)
                     foreach (var tile in _currentAttack.Tiles)
                         MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
+                RemoveAllPreviewTiles();
                 DisplayAttackPreviewTiles(_hoveredTile);
                 break;
         }
