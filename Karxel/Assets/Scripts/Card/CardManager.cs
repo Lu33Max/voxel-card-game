@@ -10,7 +10,7 @@ public class CardManager : MonoBehaviour
     [SerializeField] private List<CardData> deck;
     [SerializeField] private int drawCardCost = 1;
 
-    private List<CardData> _usedCards = new();
+    private readonly List<CardData> _usedCards = new();
     
     public void Initialize()
     {
@@ -37,7 +37,19 @@ public class CardManager : MonoBehaviour
         }
         
         // Get a random card from the deck and remove it
-        CardData newCard = deck[Random.Range(0, deck.Count)];
+        CardData newCard;
+
+        if (Random.Range(0f, 1f) < 0.5f)
+            newCard = deck[Random.Range(0, deck.Count)];
+        else
+        {
+            newCard = deck.FirstOrDefault(c =>
+                c.cardType == (GameManager.Instance.gameState == GameState.Movement ? CardType.Move : CardType.Attack));
+            
+            if(newCard == null)
+                newCard = deck[Random.Range(0, deck.Count)];
+        }
+        
         deck.Remove(newCard);
         
         HandManager.Instance.AddCardToHand(newCard);
