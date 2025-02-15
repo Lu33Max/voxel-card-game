@@ -326,7 +326,7 @@ public abstract class Unit : NetworkBehaviour
             }
     }
 
-    private void OnGameStateChanged(GameState newState)
+    protected virtual void OnGameStateChanged(GameState newState)
     {
         if(isServer)
             CheckForSkipMove(newState);
@@ -415,7 +415,7 @@ public abstract class Unit : NetworkBehaviour
     }
 
     [Server]
-    private void AddShield(int shieldToAdd)
+    public void AddShield(int shieldToAdd)
     {
         _currentShield = Mathf.Clamp(_currentShield + shieldToAdd, 0, data.health);
         ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_add", $"[{shieldToAdd},{_currentShield}]", 

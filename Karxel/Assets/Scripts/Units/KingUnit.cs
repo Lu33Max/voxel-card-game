@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class KingUnit : Unit
 {
+    [SerializeField] private int shieldGain = 1;
+     
     public override List<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
@@ -80,5 +82,25 @@ public class KingUnit : Unit
             return;
         
         GameManager.Instance.KingDefeated(owningTeam);
+    }
+
+    protected override void OnGameStateChanged(GameState newState)
+    {
+        base.OnGameStateChanged(newState);
+        
+        if(!isServer || newState != GameState.Attack)
+            return;
+        
+        var directions = new List<Vector2Int> { Vector2Int.down, Vector2Int.left, Vector2Int.right, Vector2Int.up, };
+        foreach (var dir in directions)
+        {
+            if(!GridManager.Instance.IsValidGridPosition(TilePosition + dir))
+                continue;
+            
+            var unit = GridManager.Instance.GetTileAtGridPosition(TilePosition + dir).Unit;
+            
+            if(unit != null && unit.owningTeam == owningTeam)
+                unit.AddShield(shieldGain);
+        }
     }
 }
