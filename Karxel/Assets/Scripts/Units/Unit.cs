@@ -408,12 +408,18 @@ public abstract class Unit : NetworkBehaviour
         if(changeAmount < 0)
             ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeLeft},{_currentHealth}]", 
                 null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+        
+        if(changeAmount > 0)
+            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "heal", $"[{changeLeft},{_currentHealth}]", 
+                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }
 
     [Server]
     private void AddShield(int shieldToAdd)
     {
         _currentShield = Mathf.Clamp(_currentShield + shieldToAdd, 0, data.health);
+        ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_add", $"[{shieldToAdd},{_currentShield}]", 
+            null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }
 
     [Server]

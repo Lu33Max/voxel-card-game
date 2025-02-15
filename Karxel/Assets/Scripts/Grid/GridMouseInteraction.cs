@@ -265,6 +265,9 @@ public class GridMouseInteraction : MonoBehaviour
 
             if (cardValues.cardType == CardType.Stun && _hoveredTile.Unit.owningTeam != player.team && !_hoveredTile.Unit.SetForSkip)
             {
+                GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "insult_card", null, 
+                    _hoveredTile.Position.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
+                
                 _hoveredTile.Unit.CmdUpdateTurnSkip();
                 HandManager.Instance.PlaySelectedCard();
                 return;
@@ -278,9 +281,13 @@ public class GridMouseInteraction : MonoBehaviour
                 switch (cardValues.cardType)
                 {
                     case CardType.Heal:
+                        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "heal_card", $"[{cardValues.otherValue}]", 
+                            _hoveredTile.Position.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
                         _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
                         break;
                     case CardType.Shield:
+                        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "shield_card", $"[{cardValues.otherValue}]", 
+                            _hoveredTile.Position.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
                         _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
                         break;
                     default:

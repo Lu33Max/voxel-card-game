@@ -139,6 +139,9 @@ public class HandManager : MonoBehaviour
             return;
 
         _discardCount++;
+        
+        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "discard", $"{{count: {_discardCount}, card: {card.CardData.cardName}}}", 
+            null, null, null, null);
 
         if (_discardCount == discardForActionCount)
         {

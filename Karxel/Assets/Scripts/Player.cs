@@ -62,7 +62,7 @@ public class Player : NetworkBehaviour
         
         // Logging
         GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), team.ToString(), "submit",
-            null, null, null, null, null);
+            $"AP: {ActionPointManager.ActionPoints}", null, null, null, null);
         
         GameManager.Instance.CmdSubmitTurn(team);
     }

@@ -1976,6 +1976,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Logger
       objectReference: {fileID: 0}
+    - target: {fileID: 1034440090585821735, guid: cb7e281ac68591242b05037827fc385b,
+        type: 3}
+      propertyPath: shouldLog
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1034440090585821736, guid: cb7e281ac68591242b05037827fc385b,
         type: 3}
       propertyPath: m_RootOrder
