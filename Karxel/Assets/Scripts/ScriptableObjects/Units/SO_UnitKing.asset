@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: SO_UnitKing
   m_EditorClassIdentifier: 
   unitName: KING
-  unitDescription: 'WEAK IN EVERY REGARD.
+  unitDescription: 'GIVES SHIELD TO UNITS ON ADJACENT TILES.
 
-    DEFEATING THE ENEMY KING RESULTS IN
-    WINNING THE MATCH'
+    DEFEATING THE ENEMY
+    KING RESULTS IN WINNING THE MATCH'
   health: 7
   moveAmount: 1
   attackDamage: 2
