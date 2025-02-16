@@ -16,7 +16,7 @@ MonoBehaviour:
   unitDescription: 'GIVES SHIELD TO UNITS ON ADJACENT TILES.
 
     DEFEATING THE ENEMY
-    KING RESULTS IN WINNING THE MATCH'
+    KING RESULTS IN A WIN'
   health: 7
   moveAmount: 1
   attackDamage: 2
