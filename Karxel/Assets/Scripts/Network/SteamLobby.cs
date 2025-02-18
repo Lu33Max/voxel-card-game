@@ -21,7 +21,7 @@ public class SteamLobby : MonoBehaviour
     protected Callback<LobbyDataUpdate_t> LobbyDataUpdate;
     protected Callback<P2PSessionConnectFail_t> ConnectingFailed;
 
-    public List<CSteamID> lobbyIDs = new();
+    private List<CSteamID> lobbyIDs = new();
 
     public ulong currentLobbyID;
 

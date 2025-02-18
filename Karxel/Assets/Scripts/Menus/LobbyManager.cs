@@ -33,6 +33,7 @@ public class LobbyManager : NetworkBehaviour
     
     private NetworkRoom _roomManager;
     private SteamLobby _steamLobby;
+    private EOSLobby _epicLobby;
 
     private List<CustomRoomPlayer> _bluePlayers = new();
     private List<CustomRoomPlayer> _redPlayers = new();
@@ -41,6 +42,7 @@ public class LobbyManager : NetworkBehaviour
     {
         _roomManager = FindObjectOfType<NetworkRoom>();
         _steamLobby = FindObjectOfType<SteamLobby>();
+        _epicLobby = FindObjectOfType<EOSLobby>();
         
         AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
     }
@@ -49,6 +51,22 @@ public class LobbyManager : NetworkBehaviour
     {
         base.OnStartServer();
         startBtn.gameObject.SetActive(true);
+    }
+    
+    private void OnEnable() {
+        if(_epicLobby == null)
+            return;
+        
+        _epicLobby.LeaveLobbySucceeded += OnLeaveLobbySuccess;
+        _epicLobby.LeaveLobbyFailed += message => Debug.LogError(message);
+    }
+
+    //deregister events
+    private void OnDisable() {
+        if(_epicLobby == null)
+            return;
+        
+        _epicLobby.LeaveLobbySucceeded -= OnLeaveLobbySuccess;
     }
 
     public void SetupOnConnect(CustomRoomPlayer localPlayer)
@@ -118,10 +136,15 @@ public class LobbyManager : NetworkBehaviour
 
     public void OnLeaveButtonPressed()
     {
-        if (_steamLobby == null) 
-            return;
-        
-        _steamLobby.QuitLobby();
+        if(_steamLobby != null)
+            _steamLobby.QuitLobby();
+        else if (_epicLobby != null)
+            _epicLobby.LeaveLobby();
+    }
+    
+    private void OnLeaveLobbySuccess() {
+        NetworkManager.singleton.StopHost();
+        NetworkManager.singleton.StopClient();
     }
     
     [Client]
