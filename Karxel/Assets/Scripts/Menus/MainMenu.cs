@@ -1,24 +1,15 @@
 using Mirror;
-using Steamworks;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Epic.OnlineServices.Lobby;
 using UnityEngine;
-using UnityEngine.SocialPlatforms;
 using Attribute = Epic.OnlineServices.Lobby.Attribute;
 
 public class MainMenu : MonoBehaviour
 {
     enum HostType {
         Local,
-        Steam,
         Epic
     }
-    
-    public static MainMenu Singleton;
-    public event Action OnCreatingLobby;
-    public event Action OnGetSteamLobbyList;
 
     [SerializeField] private GameObject lobbyDataItemPrefab;
     [SerializeField] private GameObject lobbyListContent;
@@ -26,24 +17,8 @@ public class MainMenu : MonoBehaviour
     private HostType _hostType;
     private EOSLobby _eosLobby;
 
-    private void Awake()
-    {
-        Singleton = this;
-    }
-
     private void Start()
     {
-        SteamLobby steamLobby = NetworkManager.singleton.GetComponent<SteamLobby>();
-        AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
-        
-        // Steam lobby will be null for testing with localhost
-        if (steamLobby != null)
-        {
-            steamLobby.LobbyDataUpdated += DisplayLobbiesSteam;
-            _hostType = HostType.Steam;
-            return;
-        }
-
         EOSLobby epicLobby = NetworkManager.singleton.GetComponent<EOSLobby>();
         
         if (epicLobby != null)
@@ -72,27 +47,6 @@ public class MainMenu : MonoBehaviour
         _eosLobby.FindLobbiesSucceeded -= DisplayLobbiesEpic;
     }
 
-    public void DisplayLobbiesSteam(List<CSteamID> lobbyIDs, LobbyDataUpdate_t callback)
-    {
-        for(int i = 0; i < lobbyListContent.transform.childCount; i++)
-            Destroy(lobbyListContent.transform.GetChild(i).gameObject);
-        
-        for (int i = 0; i < lobbyIDs.Count; i++)
-        {
-            if (lobbyIDs[i].m_SteamID != callback.m_ulSteamIDLobby) 
-                continue;
-            
-            GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
-            var lobbyCard = createdItem.GetComponent<LobbyDataEntry>();
-
-            lobbyCard.steamLobbyID = (CSteamID)lobbyIDs[i].m_SteamID;
-            lobbyCard.lobbyName = SteamMatchmaking.GetLobbyData((CSteamID)lobbyIDs[i].m_SteamID, "name");
-            lobbyCard.SetLobbyData();
-
-            createdItem.transform.localScale = Vector3.one;
-        }
-    }
-
     public void DisplayLobbiesEpic(List<LobbyDetails> foundLobbies)
     {
         for(int i = 0; i < lobbyListContent.transform.childCount; i++)
@@ -100,7 +54,7 @@ public class MainMenu : MonoBehaviour
 
         foreach (var lobby in foundLobbies)
         {
-            Attribute? lobbyNameAttribute = new Attribute();
+            Attribute? lobbyNameAttribute;
             LobbyDetailsCopyAttributeByKeyOptions copyOptions = new LobbyDetailsCopyAttributeByKeyOptions { AttrKey = "LobbyName" };
             lobby.CopyAttributeByKey(ref copyOptions, out lobbyNameAttribute);
             
@@ -124,9 +78,7 @@ public class MainMenu : MonoBehaviour
     
     public void CreateLobbyButton()
     {
-        if(_hostType == HostType.Steam)
-            OnCreatingLobby?.Invoke();
-        else if (_hostType == HostType.Epic)
+        if (_hostType == HostType.Epic)
             _eosLobby.CreateLobby(8, LobbyPermissionLevel.Publicadvertised, false,
                 new []
                 {
@@ -139,9 +91,7 @@ public class MainMenu : MonoBehaviour
     
     public void GetListOfLobbiesButton()
     {
-        if(_hostType == HostType.Steam)
-            OnGetSteamLobbyList?.Invoke();
-        else if(_hostType == HostType.Epic)
+        if(_hostType == HostType.Epic)
             NetworkManager.singleton.GetComponent<EOSLobby>().FindLobbies();
     }
 

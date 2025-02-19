@@ -1,5 +1,4 @@
 using Mirror;
-using Steamworks;
 
 /// <summary>
 /// Custom Room Player for Lobby
@@ -28,11 +27,7 @@ public class CustomRoomPlayer : NetworkRoomPlayer
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        
-        if (!SteamManager.Initialized)
-            CmdSetName(NetworkClient.localPlayer.netId.ToString());
-        else
-            CmdSetName(SteamFriends.GetPersonaName());
+        CmdSetName(NetworkClient.localPlayer.netId.ToString());
     }
 
     public void SetTeam(Team newTeam)

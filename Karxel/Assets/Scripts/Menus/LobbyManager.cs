@@ -30,7 +30,6 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private GameObject mapSelection;
     
     private NetworkRoom _roomManager;
-    private SteamLobby _steamLobby;
     private EOSLobby _epicLobby;
 
     private List<CustomRoomPlayer> _bluePlayers = new();
@@ -39,7 +38,6 @@ public class LobbyManager : NetworkBehaviour
     private void Awake()
     {
         _roomManager = FindObjectOfType<NetworkRoom>();
-        _steamLobby = FindObjectOfType<SteamLobby>();
         _epicLobby = FindObjectOfType<EOSLobby>();
         
         AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
@@ -134,9 +132,7 @@ public class LobbyManager : NetworkBehaviour
 
     public void OnLeaveButtonPressed()
     {
-        if(_steamLobby != null)
-            _steamLobby.QuitLobby();
-        else if (_epicLobby != null)
+        if (_epicLobby != null)
             _epicLobby.LeaveLobby();
     }
     
