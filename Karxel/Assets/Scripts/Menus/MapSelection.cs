@@ -136,9 +136,7 @@ public class MapSelection : NetworkBehaviour
     [ClientRpc]
     private void RpcSelectedMap(int mapIndex)
     {
-        SceneData.MapIndex = mapIndex;
-        
         if(isServer)
-            FindObjectOfType<LobbyManager>().StartGame();
+            FindObjectOfType<LobbyManager>().StartGame(mapIndex);
     }
 }

@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
-using Steamworks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -87,9 +85,9 @@ public class LobbyManager : NetworkBehaviour
         RpcSwitchToMapSelection();
     }
 
-    public void StartGame()
+    public void StartGame(int mapIndex)
     {
-        _roomManager.ServerChangeScene($"Game{SceneData.MapIndex}");
+        _roomManager.ServerChangeScene($"Game{mapIndex}");
     }
     
     public void OnSelectTeamRed()
@@ -142,7 +140,8 @@ public class LobbyManager : NetworkBehaviour
             _epicLobby.LeaveLobby();
     }
     
-    private void OnLeaveLobbySuccess() {
+    private void OnLeaveLobbySuccess() 
+    {
         NetworkManager.singleton.StopHost();
         NetworkManager.singleton.StopClient();
     }
