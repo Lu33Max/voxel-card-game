@@ -53,7 +53,7 @@ public class MapSelection : NetworkBehaviour
         var newTime = Mathf.FloorToInt(_timeLeft + 1).ToString();
 
         if(newTime != timerText.text && _timeLeft < 3)
-            AudioManager.Instance.PlaySFX(timerRegular);
+            AudioManager.Instance.PlaySfx(timerRegular);
         
         timerText.text = newTime;
     }

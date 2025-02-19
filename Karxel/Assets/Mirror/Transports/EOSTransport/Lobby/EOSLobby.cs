@@ -187,7 +187,6 @@ public class EOSLobby : MonoBehaviour {
                 currentLobbyId = lobbyId;
 
                 //invoke event
-                Debug.Log("Calling event");
                 CreateLobbySucceeded?.Invoke(lobbyReturnData);
             });
         });

@@ -162,7 +162,7 @@ public abstract class Unit : NetworkBehaviour
         direction.y = 0;
         
         Quaternion targetRotation = Quaternion.LookRotation(direction);
-        AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitMove);
+        AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
         
         float elapsedTime = 0;
         
@@ -537,7 +537,7 @@ public abstract class Unit : NetworkBehaviour
     [ClientRpc]
     private void PlayHurtSound()
     {
-        AudioManager.PlaySFX(_sfxSource, AudioManager.Instance.UnitHurt);
+        AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitHurt);
     }
 
     [ClientRpc]

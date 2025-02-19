@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
 
-    [SerializeField, Range(0f, 1f)] private float musicVol = 1f;
-    [SerializeField, Range(0f, 1f)] private float sfxVol = 1f;
+    [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
+    [SerializeField, Range(0f, 1f)] private float sfxVolume = 1f;
     
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
@@ -34,22 +35,22 @@ public class AudioManager : MonoBehaviour
     
     private void Awake()
     {
-        // TODO: Remove upon settings implementation
-        SetVolume(musicVol, sfxVol);
-        
-        if (Instance == null)
+        if (Instance != null)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Destroy(gameObject);
             return;
         }
 
-        Destroy(gameObject);
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+            
+        SetVolume(PlayerPrefs.GetInt("musicVol", 10) / 10f, PlayerPrefs.GetInt("sfxVol", 10) / 10f);
+        PlayMusic(menuMusic);
     }
 
-    public void PlaySFX(AudioClip clip, float minPitch = 0.90f, float maxPitch = 1.1f)
+    public void PlaySfx(AudioClip clip, float minPitch = 0.90f, float maxPitch = 1.1f)
     {
-        PlaySFX(sfxSource, clip, minPitch, maxPitch);
+        PlaySfx(sfxSource, clip, minPitch, maxPitch);
     }
 
     public void PlayMusic(AudioClip clip)
@@ -67,9 +68,10 @@ public class AudioManager : MonoBehaviour
         SfxVolume = sfxVol;
 
         musicSource.volume = MusicVolume;
+        sfxSource.volume = SfxVolume;
     }
     
-    public static void PlaySFX(AudioSource source, AudioClip clip, float minPitch = 0.90f, float maxPitch = 1.1f)
+    public static void PlaySfx(AudioSource source, AudioClip clip, float minPitch = 0.90f, float maxPitch = 1.1f)
     {
         source.volume = SfxVolume;
         source.pitch = Random.Range(minPitch, maxPitch);

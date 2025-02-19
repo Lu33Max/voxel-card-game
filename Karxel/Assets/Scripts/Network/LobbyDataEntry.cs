@@ -9,12 +9,18 @@ using Mirror;
 public class LobbyDataEntry : MonoBehaviour
 {
     public LobbyDetails epicLobby;
+    
     public string lobbyName;
-    public TMP_Text lobbyNameText;
-
+    public int playerCount;
+    public int maxPlayerCount;
+    
+    [SerializeField] private TMP_Text lobbyNameText;
+    [SerializeField] private TMP_Text lobbyPlayerText;
+    
     public void SetLobbyData()
     {
         lobbyNameText.text = lobbyName;
+        lobbyPlayerText.text = $"{playerCount}/{maxPlayerCount}";
     }
 
     public void JoinLobby()

@@ -54,9 +54,8 @@ public class MainMenu : MonoBehaviour
 
         foreach (var lobby in foundLobbies)
         {
-            Attribute? lobbyNameAttribute;
             LobbyDetailsCopyAttributeByKeyOptions copyOptions = new LobbyDetailsCopyAttributeByKeyOptions { AttrKey = "LobbyName" };
-            lobby.CopyAttributeByKey(ref copyOptions, out lobbyNameAttribute);
+            lobby.CopyAttributeByKey(ref copyOptions, out var lobbyNameAttribute);
             
             GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
             var lobbyCard = createdItem.GetComponent<LobbyDataEntry>();
@@ -79,7 +78,7 @@ public class MainMenu : MonoBehaviour
     public void CreateLobbyButton()
     {
         if (_hostType == HostType.Epic)
-            _eosLobby.CreateLobby(8, LobbyPermissionLevel.Publicadvertised, false,
+            _eosLobby.CreateLobby(8, LobbyPermissionLevel.Publicadvertised, true,
                 new []
                 {
                     new AttributeData

@@ -427,7 +427,7 @@ public class GameManager : NetworkBehaviour
         if (_timeLeft <= submitTime + 1 && _timeLeft > 0 && timerText.text != newText)
         {
             var pitch = 1 + (submitTime - totalSeconds) * 0.02f;
-            AudioManager.PlaySFX(_timerAudio, _timeLeft >= 4 ? timerRegular : timerEnding, pitch, pitch);
+            AudioManager.PlaySfx(_timerAudio, _timeLeft >= 4 ? timerRegular : timerEnding, pitch, pitch);
         }
         
         timerText.color = _timeLeft > submitTime + 1 ? Color.white : Color.red;
@@ -602,8 +602,8 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void RPCPlayRoundChangeSound()
     {
-        AudioManager.PlaySFX(_timerAudio, timerEnding, 1.2f, 1.2f);
-        AudioManager.PlaySFX(_timerAudio, timerEnding, 1.22f, 1.22f);
+        AudioManager.PlaySfx(_timerAudio, timerEnding, 1.2f, 1.2f);
+        AudioManager.PlaySfx(_timerAudio, timerEnding, 1.22f, 1.22f);
     }
 
     [Command(requiresAuthority = false)]

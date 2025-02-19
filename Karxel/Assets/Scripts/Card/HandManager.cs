@@ -77,7 +77,7 @@ public class HandManager : MonoBehaviour
         if(SelectedCard != null)
             DeselectCurrentCard();
         else
-            AudioManager.Instance.PlaySFX(drawCardSound);
+            AudioManager.Instance.PlaySfx(drawCardSound);
         
         UpdateCardPositions(GameManager.Instance.gameState);
     }
@@ -98,7 +98,7 @@ public class HandManager : MonoBehaviour
             return;
         }
         
-        AudioManager.Instance.PlaySFX(drawCardSound);
+        AudioManager.Instance.PlaySfx(drawCardSound);
         
         cardDeselected.Invoke();
         
@@ -118,13 +118,13 @@ public class HandManager : MonoBehaviour
         
         mouseFollower.ClearUIElement();
         
-        AudioManager.Instance.PlaySFX(drawCardSound);
+        AudioManager.Instance.PlaySfx(drawCardSound);
         UpdateCardPositions(GameManager.Instance.gameState);
     }
 
     public void DeselectCurrentCard()
     {
-        AudioManager.Instance.PlaySFX(drawCardSound);
+        AudioManager.Instance.PlaySfx(drawCardSound);
         
         cardDeselected?.Invoke();
         SelectedCard.UpdateYPosition(cardRegularY);

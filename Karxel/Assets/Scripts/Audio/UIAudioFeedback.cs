@@ -8,11 +8,11 @@ public class UIAudioFeedback : MonoBehaviour, IPointerEnterHandler, IPointerClic
     public void OnPointerEnter(PointerEventData eventData)
     {
         if(GetComponent<Button>().interactable)
-            AudioManager.Instance.PlaySFX(AudioManager.Instance.ButtonHover);
+            AudioManager.Instance.PlaySfx(AudioManager.Instance.ButtonHover);
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        AudioManager.Instance.PlaySFX(AudioManager.Instance.ButtonPressed);
+        AudioManager.Instance.PlaySfx(AudioManager.Instance.ButtonPressed);
     }
 }
