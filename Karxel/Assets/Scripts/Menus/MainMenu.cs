@@ -1,6 +1,7 @@
 using Mirror;
 using System.Collections.Generic;
 using Epic.OnlineServices.Lobby;
+using TMPro;
 using UnityEngine;
 using Attribute = Epic.OnlineServices.Lobby.Attribute;
 
@@ -14,11 +15,15 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private GameObject lobbyDataItemPrefab;
     [SerializeField] private GameObject lobbyListContent;
 
+    [SerializeField] private TMP_InputField nameInput;
+
     private HostType _hostType;
     private EOSLobby _eosLobby;
 
     private void Start()
     {
+        nameInput.text = PlayerPrefs.GetString("playerName", "RandomPlayer");
+        
         EOSLobby epicLobby = NetworkManager.singleton.GetComponent<EOSLobby>();
         
         if (epicLobby != null)
@@ -98,9 +103,13 @@ public class MainMenu : MonoBehaviour
     {
         Application.Quit();
     }
+
+    public void OnPlayerNameUpdated(string newValue)
+    {
+        PlayerPrefs.SetString("playerName", newValue);
+    }
     
     private void OnCreateLobbySuccess(List<Attribute> attributes) {
-        Debug.Log("Starting host");
         NetworkManager.singleton.StartHost();
     }
 

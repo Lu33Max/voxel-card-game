@@ -1,4 +1,5 @@
 using Mirror;
+using UnityEngine;
 
 /// <summary>
 /// Custom Room Player for Lobby
@@ -27,7 +28,7 @@ public class CustomRoomPlayer : NetworkRoomPlayer
     public override void OnStartLocalPlayer()
     {
         base.OnStartLocalPlayer();
-        CmdSetName(NetworkClient.localPlayer.netId.ToString());
+        CmdSetName(PlayerPrefs.GetString("playerName", "Player " + NetworkClient.localPlayer.netId));
     }
 
     public void SetTeam(Team newTeam)
