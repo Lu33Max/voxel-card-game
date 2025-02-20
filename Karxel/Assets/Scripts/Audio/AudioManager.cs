@@ -4,9 +4,6 @@ using UnityEngine.Serialization;
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
-
-    [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
-    [SerializeField, Range(0f, 1f)] private float sfxVolume = 1f;
     
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;

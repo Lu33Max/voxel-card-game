@@ -8,6 +8,12 @@ namespace Epic.OnlineServices.Lobby
 	/// </summary>
 	public struct AttributeData
 	{
+		public AttributeData(Utf8String key, AttributeDataValue value)
+		{
+			Key = key;
+			Value = value;
+		}
+
 		/// <summary>
 		/// Name of the lobby attribute
 		/// </summary>

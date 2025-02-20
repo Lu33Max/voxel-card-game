@@ -14,24 +14,21 @@ public class MainMenu : MonoBehaviour
 
     [SerializeField] private GameObject lobbyDataItemPrefab;
     [SerializeField] private GameObject lobbyListContent;
-
     [SerializeField] private TMP_InputField nameInput;
 
     private HostType _hostType;
     private EOSLobby _eosLobby;
+    private float _lastRefreshTime;
 
     private void Start()
     {
         nameInput.text = PlayerPrefs.GetString("playerName", "RandomPlayer");
         
-        EOSLobby epicLobby = NetworkManager.singleton.GetComponent<EOSLobby>();
+        _eosLobby = NetworkManager.singleton.GetComponent<EOSLobby>();
         
-        if (epicLobby != null)
+        if (_eosLobby != null)
         {
-            _eosLobby = epicLobby;
-            epicLobby.FindLobbiesSucceeded += DisplayLobbiesEpic;
             _hostType = HostType.Epic;
-            
             _eosLobby.CreateLobbySucceeded += OnCreateLobbySuccess;
             _eosLobby.JoinLobbySucceeded += OnJoinLobbySuccess;
             _eosLobby.FindLobbiesSucceeded += DisplayLobbiesEpic;
@@ -51,34 +48,6 @@ public class MainMenu : MonoBehaviour
         _eosLobby.JoinLobbySucceeded -= OnJoinLobbySuccess;
         _eosLobby.FindLobbiesSucceeded -= DisplayLobbiesEpic;
     }
-
-    public void DisplayLobbiesEpic(List<LobbyDetails> foundLobbies)
-    {
-        for(int i = 0; i < lobbyListContent.transform.childCount; i++)
-            Destroy(lobbyListContent.transform.GetChild(i).gameObject);
-
-        foreach (var lobby in foundLobbies)
-        {
-            LobbyDetailsCopyAttributeByKeyOptions copyOptions = new LobbyDetailsCopyAttributeByKeyOptions { AttrKey = "LobbyName" };
-            lobby.CopyAttributeByKey(ref copyOptions, out var lobbyNameAttribute);
-            
-            GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
-            var lobbyCard = createdItem.GetComponent<LobbyDataEntry>();
-
-            if (lobbyNameAttribute.HasValue && lobbyNameAttribute.Value.Data.HasValue)
-            {
-                var data = lobbyNameAttribute.Value.Data.Value;
-                
-                lobbyCard.lobbyName = data.Value.AsUtf8.Length > 30
-                    ? data.Value.AsUtf8.ToString().Substring(0, 27).Trim() + "..."
-                    : data.Value.AsUtf8;
-            }
-            
-            lobbyCard.SetLobbyData();
-
-            createdItem.transform.localScale = Vector3.one;
-        }
-    }
     
     public void CreateLobbyButton()
     {
@@ -86,27 +55,47 @@ public class MainMenu : MonoBehaviour
             _eosLobby.CreateLobby(8, LobbyPermissionLevel.Publicadvertised, true,
                 new []
                 {
-                    new AttributeData
-                    {
-                        Key = "LobbyName", Value = "Test Lobby"
-                    },
+                    new AttributeData(key: "LobbyName", value: PlayerPrefs.GetString("lobbyName")),
+                    new AttributeData(key: "Version", value: Application.version),
+                    new AttributeData(key: "Visibility", value: PlayerPrefs.GetInt("lobbyVisibility").ToString()),
+                    new AttributeData(key: "Password", value: PlayerPrefs.GetString("lobbyPassword"))
                 });
     }
     
     public void GetListOfLobbiesButton()
     {
+        if(Time.time < _lastRefreshTime + 1)
+            return;
+
+        _lastRefreshTime = Time.time;
+        
         if(_hostType == HostType.Epic)
             NetworkManager.singleton.GetComponent<EOSLobby>().FindLobbies();
+    }
+    
+    public void OnPlayerNameUpdated(string newValue)
+    {
+        PlayerPrefs.SetString("playerName", newValue);
     }
 
     public void CloseGame()
     {
         Application.Quit();
     }
-
-    public void OnPlayerNameUpdated(string newValue)
+    
+    private void DisplayLobbiesEpic(List<LobbyDetails> foundLobbies)
     {
-        PlayerPrefs.SetString("playerName", newValue);
+        for(int i = 0; i < lobbyListContent.transform.childCount; i++)
+            Destroy(lobbyListContent.transform.GetChild(i).gameObject);
+
+        foreach (var lobby in foundLobbies)
+        {
+            GameObject createdItem = Instantiate(lobbyDataItemPrefab, lobbyListContent.transform, true);
+            createdItem.transform.localScale = Vector3.one;
+            
+            var lobbyCard = createdItem.GetComponent<LobbyDataEntry>();
+            lobbyCard.SetLobbyData(lobby);
+        }
     }
     
     private void OnCreateLobbySuccess(List<Attribute> attributes) {
