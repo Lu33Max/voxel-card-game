@@ -41,6 +41,8 @@ public class Player : NetworkBehaviour
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         GameManager.Instance.CmdPlayerSpawned();
         
+        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, team, NetworkServer.connections.Count, 1);
+        
         GameManager.RoundTimerUp.AddListener(SubmitTurn);
         
         CmdAddToPlayerList(team);

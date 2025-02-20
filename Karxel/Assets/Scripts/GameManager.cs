@@ -102,7 +102,6 @@ public class GameManager : NetworkBehaviour
     private void Start()
     {
         AudioManager.Instance.PlayMusic(AudioManager.Instance.CombatMusic);
-        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, localPlayer.team, NetworkServer.connections.Count, 1);
     }
 
     private void Update()
