@@ -102,6 +102,7 @@ public class GameManager : NetworkBehaviour
     private void Start()
     {
         AudioManager.Instance.PlayMusic(AudioManager.Instance.CombatMusic);
+        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, localPlayer.team, NetworkServer.connections.Count, 1);
     }
 
     private void Update()
@@ -344,6 +345,8 @@ public class GameManager : NetworkBehaviour
             _timeLeft = movementTime;
             _timerActive = true;
             
+            DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, localPlayer.team, NetworkServer.connections.Count, _roundCounter);
+            
             foreach (var unit in AttackIntents
                          .Select(origIntent => GridManager.Instance.GetTileAtGridPosition(origIntent.Key).Unit)
                          .Where(unit => unit != null))
@@ -510,7 +513,6 @@ public class GameManager : NetworkBehaviour
         if(!isServer)
             return;
         
-        // TODO: Implement return to lobby logic
         NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 

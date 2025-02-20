@@ -23,6 +23,7 @@ public class MainMenu : MonoBehaviour
     private void Start()
     {
         nameInput.text = PlayerPrefs.GetString("playerName", "RandomPlayer");
+        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Menu);
         
         _eosLobby = NetworkManager.singleton.GetComponent<EOSLobby>();
         

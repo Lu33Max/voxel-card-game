@@ -138,13 +138,18 @@ public class LobbyManager : NetworkBehaviour
     
     private void OnLeaveLobbySuccess() 
     {
+        CmdUpdatePlayerList();
+        
         NetworkManager.singleton.StopHost();
         NetworkManager.singleton.StopClient();
     }
     
+    
     [Client]
     public void UpdatePlayerList()
     {
+        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Lobby, Team.None, NetworkServer.connections.Count);
+        
         _bluePlayers.Clear();
         _redPlayers.Clear();
         
