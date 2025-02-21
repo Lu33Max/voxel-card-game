@@ -68,11 +68,9 @@ public class GameManager : NetworkBehaviour
     
     private int _redSubmit;
     private int _blueSubmit;
-
-    private int _unreadiedPlayers;
-    private int _playersToUnready;
     
     private int _readyPlayers;
+    
     private int _unitsToMove;
     private int _unitsDoneMoving;
     
@@ -294,7 +292,7 @@ public class GameManager : NetworkBehaviour
         }
 
         // Since movement is done clientside, each unit on each client will call the command
-        _unitsToMove = actualMoves.Count * NetworkServer.connections.Count;
+        _unitsToMove = actualMoves.Count;
         MoveIntents.Clear();
 
         if (_unitsToMove > 0)
@@ -375,7 +373,7 @@ public class GameManager : NetworkBehaviour
             
             AttackExecuted?.Invoke(currentAttack);
 
-            _unitsToAttack = attacksToExecute.Count * NetworkServer.connections.Count;
+            _unitsToAttack = attacksToExecute.Count;
             
             var unit = GridManager.Instance.GetTileAtGridPosition(attackIntent.Key).Unit;
             if (unit != null)
@@ -419,6 +417,14 @@ public class GameManager : NetworkBehaviour
         var screenText = _defeatedKings.Count > 1 ? "The game ends in a tie" :
             _defeatedKings.First() == Team.Blue ? "Red team has won!" : "Blue team has won!";
         RPCGameOver(screenText);
+    }
+    
+    public void ReturnToLobby()
+    {
+        if(!isServer)
+            return;
+        
+        NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
     private void UpdateTimerText(float old, float newTime)
@@ -471,6 +477,14 @@ public class GameManager : NetworkBehaviour
             _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
         }
 
+        CheckForAllSubmitted();
+    }
+
+    [Server]
+    private void CheckForAllSubmitted()
+    {
+        Debug.Log(bluePlayers.Count + " | " + _blueSubmit);
+        
         if (_blueSubmit != bluePlayers.Count || _redSubmit != redPlayers.Count)
         {
             // If all players of one team have submitted, reduce the remaining round time
@@ -503,18 +517,16 @@ public class GameManager : NetworkBehaviour
     {
         _unitsDoneMoving++;
 
-        if (_unitsDoneMoving != _unitsToMove) 
+        CheckForAllMovesExecuted();
+    }
+
+    [Server]
+    private void CheckForAllMovesExecuted()
+    {
+        if (_unitsDoneMoving != _unitsToMove * NetworkServer.connections.Count) 
             return;
         
         StartAttackPhase();
-    }
-    
-    public void ReturnToLobby()
-    {
-        if(!isServer)
-            return;
-        
-        NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
     private void StartAttackPhase()
@@ -537,7 +549,13 @@ public class GameManager : NetworkBehaviour
     {
         _unitsDoneAttacking++;
         
-        if(_unitsDoneAttacking != _unitsToAttack)
+        CheckForAllAttacksExecuted();
+    }
+
+    [Server]
+    private void CheckForAllAttacksExecuted()
+    {
+        if(_unitsDoneAttacking != _unitsToAttack * NetworkServer.connections.Count)
             return;
 
         _unitsDoneAttacking = 0;
@@ -546,6 +564,44 @@ public class GameManager : NetworkBehaviour
         
         CheckHealth?.Invoke();
         ExecuteCurrentAttackRound();
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdLeaveLobby()
+    {
+        var players = FindObjectsByType<Player>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        
+        bluePlayers.Clear();
+        redPlayers.Clear();
+
+        _blueSubmit = 0;
+        _redSubmit = 0;
+
+        foreach (var player in players)
+        {
+            if (player.team == Team.Blue)
+            {
+                bluePlayers.Add(player);
+                if (player.HasSubmitted)
+                    _blueSubmit++;
+            }
+            else if (player.team == Team.Red)
+            {
+                redPlayers.Add(player);
+                if (player.HasSubmitted)
+                    _redSubmit++;
+            }
+        }
+        
+        _bluePlayerText = $"{_blueSubmit}/{bluePlayers.Count}";
+        _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
+        
+        CheckForAllSubmitted();
+
+        if (gameState == GameState.AttackExecution)
+            CheckForAllAttacksExecuted();
+        else if (gameState == GameState.MovementExecution)
+            CheckForAllMovesExecuted();
     }
 
     [ClientRpc]

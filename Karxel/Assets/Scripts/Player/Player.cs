@@ -1,4 +1,3 @@
-using System.Linq;
 using Mirror;
 using UnityEngine;
 using UnityEngine.Events;
@@ -21,6 +20,8 @@ public class Player : NetworkBehaviour
     [HideInInspector] public UnityEvent turnSubmitted = new();
 
     private bool _hasSubmitted;
+
+    public bool HasSubmitted => _hasSubmitted;
     
     private void Start()
     {
@@ -51,6 +52,12 @@ public class Player : NetworkBehaviour
     private void OnDestroy()
     {
         GameManager.RoundTimerUp.RemoveListener(SubmitTurn);
+        
+        // Only execute if leaving during play mode
+        if(GameManager.Instance == null)
+            return;
+        
+        GameManager.Instance.CmdLeaveLobby();
     }
 
     public void SubmitTurn()
