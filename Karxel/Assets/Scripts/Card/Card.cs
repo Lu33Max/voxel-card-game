@@ -13,6 +13,7 @@ public class Card : MonoBehaviour
 
     [SerializeField] private Sprite cardBGRegular;
     [SerializeField] private Sprite cardBGUnselected;
+    [SerializeField] private Sprite cardBGRare;
     [SerializeField] private Image backgroundImage;
 
     public CardData CardData { get; private set; }
@@ -29,6 +30,7 @@ public class Card : MonoBehaviour
         pointText.text = CardData.cost.ToString();
         nameText.text = CardData.cardName;
         cardImage.sprite = CardData.cardSprite;
+        backgroundImage.sprite = CardData.rarity == Rarity.Common ? cardBGRegular : cardBGRare;
         
         UpdateState(GameManager.Instance.gameState);
     }
@@ -55,7 +57,7 @@ public class Card : MonoBehaviour
 
     public void UpdateState(GameState state)
     {
-        backgroundImage.sprite = CanBeSelected(state) ? cardBGRegular : cardBGUnselected;
+        backgroundImage.sprite = !CanBeSelected(state) ? cardBGUnselected : CardData.rarity == Rarity.Common ? cardBGRegular : cardBGRare;
     }
 
     public void CardClickedButton()

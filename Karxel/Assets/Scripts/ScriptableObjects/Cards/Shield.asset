@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: Shield x3
   cost: 2
   cardType: 3
-  rarity: 0
+  rarity: 1
   cardSprite: {fileID: 21300000, guid: 7577225dcacade643a630d1c3182db00, type: 3}
   movementRange: 0
   attackDamage: 0

@@ -67,7 +67,8 @@ public class HandManager : MonoBehaviour
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
-        _handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : c1.CardData.cardType == c2.CardData.cardType ? 0 : -1);
+        //_handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : c1.CardData.cardType == c2.CardData.cardType ? 0 : -1);
+        _handCards = _handCards.OrderBy(c => c.CardData.cardType).ThenBy(c => c.CardData.cardName).ToList();
 
         // Logging
         GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(),

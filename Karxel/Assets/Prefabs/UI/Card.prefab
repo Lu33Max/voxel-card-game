@@ -359,6 +359,7 @@ MonoBehaviour:
   cardImage: {fileID: 908237563861211682}
   cardBGRegular: {fileID: 21300000, guid: 055bcd40ce747574b9219138010b0f58, type: 3}
   cardBGUnselected: {fileID: 21300000, guid: 98accbec983d37647a3b1f7719ce9d65, type: 3}
+  cardBGRare: {fileID: 21300000, guid: a0b76fab2a866d94392ad7829f47b67c, type: 3}
   backgroundImage: {fileID: 3952947544106965672}
 --- !u!114 &2153769999577734427
 MonoBehaviour:
