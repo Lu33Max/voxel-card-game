@@ -112,8 +112,10 @@ public class GameManager : NetworkBehaviour
         if(_timerActive)
             UpdateTimer();
 
+        #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.K))
             _defeatedKings.Add(Team.Blue);
+        #endif
     }
 
     [Server]
