@@ -1,7 +1,9 @@
+using System;
 using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 public class ActionPointManager : MonoBehaviour
 {
@@ -11,10 +13,13 @@ public class ActionPointManager : MonoBehaviour
     public UnityEvent<int> actionPointsUpdated = new();
     
     [SerializeField] private int startPoints;
-    [SerializeField] private int maxPoints;
-    [SerializeField] private int pointsPerRound;
+    [FormerlySerializedAs("maxPoints")] [SerializeField] private int baseMaxPoints;
+    [FormerlySerializedAs("pointsPerRound")] [SerializeField] private int basePointsPerRound;
 
     [SerializeField] private TextMeshProUGUI actionText;
+
+    private int _maxPoints;
+    private int _pointsPerRound;
 
     public void Initialize()
     {
@@ -22,25 +27,28 @@ public class ActionPointManager : MonoBehaviour
             return;
 
         Instance = this;
+
+        _maxPoints = baseMaxPoints;
+        _pointsPerRound = basePointsPerRound;
         
         ActionPoints = startPoints;
-        actionText.text = $"{ActionPoints}/{maxPoints}";
+        actionText.text = $"{ActionPoints}/{_maxPoints}";
     }
 
     private void OnEnable()
     {
-        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.updateActionPoints.AddListener(UpdatePointsOnNewRound);
     }
 
     private void OnDisable()
     {
-        GameManager.Instance.gameStateChanged.RemoveListener(OnGameStateChanged);
+        GameManager.Instance.updateActionPoints.RemoveListener(UpdatePointsOnNewRound);
     }
 
     public void UpdateActionPoints(int valueToAdd)
     {
-        ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, maxPoints);
-        actionText.text = $"{ActionPoints}/{maxPoints}";
+        ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, _maxPoints);
+        actionText.text = $"{ActionPoints}/{_maxPoints}";
 
         actionPointsUpdated.Invoke(ActionPoints);
         
@@ -53,15 +61,28 @@ public class ActionPointManager : MonoBehaviour
 
     public void UpdateActionPointsOnPlay(int valueToAdd)
     {
-        ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, maxPoints);
-        actionText.text = $"{ActionPoints}/{maxPoints}";
+        ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, _maxPoints);
+        actionText.text = $"{ActionPoints}/{_maxPoints}";
     }
 
-    private void OnGameStateChanged(GameState newState)
+    private void UpdatePointsOnNewRound(int blueCount, int redCount)
     {
-        if(newState != GameState.Movement)
-            return;
+        var pointDiff = Mathf.Abs(blueCount - redCount) * baseMaxPoints;
+        var pointGainDiff = Mathf.Abs(blueCount - redCount) * basePointsPerRound;
 
-        UpdateActionPoints(pointsPerRound);
+        // If the player is part of the disadvantaged team
+        if ((GameManager.Instance.localPlayer.team == Team.Red && redCount < blueCount) ||
+            (GameManager.Instance.localPlayer.team == Team.Blue && blueCount < redCount))
+        {
+            _maxPoints = baseMaxPoints + (pointDiff / redCount);
+            _pointsPerRound = basePointsPerRound + (pointGainDiff / redCount);
+        }
+        else
+        {
+            _maxPoints = baseMaxPoints;
+            _pointsPerRound = basePointsPerRound;
+        }
+
+        UpdateActionPoints(_pointsPerRound);
     }
 }

@@ -36,6 +36,7 @@ public class GameManager : NetworkBehaviour
     public static UnityEvent<int> NewRound = new();
     
     [HideInInspector] public UnityEvent<GameState> gameStateChanged = new();
+    [HideInInspector] public UnityEvent<int, int> updateActionPoints = new();
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
     [HideInInspector] public Player localPlayer;
@@ -418,6 +419,9 @@ public class GameManager : NetworkBehaviour
         
         if(gameState is GameState.Movement or GameState.Attack)
             ActionLogger.Instance.LogAction("server", "server", "phaseSwitch", $"[{_roundCounter + (gameState == GameState.Movement ? 1 : 0)}]", null, null, null, null);
+
+        if (gameState is GameState.Movement)
+            UpdateActionPoints(bluePlayers.Count, redPlayers.Count);
         
         RPCInvokeStateUpdate(newState);
     }
@@ -630,6 +634,12 @@ public class GameManager : NetworkBehaviour
             CheckForAllAttacksExecuted();
         else if (gameState == GameState.MovementExecution)
             CheckForAllMovesExecuted();
+    }
+
+    [ClientRpc]
+    private void UpdateActionPoints(int blueCount, int redCount)
+    {
+        updateActionPoints.Invoke(blueCount, redCount);
     }
 
     [ClientRpc]
