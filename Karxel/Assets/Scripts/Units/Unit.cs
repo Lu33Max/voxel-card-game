@@ -150,6 +150,12 @@ public abstract class Unit : NetworkBehaviour
         
         Vector3 targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
         yield return StartCoroutine(Move(targetPos));
+
+        if (moveCommand.BlockedPosition.HasValue)
+        {
+            Vector3 blockedPos = GridManager.Instance.GridToWorldPosition(moveCommand.BlockedPosition.Value);
+            yield return StartCoroutine(BlockedAnimation(blockedPos));
+        }
         
         GameManager.Instance.CmdUnitMovementDone();
     }
@@ -161,7 +167,7 @@ public abstract class Unit : NetworkBehaviour
         Vector3 direction = targetPos - startingPos;
         direction.y = 0;
         
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        Quaternion targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
         AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
         
         float elapsedTime = 0;
@@ -186,6 +192,57 @@ public abstract class Unit : NetworkBehaviour
         
         transform.rotation = targetRotation;
         transform.position = targetPos;
+    }
+
+    private IEnumerator BlockedAnimation(Vector3 targetPos)
+    {
+        Vector3 startingPos = transform.position;
+        Vector3 direction = targetPos - startingPos;
+        direction.y = 0;
+        
+        Quaternion targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
+        AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
+        
+        float elapsedTime = 0;
+        
+        while (elapsedTime < data.stepDuration / 2)
+        {
+            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+            
+            var progression = elapsedTime / data.stepDuration;
+            var newPos = Vector3.Lerp(startingPos, targetPos, progression);
+            
+            // Parabolic movement
+            var baseHeight = Mathf.Lerp(startingPos.y, targetPos.y, progression);
+            var height = 4 * moveArcHeight * progression * (1 - progression);
+            newPos.y = baseHeight + height;
+
+            transform.position = newPos;
+            elapsedTime += Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        
+        while (elapsedTime < data.stepDuration)
+        {
+            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+            
+            var progression = elapsedTime / data.stepDuration;
+            var newPos = Vector3.Lerp(targetPos, startingPos, progression);
+            
+            // Parabolic movement
+            var baseHeight = Mathf.Lerp(targetPos.y, startingPos.y, progression);
+            var height = 4 * moveArcHeight * progression * (1 - progression);
+            newPos.y = baseHeight + height;
+
+            transform.position = newPos;
+            elapsedTime += Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+
+        transform.rotation = targetRotation;
+        transform.position = startingPos;
     }
 
     /// <summary>Used to play animations, sfx etc.</summary>

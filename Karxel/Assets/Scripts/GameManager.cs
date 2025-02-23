@@ -228,10 +228,30 @@ public class GameManager : NetworkBehaviour
                 intendedMoves.Remove(move.Key);
                 staticUnits.Add(i > 0 ? actualMoves[move.Key].TargetPosition : move.Key);
 
+                if (i == 0)
+                    actualMoves.Add(move.Key, new MoveCommand
+                    {
+                        Path = new(), TargetPosition = move.Key,
+                        BlockedPosition = move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition
+                    });
+                else
+                    actualMoves[move.Key].BlockedPosition =
+                        move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition;
+
                 foreach (var otherMove in unitsWithSameIntent)
                 {
                     intendedMoves.Remove(otherMove.Key);
                     staticUnits.Add(i > 0 ? actualMoves[otherMove.Key].TargetPosition : otherMove.Key);
+                    
+                    if (i == 0)
+                        actualMoves.Add(otherMove.Key, new MoveCommand
+                        {
+                            Path = new(), TargetPosition = otherMove.Key,
+                            BlockedPosition = otherMove.Value.Path.Count > i ? otherMove.Value.Path[i] : otherMove.Value.TargetPosition
+                        });
+                    else
+                        actualMoves[otherMove.Key].BlockedPosition =
+                            otherMove.Value.Path.Count > i ? otherMove.Value.Path[i] : otherMove.Value.TargetPosition;
                 }
                 
             }
@@ -253,6 +273,17 @@ public class GameManager : NetworkBehaviour
                     
                     intendedMoves.Remove(move.Key);
                     staticUnits.Add(i > 0 ? actualMoves[move.Key].TargetPosition : move.Key);
+                    
+                    if (i == 0)
+                        actualMoves.Add(move.Key, new MoveCommand
+                        {
+                            Path = new(), TargetPosition = move.Key,
+                            BlockedPosition = move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition
+                        });
+                    else
+                        actualMoves[move.Key].BlockedPosition =
+                            move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition;
+                    
                     addedStatics = true;
                 }
             }
@@ -290,8 +321,7 @@ public class GameManager : NetworkBehaviour
         {
             unit.RPCCleanUp();
         }
-
-        // Since movement is done clientside, each unit on each client will call the command
+        
         _unitsToMove = actualMoves.Count;
         MoveIntents.Clear();
 
@@ -483,8 +513,6 @@ public class GameManager : NetworkBehaviour
     [Server]
     private void CheckForAllSubmitted()
     {
-        Debug.Log(bluePlayers.Count + " | " + _blueSubmit);
-        
         if (_blueSubmit != bluePlayers.Count || _redSubmit != redPlayers.Count)
         {
             // If all players of one team have submitted, reduce the remaining round time
