@@ -30,7 +30,7 @@ public class HandManager : MonoBehaviour
     [Header("Discarding")] 
     [SerializeField] private int discardForActionCount = 2;
     [SerializeField] private int actionsGained = 1;
-    [SerializeField] private Slider discardSlider;
+    [SerializeField] private Transform discardContainer;
     
     private List<Card> _handCards = new();
     private int _discardCount;
@@ -67,7 +67,6 @@ public class HandManager : MonoBehaviour
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
-        //_handCards.Sort((c1, c2) => c1.CardData.cardType < c2.CardData.cardType ? 1 : c1.CardData.cardType == c2.CardData.cardType ? 0 : -1);
         _handCards = _handCards.OrderBy(c => c.CardData.cardType).ThenBy(c => c.CardData.cardName).ToList();
 
         // Logging
@@ -149,8 +148,14 @@ public class HandManager : MonoBehaviour
             _discardCount = 0;
             ActionPointManager.Instance.UpdateActionPoints(actionsGained);
         }
-
-        discardSlider.value = (float)_discardCount / discardForActionCount;
+        
+        Debug.Log("Loop over " + discardContainer.childCount + " children with count " + _discardCount);
+        for (int i = 0; i < discardContainer.childCount; i++)
+        {
+            Debug.Log("Loop " + i);
+            var cardImage = discardContainer.GetChild(i).GetComponent<Image>();
+            cardImage.color = i < _discardCount ? Color.white : Color.gray;
+        }
         
         card.RemoveCard();
         _handCards.Remove(card);

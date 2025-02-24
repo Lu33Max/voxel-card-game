@@ -15634,7 +15634,7 @@ MonoBehaviour:
   buttonHover: {fileID: 8300000, guid: af764a643b17df145b204cfc6a45a330, type: 3}
   buttonPressed: {fileID: 8300000, guid: af764a643b17df145b204cfc6a45a330, type: 3}
   menuMusic: {fileID: 8300000, guid: 4517064455d19094395dcf7731dae9e7, type: 3}
-  combatMusic: {fileID: 8300000, guid: 96b555cb65327134ea95d1c7b7ee2601, type: 3}
+  combatMusic: {fileID: 8300000, guid: cafebf162eedc4945a2502c77f9c2e59, type: 3}
   unitMove: {fileID: 8300000, guid: d1418f18eca4d5a41a15148e46848f85, type: 3}
   unitAttack: {fileID: 8300000, guid: ad85e2d10122c9c4d8de7c9aff8c8702, type: 3}
   unitHurt: {fileID: 8300000, guid: 96cea2a5b6e609847a961de6e690ef69, type: 3}
