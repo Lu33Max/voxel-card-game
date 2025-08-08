@@ -27,7 +27,8 @@ public class DiscordManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        
+
+        SetupDiscord();
         _activity = new Activity();
         UpdateActivity(ActivityState.Menu);
     }
@@ -110,6 +111,14 @@ public class DiscordManager : MonoBehaviour
 
     private void SetupDiscord()
     {
-        _discord = new Discord.Discord(1342122312463417396, (ulong)CreateFlags.NoRequireDiscord);
+        try
+        {
+            _discord = new Discord.Discord(1342122312463417396, (ulong)CreateFlags.NoRequireDiscord);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError(ex);
+            _discord = null;
+        }
     }
 }
