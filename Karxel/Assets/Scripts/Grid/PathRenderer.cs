@@ -9,17 +9,17 @@ public class PathRenderer : NetworkBehaviour
     [SerializeField] private LineRenderer lineRenderer;
     [SerializeField] private float groundOffset = 0.01f;
     
-    public void DrawPath(MoveCommand command, Vector2Int start)
+    public void DrawPath(MoveCommand command, Vector3Int start)
     {
         List<Vector3> positions = new();
 
-        var startPos = GridManager.Instance.GridToWorldPosition(start);
+        var startPos = GridManager.Instance.GridToWorldPosition(start).GetValueOrDefault();
         startPos.y += groundOffset;
         positions.Add(startPos);
         
         foreach (var tile in command.Path.Append(command.TargetPosition))
         {
-            var tilePos = GridManager.Instance.GridToWorldPosition(tile);
+            var tilePos = GridManager.Instance.GridToWorldPosition(tile).GetValueOrDefault();
 
             if (Math.Abs(tilePos.y - positions.Last().y) > 0.1)
             {
@@ -49,7 +49,7 @@ public class PathRenderer : NetworkBehaviour
         
         foreach (var tile in command.Path.Append(command.TargetPosition))
         {
-            var tilePos = GridManager.Instance.GridToWorldPosition(tile);
+            var tilePos = GridManager.Instance.GridToWorldPosition(tile).GetValueOrDefault();
 
             if (Math.Abs(tilePos.y - positions.Last().y) > 0.01)
             {
@@ -72,7 +72,7 @@ public class PathRenderer : NetworkBehaviour
         }
     }
 
-    private float Sign(float num)
+    private static float Sign(float num)
     {
         return num > 0 ? 1f : num < 0 ? -1f : 0f;
     }

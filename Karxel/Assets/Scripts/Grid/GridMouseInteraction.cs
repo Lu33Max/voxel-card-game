@@ -14,7 +14,7 @@ public class GridMouseInteraction : MonoBehaviour
     
     private Vector3 _prevMousePos;
     private List<MoveCommand> _highlightedMoveTiles = new();
-    private List<Vector2Int> _previewTiles = new();
+    private List<Vector3Int> _previewTiles = new();
     private Attack _currentAttack;
     
     private bool _hasSubmitted;
@@ -46,15 +46,14 @@ public class GridMouseInteraction : MonoBehaviour
             !EventSystem.current.IsPointerOverGameObject() &&
             Physics.Raycast(_mainCamera.ScreenPointToRay(Input.mousePosition), out var hit, groundLayer))
         {
-            Vector2 worldPosition = new Vector2(hit.point.x, hit.point.z);
-            Vector2Int hoveredPosition = GridManager.Instance.WorldToGridPosition(worldPosition);
+            var hoveredPosition = GridManager.Instance.WorldToGridPosition(hit.point);
 
             // Check if the hovered position is one of the tiles
-            bool inGrid = GridManager.Instance.IsValidGridPosition(hoveredPosition);
+            var inGrid = GridManager.Instance.IsValidGridPosition(hoveredPosition);
             if (!inGrid)
             {
                 if(_hoveredTile != null)
-                    MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
+                    MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.TilePosition, MarkerType.Hover, _playerId);
 
                 HideUnitDisplay();
                 
@@ -66,7 +65,7 @@ public class GridMouseInteraction : MonoBehaviour
             }
 
             // Check if a tile exists at the given position
-            TileData newHoveredTile = GridManager.Instance.GetTileAtWorldPosition(new Vector2(hit.point.x, hit.point.z));
+            TileData newHoveredTile = GridManager.Instance.GetTileAtWorldPosition(hit.point);
             
             // Needs to be checked even if hovered tile has not changed
             if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
@@ -74,7 +73,7 @@ public class GridMouseInteraction : MonoBehaviour
             
             _prevMousePos = hit.point;
 
-            if (_hoveredTile == null || _hoveredTile.Position != hoveredPosition)
+            if (_hoveredTile == null || _hoveredTile.TilePosition != hoveredPosition)
             {
                 if (HandManager.Instance != null && HandManager.Instance.SelectedCard != null)
                 {
@@ -119,7 +118,7 @@ public class GridMouseInteraction : MonoBehaviour
                 (GameManager.Instance.gameState == GameState.Attack && _selectedUnit == null))
                 RemoveAllPreviewTiles();
             
-            MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
+            MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.TilePosition, MarkerType.Hover, _playerId);
             _hoveredTile = null;
         }
     }
@@ -181,13 +180,13 @@ public class GridMouseInteraction : MonoBehaviour
         }
     }
 
-    private void UpdateHoverMarker(Vector2Int hoveredPosition)
+    private void UpdateHoverMarker(Vector3Int hoveredPosition)
     {
         if(MarkerManager.Instance == null)
             return;
         
         if (_hoveredTile != null)
-            MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.Position, MarkerType.Hover, _playerId);
+            MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.TilePosition, MarkerType.Hover, _playerId);
 
         MarkerManager.Instance.AddMarkerLocal(hoveredPosition, new MarkerData
         {
@@ -266,7 +265,7 @@ public class GridMouseInteraction : MonoBehaviour
             if (cardValues.cardType == CardType.Stun && _hoveredTile.Unit.owningTeam != player.team && !_hoveredTile.Unit.SetForSkip)
             {
                 GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "insult_card", null, 
-                    _hoveredTile.Position.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
+                    _hoveredTile.TilePosition.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
                 
                 _hoveredTile.Unit.CmdUpdateTurnSkip();
                 HandManager.Instance.PlaySelectedCard();
@@ -282,12 +281,12 @@ public class GridMouseInteraction : MonoBehaviour
                 {
                     case CardType.Heal:
                         GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "heal_card", $"[{cardValues.otherValue}]", 
-                            _hoveredTile.Position.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
+                            _hoveredTile.TilePosition.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
                         _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
                         break;
                     case CardType.Shield:
                         GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "shield_card", $"[{cardValues.otherValue}]", 
-                            _hoveredTile.Position.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
+                            _hoveredTile.TilePosition.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
                         _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
                         break;
                     default:
@@ -347,7 +346,7 @@ public class GridMouseInteraction : MonoBehaviour
         {
             case GameState.Movement:
                 var moveCommand = _selectedUnit.GetValidMoves(cardValues.movementRange)
-                    .FirstOrDefault(move => move.TargetPosition == _hoveredTile.Position);
+                    .FirstOrDefault(move => move.TargetPosition == _hoveredTile.TilePosition);
                 if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
                 {
                     // Logging
@@ -360,7 +359,7 @@ public class GridMouseInteraction : MonoBehaviour
                 break;
             case GameState.Attack:
                 // If the player clicked on a tile within the current attack radius
-                if (_currentAttack.Tiles.Contains(_hoveredTile.Position))
+                if (_currentAttack.Tiles.Contains(_hoveredTile.TilePosition))
                 {
                     // Logging
                     _selectedUnit.LogAttack(cardValues, _currentAttack);

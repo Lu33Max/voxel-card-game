@@ -35,7 +35,7 @@ public abstract class Unit : NetworkBehaviour
     [SerializeField] private Transform actionDisplayParent;
     [SerializeField] private GameObject actionImagePrefab;
     
-    public Vector2Int TilePosition { get; private set; }
+    public Vector3Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
     public List<Attack> AttackIntent { get; } = new();
     public UnitData Data => data;
@@ -53,7 +53,7 @@ public abstract class Unit : NetworkBehaviour
     /// <param name="movementRange">The movement range given by the played card</param>
     public abstract List<MoveCommand> GetValidMoves(int movementRange);
 
-    public abstract List<Vector2Int> GetValidAttackTiles(int attackRange);
+    public abstract List<Vector3Int> GetValidAttackTiles(int attackRange);
 
     /// <summary>Get all tiles that would be effected by an attack. Only includes valid tiles.</summary>
     /// <param name="attackRange">The attack range given by the played card</param>
@@ -102,10 +102,12 @@ public abstract class Unit : NetworkBehaviour
     }
 
     /// <summary>Instantly move the unit to the given tile</summary>
-    public void MoveToTile(Vector2Int tilePos)
+    public void MoveToTile(Vector3Int tilePos)
     {
-        Vector3 worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
-        CmdChangePosition(worldPos, tilePos);
+        Vector3? worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
+        
+        if(worldPos != null)
+            CmdChangePosition(worldPos.Value, tilePos);
     }
 
     /// <summary>Step to a target tile while passing over all the given tiles in the path</summary>
@@ -141,19 +143,24 @@ public abstract class Unit : NetworkBehaviour
     // Move the unit along the given path from tile to tile
     private IEnumerator MoveToPositions(MoveCommand moveCommand)
     {
-        foreach (var tile in moveCommand.Path)
+        foreach (var worldPos in moveCommand.Path
+                                             .Select(tile => GridManager.Instance.GridToWorldPosition(tile))
+                                             .Where(worldPos => worldPos.HasValue))
         {
-            Vector3 worldPos = GridManager.Instance.GridToWorldPosition(tile);
-            yield return StartCoroutine(Move(worldPos));
+            yield return StartCoroutine(Move(worldPos.Value));
         }
         
-        Vector3 targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
-        yield return StartCoroutine(Move(targetPos));
+        var targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
+        
+        if(targetPos.HasValue)
+            yield return StartCoroutine(Move(targetPos.Value));
 
         if (moveCommand.BlockedPosition.HasValue)
         {
-            Vector3 blockedPos = GridManager.Instance.GridToWorldPosition(moveCommand.BlockedPosition.Value);
-            yield return StartCoroutine(BlockedAnimation(blockedPos));
+            var blockedPos = GridManager.Instance.GridToWorldPosition(moveCommand.BlockedPosition.Value);
+            
+            if(blockedPos.HasValue)
+                yield return StartCoroutine(BlockedAnimation(blockedPos.Value));
         }
         
         GameManager.Instance.CmdUnitMovementDone();
@@ -248,45 +255,47 @@ public abstract class Unit : NetworkBehaviour
     protected virtual IEnumerator Attack(Attack attack)
     {
         Vector3 startingPos = transform.position;
-        Vector3 direction = GridManager.Instance.GridToWorldPosition(attack.Tiles[0]) - startingPos;
+        Vector3 direction = GridManager.Instance.GridToWorldPosition(attack.Tiles[0])!.Value - startingPos;
         direction.y = 0;
         
         Quaternion targetRotation = Quaternion.LookRotation(direction);
         
+        var unitTransform = transform;
         var elapsedTime = 0f;
 
         while (elapsedTime < data.stepDuration)
         {
             if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
                 transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
-
-            var newPos = transform.position;
+            
+            var newPos = unitTransform.position;
             var progression = elapsedTime / data.stepDuration;
             newPos.y = startingPos.y + 4 * moveArcHeight * progression * (1 - progression);
             
-            transform.position = newPos;
+            unitTransform.position = newPos;
             
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
 
-        transform.position = startingPos;
-        transform.rotation = targetRotation;
+        unitTransform.position = startingPos;
+        unitTransform.rotation = targetRotation;
         
         GameManager.Instance.CmdUnitAttackDone();
     }
     
     /// <summary>Used to generate path of MoveCommand inside of GetValidMoves</summary>
-    protected List<Vector2Int> GeneratePath(Vector2Int start, Vector2Int end)
+    protected static List<Vector3Int> GeneratePath(Vector3Int start, Vector3Int end)
     {
-        var path = new List<Vector2Int>();
+        var path = new List<Vector3Int>();
         var current = start;
 
         while (current != end)
         {
-            var step = new Vector2Int(
+            var step = new Vector3Int(
                 current.x < end.x ? 1 : (current.x > end.x ? -1 : 0),
-                current.y < end.y ? 1 : (current.y > end.y ? -1 : 0)
+                current.y < end.y ? 1 : (current.y > end.y ? -1 : 0),
+                current.z < end.z ? 1 : (current.z > end.z ? -1 : 0)
             );
 
             current += step;
@@ -506,7 +515,7 @@ public abstract class Unit : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdChangePosition(Vector3 position, Vector2Int tilePos)
+    private void CmdChangePosition(Vector3 position, Vector3Int tilePos)
     {
         RPCChangePosition(position, tilePos);
     }
@@ -548,7 +557,7 @@ public abstract class Unit : NetworkBehaviour
     }
     
     [ClientRpc]
-    private void RPCChangePosition(Vector3 position, Vector2Int tilePos)
+    private void RPCChangePosition(Vector3 position, Vector3Int tilePos)
     {
         transform.position = position;
         TilePosition = tilePos;

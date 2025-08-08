@@ -9,7 +9,7 @@ public class PathManager : NetworkBehaviour
     
     [SerializeField] private GameObject pathPrefab;
     
-    private Dictionary<Vector2Int, PathRenderer> _activePaths = new();
+    private Dictionary<Vector3Int, PathRenderer> _activePaths = new();
     
     private void Awake()
     {
@@ -35,7 +35,7 @@ public class PathManager : NetworkBehaviour
     }
 
     [Server]
-    public void CreatePath(MoveCommand path, Vector2Int start, Vector2Int unitPosition)
+    public void CreatePath(MoveCommand path, Vector3Int start, Vector3Int unitPosition)
     {
         if (pathPrefab == null) 
             return;
@@ -45,7 +45,7 @@ public class PathManager : NetworkBehaviour
     
     public void ClearAllPaths()
     {
-        foreach (PathRenderer path in _activePaths.Values)
+        foreach (var path in _activePaths.Values)
             Destroy(path.gameObject);
         
         _activePaths.Clear();
@@ -59,7 +59,7 @@ public class PathManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void RPCSpawnNewPath(MoveCommand moveCommand, Vector2Int start, Vector2Int unitPosition)
+    private void RPCSpawnNewPath(MoveCommand moveCommand, Vector3Int start, Vector3Int unitPosition)
     {
         var unit = GridManager.Instance.GetTileAtGridPosition(unitPosition).Unit;
         

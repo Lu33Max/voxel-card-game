@@ -25,9 +25,9 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     /// <summary>SERVER ONLY<br/>List of all moves to execute when round finishes</summary>
-    public Dictionary<Vector2Int, List<MoveCommand>> MoveIntents = new();
+    public Dictionary<Vector3Int, List<MoveCommand>> MoveIntents = new();
     /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
-    public Dictionary<Vector2Int, List<Attack>> AttackIntents = new();
+    public Dictionary<Vector3Int, List<Attack>> AttackIntents = new();
 
     public static UnityEvent PlayersReady = new();
     public static UnityEvent RoundTimerUp = new();
@@ -142,7 +142,7 @@ public class GameManager : NetworkBehaviour
     }
 
     [Server]
-    public void RegisterMoveIntent(Vector2Int unitPos, MoveCommand moveCommand)
+    public void RegisterMoveIntent(Vector3Int unitPos, MoveCommand moveCommand)
     {
         if (MoveIntents.TryGetValue(unitPos, out _))
             MoveIntents[unitPos].Add(moveCommand);
@@ -151,7 +151,7 @@ public class GameManager : NetworkBehaviour
     }
 
     [Server]
-    public void RegisterAttackIntent(Vector2Int unitPos, Attack newAttack, Team team)
+    public void RegisterAttackIntent(Vector3Int unitPos, Attack newAttack, Team team)
     {
         if (AttackIntents.TryGetValue(unitPos, out _))
             AttackIntents[unitPos].Add(newAttack);
@@ -171,7 +171,7 @@ public class GameManager : NetworkBehaviour
     }
 
     [Server]
-    public void UnitDefeated(Vector2Int unitPos)
+    public void UnitDefeated(Vector3Int unitPos)
     {
         AttackIntents.Remove(unitPos);
     }
@@ -186,19 +186,19 @@ public class GameManager : NetworkBehaviour
     private void ExecuteMoveIntents()
     {
         // Combine all moveCommands for every unit
-        Dictionary<Vector2Int, MoveCommand> intendedMoves =
+        Dictionary<Vector3Int, MoveCommand> intendedMoves =
             MoveIntents.ToDictionary(intent => intent.Key, intent => new MoveCommand
             {
                 TargetPosition = intent.Value.Last().TargetPosition,
                 Path = intent.Value.SelectMany((m, index) => m.Path.Concat(index < intent.Value.Count - 1
                         ? new[] { m.TargetPosition }
-                        : Enumerable.Empty<Vector2Int>()))
+                        : Enumerable.Empty<Vector3Int>()))
                     .ToList()
             });
 
         // Static units are all units minus the ones with move intents
-        List<Vector2Int> staticUnits = GridManager.Instance.GetAllUnitTiles().Except(intendedMoves.Keys).ToList();
-        Dictionary<Vector2Int, MoveCommand> actualMoves = new();
+        List<Vector3Int> staticUnits = GridManager.Instance.GetAllUnitTiles().Except(intendedMoves.Keys).ToList();
+        Dictionary<Vector3Int, MoveCommand> actualMoves = new();
 
         int i = 0;
         while (intendedMoves.Count > 0)

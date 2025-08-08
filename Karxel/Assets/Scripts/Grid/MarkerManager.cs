@@ -8,7 +8,7 @@ public class MarkerManager : NetworkBehaviour
     
     public static MarkerManager Instance { get; private set; }
     
-    private Dictionary<Vector2Int, Marker> _markers = new();
+    private Dictionary<Vector3Int, Marker> _markers = new();
     
     
     private void Awake()
@@ -24,18 +24,18 @@ public class MarkerManager : NetworkBehaviour
 
     /// <summary>Registers new tile upon board creation</summary>
     [Client]
-    public void RegisterTile(Vector2Int tilePos, Vector3 worldPos, float scale)
+    public void RegisterTile(Vector3Int tilePos, Vector3 worldPos, Vector3 scale)
     {
         var marker = Instantiate(markerPrefab, transform);
         marker.transform.position = worldPos;
-        marker.transform.localScale = new Vector3(scale, scale, scale);
+        marker.transform.localScale = scale;
         
         _markers[tilePos] = marker.GetComponent<Marker>();
     }
 
     /// <summary>Adds a new Marker to the given position</summary>
     [ClientRpc]
-    public void RPCAddMarker(Vector2Int position, MarkerData markerData)
+    public void RPCAddMarker(Vector3Int position, MarkerData markerData)
     {
         if (ShouldIgnore(markerData.Visibility))
             return;
@@ -45,7 +45,7 @@ public class MarkerManager : NetworkBehaviour
     }
     
     [Client]
-    public void AddMarkerLocal(Vector2Int position, MarkerData markerData)
+    public void AddMarkerLocal(Vector3Int position, MarkerData markerData)
     {
         if (ShouldIgnore(markerData.Visibility))
             return;
@@ -56,14 +56,14 @@ public class MarkerManager : NetworkBehaviour
 
     // Entfernt eine Markierung von einem spezifischen Tile
     [ClientRpc]
-    public void RPCRemoveMarker(Vector2Int position, MarkerType markerType, string visibility)
+    public void RPCRemoveMarker(Vector3Int position, MarkerType markerType, string visibility)
     {
         if (_markers.TryGetValue(position, out Marker tile))
             tile.RemoveMarker(markerType, visibility);
     }
     
     [Client]
-    public void RemoveMarkerLocal(Vector2Int position, MarkerType markerType, string visibility)
+    public void RemoveMarkerLocal(Vector3Int position, MarkerType markerType, string visibility)
     {
         if (_markers.TryGetValue(position, out Marker tile))
             tile.RemoveMarker(markerType, visibility);
@@ -71,7 +71,7 @@ public class MarkerManager : NetworkBehaviour
 
     // Entfernt alle Markierungen von einem Tile
     [ClientRpc]
-    public void RPCClearMarkers(Vector2Int position)
+    public void RPCClearMarkers(Vector3Int position)
     {
         if (_markers.TryGetValue(position, out Marker tile))
             tile.ClearAllMarkers();

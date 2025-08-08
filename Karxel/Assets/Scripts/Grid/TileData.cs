@@ -3,17 +3,8 @@ using UnityEngine;
 
 public class TileData
 {
-    public Vector2Int Position;
-    public int HeightLayer;
+    public Vector3Int TilePosition;
+    public Vector3 WorldPosition;
 
     [CanBeNull] public Unit Unit;
-
-    /// <summary>Calculates the world position of the current tile</summary>
-    /// <param name="yOffset">Optional offset on top of y-coordinate</param>
-    /// <returns></returns>
-    public Vector3 GetWorldPosition(float yOffset = 0f)
-    {
-        Vector3 worldPos = GridManager.Instance.GridToWorldPosition(Position);
-        return new Vector3(worldPos.x, worldPos.y + yOffset, worldPos.z);
-    }
 }

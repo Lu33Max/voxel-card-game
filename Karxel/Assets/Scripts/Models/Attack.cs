@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Attack
 {
-    public List<Vector2Int> Tiles;
+    public List<Vector3Int> Tiles;
     public int Damage;
     public int PlayerId;
 }

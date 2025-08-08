@@ -1987,6 +1987,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2519460356350174845, guid: b085b4f4103ca3145b3ee388988b82f1,
         type: 3}
+      propertyPath: mapSize.x
+      value: 39
+      objectReference: {fileID: 0}
+    - target: {fileID: 2519460356350174845, guid: b085b4f4103ca3145b3ee388988b82f1,
+        type: 3}
+      propertyPath: mapSize.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2519460356350174845, guid: b085b4f4103ca3145b3ee388988b82f1,
+        type: 3}
+      propertyPath: mapSize.z
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 2519460356350174845, guid: b085b4f4103ca3145b3ee388988b82f1,
+        type: 3}
       propertyPath: redParent
       value: 
       objectReference: {fileID: 805257955}

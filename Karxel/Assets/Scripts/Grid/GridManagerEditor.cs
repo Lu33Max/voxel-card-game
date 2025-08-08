@@ -25,7 +25,7 @@ public class GridManagerEditor : Editor
         foreach (var tile in manager.tiles.Values)
         {
             Gizmos.color = tile.walkable ? Color.green : Color.red;
-            Gizmos.DrawWireCube(tile.worldPos, Vector3.one * 0.3f * 0.9f);
+            Gizmos.DrawWireCube(tile.worldPos, new Vector3(1, 0.2f, 1) * 0.3f * 0.9f);
         }
     }
 }

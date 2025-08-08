@@ -10,15 +10,12 @@ public class GridManager : NetworkBehaviour
     public static GridManager Instance { get; private set; }
     
     [Header("Grid Setup")]
-    [SerializeField, Tooltip("Max number of tiles in x-Direction")] 
-    private int gridSizeX = 10;
-    [SerializeField, Tooltip("Max number of tiles in z-Direction")] 
-    private int gridSizeZ = 10;
-    [SerializeField, Tooltip("Edge length of a single tile")] 
-    private float gridResolution = 1;
-    [SerializeField, Tooltip("Height of a single map layer")]
-    private float layerHeight = 0.5f;
-    [SerializeField] private LayerMask groundLayer;
+    [SerializeField, Tooltip("The maximum dimensions of the map measured in tiles")]
+    private Vector3Int mapSize;
+    [SerializeField, Tooltip("The dimensions of a singular tile in meters")]
+    private Vector3 tileSize = new(0.3f, 0.3f, 0.3f);
+    [SerializeField, Tooltip("Layermask used by all walkable colliders")] 
+    private LayerMask groundLayer;
 
     [FormerlySerializedAs("highlightHoverHeight")]
     [Header("Highlighting")]
@@ -29,7 +26,7 @@ public class GridManager : NetworkBehaviour
     [SerializeField] private Transform redParent;
 
     
-    private Dictionary<Vector2Int, TileData> _tiles = new();
+    private Dictionary<Vector3Int, TileData> _tiles = new();
     private GameObject _map;
     private int _readyPlayers;
 
@@ -45,12 +42,12 @@ public class GridManager : NetworkBehaviour
     {
         tiles.Clear();
 
-        for (int x = 0; x < gridSizeX; x++)
+        for (int x = 0; x < mapSize.x; x++)
         {
-            for (int y = 0; y < gridSizeZ; y++)
+            for (int z = 0; z < mapSize.z; z++)
             {
                 Ray ray = new Ray(
-                    new Vector3(x * gridResolution + gridResolution / 2, 200, y * gridResolution + gridResolution / 2),
+                    new Vector3(x * tileSize.x + tileSize.x / 2, 200, z * tileSize.z + tileSize.z / 2),
                     Vector3.down);
 
                 // ReSharper disable once Unity.PreferNonAllocApi
@@ -59,10 +56,12 @@ public class GridManager : NetworkBehaviour
                 foreach (var hit in results)
                 {
                     Vector3Int gridPos = new Vector3Int(
-                        Mathf.RoundToInt(hit.point.x / gridResolution - gridResolution / 2),
-                        Mathf.RoundToInt(hit.point.y / gridResolution - gridResolution / 2),
-                        Mathf.RoundToInt(hit.point.z / gridResolution - gridResolution / 2)
+                        Mathf.RoundToInt(hit.point.x / tileSize.x - tileSize.x / 2),
+                        Mathf.RoundToInt(hit.point.y / tileSize.y - tileSize.y / 2),
+                        Mathf.RoundToInt(hit.point.z / tileSize.z - tileSize.z / 2)
                     );
+                    
+                    if(gridPos.x < 0 || gridPos.x > mapSize.x || gridPos.y < 0 || gridPos.y > mapSize.y || gridPos.z < 0 || gridPos.z > mapSize.z) return;
 
                     tiles.TryAdd(gridPos, new GridTile
                     {
@@ -91,38 +90,37 @@ public class GridManager : NetworkBehaviour
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
-    public TileData GetTileAtGridPosition(Vector2Int tilePosition)
+    public TileData GetTileAtGridPosition(Vector3Int tilePosition)
     {
         _tiles.TryGetValue(tilePosition, out TileData tile);
         return tile;
     }
 
     /// <summary>Retrieve TileData at a world position by converting it to grid tiles.</summary>
-    public TileData GetTileAtWorldPosition(Vector2 worldPosition)
+    public TileData GetTileAtWorldPosition(Vector3 worldPosition)
     {
-        Vector2Int gridPosition = WorldToGridPosition(worldPosition);
+        Vector3Int gridPosition = WorldToGridPosition(worldPosition);
         return GetTileAtGridPosition(gridPosition);
     }
 
     /// <summary>Converts a given world coordinate into a grid coordinate.</summary>
-    public Vector2Int WorldToGridPosition(Vector2 worldPosition)
+    public Vector3Int WorldToGridPosition(Vector3 worldPosition)
     {
-        return new Vector2Int(Mathf.FloorToInt(worldPosition.x / gridResolution),
-            Mathf.FloorToInt(worldPosition.y / gridResolution));
+        return new Vector3Int(Mathf.FloorToInt(worldPosition.x / tileSize.x),
+            Mathf.FloorToInt(worldPosition.y / tileSize.y), Mathf.FloorToInt(worldPosition.z / tileSize.z));
     }
 
     /// <summary>Convert a grid position into world coordinates</summary>
-    public Vector3 GridToWorldPosition(Vector2Int gridPosition)
+    public Vector3? GridToWorldPosition(Vector3Int gridPosition)
     {
         if (!IsValidGridPosition(gridPosition))
-            return Vector3.zero;
+            return null;
         
-        return new Vector3(gridPosition.x * gridResolution + gridResolution / 2, _tiles[gridPosition].HeightLayer * layerHeight,
-            gridPosition.y * gridResolution + gridResolution / 2);
+        return _tiles[gridPosition].WorldPosition;
     }
 
     /// <summary>Returns a list of all positions currently containing references to units</summary>
-    public List<Vector2Int> GetAllUnitTiles()
+    public IEnumerable<Vector3Int> GetAllUnitTiles()
     {
         return _tiles.Where(t => t.Value.Unit != null)
             .Select(t => t.Key)
@@ -130,7 +128,7 @@ public class GridManager : NetworkBehaviour
     }
 
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
-    public bool IsValidGridPosition(Vector2Int gridPosition)
+    public bool IsValidGridPosition(Vector3Int gridPosition)
     {
         return _tiles.ContainsKey(gridPosition);
     }
@@ -151,7 +149,7 @@ public class GridManager : NetworkBehaviour
     }
 
     /// <summary>Transfers a Unit-reference from a start tile to a target tile</summary>
-    public void MoveUnit(Vector2Int startTile, Vector2Int targetTile)
+    public void MoveUnit(Vector3Int startTile, Vector3Int targetTile)
     {
         var unit = _tiles[startTile].Unit;
         
@@ -163,7 +161,7 @@ public class GridManager : NetworkBehaviour
     }
 
     /// <summary>Removes the reference to the unit from the given tile</summary>
-    public void RemoveUnit(Vector2Int unitPos)
+    public void RemoveUnit(Vector3Int unitPos)
     {
         CmdUpdateTileUnit(unitPos, null);
     }
@@ -173,26 +171,35 @@ public class GridManager : NetworkBehaviour
     [Client]
     private void CalculateTilePositions()
     {
-        for (int x = 0; x < gridSizeX; x++)
+        for (var x = 0; x < mapSize.x; x++)
         {
-            for (int y = 0; y < gridSizeZ; y++)
+            for (var z = 0; z < mapSize.z; z++)
             {
-                Ray ray = new Ray(
-                    new Vector3(x * gridResolution + gridResolution / 2, 200, y * gridResolution + gridResolution / 2),
+                var ray = new Ray(
+                    new Vector3(x * tileSize.x + tileSize.x / 2, 200, z * tileSize.z + tileSize.z / 2),
                     Vector3.down);
                 
-                if (!Physics.Raycast(ray, out RaycastHit hitInfo, 250, groundLayer))
-                    continue;
-                
-                var gridPos = new Vector2Int(x, y);
-                var tile = new TileData
-                    { Position = gridPos, HeightLayer = Mathf.RoundToInt(hitInfo.point.y / layerHeight) };
+                // ReSharper disable once Unity.PreferNonAllocApi
+                var raycastHits = Physics.RaycastAll(ray, 250, groundLayer);
 
-                _tiles.Add(gridPos, tile);
+                foreach (var hit in raycastHits)
+                {
+                    Vector3Int gridPos = new Vector3Int(
+                        Mathf.RoundToInt(hit.point.x / tileSize.x - tileSize.x / 2),
+                        Mathf.RoundToInt(hit.point.y / tileSize.y - tileSize.y / 2),
+                        Mathf.RoundToInt(hit.point.z / tileSize.z - tileSize.z / 2)
+                    );
 
-                var worldPos = hitInfo.point;
-                worldPos.y += markerHeight;
-                MarkerManager.Instance.RegisterTile(gridPos, worldPos, gridResolution);
+                    _tiles.TryAdd(gridPos, new TileData
+                    {
+                        TilePosition = gridPos,
+                        WorldPosition = hit.point,
+                    });
+                    
+                    var worldPos = hit.point;
+                    worldPos.y += markerHeight;
+                    MarkerManager.Instance.RegisterTile(gridPos, worldPos, tileSize);
+                }
             }
         }
 
@@ -205,15 +212,14 @@ public class GridManager : NetworkBehaviour
     {
         foreach (var parent in new List<Transform>{blueParent, redParent})
         {
-            for(int i = 0; i < parent.transform.childCount; i++)
+            for(var i = 0; i < parent.transform.childCount; i++)
             {
                 var unit = parent.transform.GetChild(i);
                 var unitScript = unit.GetComponent<Unit>();
 
                 var unitPosition = unit.position;
-                Vector2Int gridPos =
-                    new Vector2Int(Mathf.RoundToInt((unitPosition.x - (gridResolution / 2)) / gridResolution),
-                        Mathf.RoundToInt((unitPosition.z - (gridResolution / 2)) / gridResolution));
+                
+                Vector3Int gridPos = WorldToGridPosition(unitPosition);
             
                 if(!IsValidGridPosition(gridPos))
                     continue;
@@ -229,7 +235,7 @@ public class GridManager : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdUpdateTileUnit(Vector2Int gridPos, Unit unit)
+    private void CmdUpdateTileUnit(Vector3Int gridPos, Unit unit)
     {
         var tile = _tiles[gridPos];
         tile.Unit = unit;
@@ -246,7 +252,7 @@ public class GridManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void RPCUpdateTile(Vector2Int pos, TileData newTile)
+    private void RPCUpdateTile(Vector3Int pos, TileData newTile)
     {
         _tiles[pos] = newTile;
     }

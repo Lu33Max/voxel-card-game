@@ -9,22 +9,20 @@ public class HeavyUnit : Unit
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
         
-        var directions = new List<Vector2Int>
+        var directions = new List<Vector3Int>
         {
-            Vector2Int.down, Vector2Int.left, Vector2Int.right, Vector2Int.up, 
-            new (1, -1), new (1, 1) , new (-1, 1), new (-1, -1)
+            Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward, 
+            new (1, 0, -1), new (1, 0, 1) , new (-1, 0, 1), new (-1, 0, -1)
         };
 
-        for (int i = 1; i <= movementRange; i++)
+        for (var i = 1; i <= movementRange; i++)
         {
             foreach (var direction in directions)
             {
-                var path = new List<Vector2Int>();
+                var path = new List<Vector3Int>();
 
-                for (int j = 1; j < i; j++)
-                {
+                for (var j = 1; j < i; j++)
                     path.Add(startPosition + direction * j);
-                }
             
                 moves.Add(new MoveCommand { TargetPosition = startPosition + direction * i, Path = path });
             }
@@ -33,14 +31,14 @@ public class HeavyUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override List<Vector2Int> GetValidAttackTiles(int attackRange)
+    public override List<Vector3Int> GetValidAttackTiles(int attackRange)
     {
-        return new List<Vector2Int>
+        return new List<Vector3Int>
             {
-                TilePosition + Vector2Int.up, TilePosition + Vector2Int.left,
-                TilePosition + Vector2Int.down, TilePosition + Vector2Int.right,
-                TilePosition + new Vector2Int(1, 1), TilePosition + new Vector2Int(-1, 1),
-                TilePosition + new Vector2Int(1, -1), TilePosition + new Vector2Int(-1, -1)
+                TilePosition + Vector3Int.back, TilePosition + Vector3Int.left,
+                TilePosition + Vector3Int.forward, TilePosition + Vector3Int.right,
+                TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
+                TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1)
             }
             .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList();
     }
@@ -48,7 +46,7 @@ public class HeavyUnit : Unit
     public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
         Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
     {
-        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition);
+        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition).GetValueOrDefault();
         
         var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
         var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
@@ -61,13 +59,12 @@ public class HeavyUnit : Unit
         
         hasChanged = true;
 
-        List<Vector2Int> tiles = newAngle switch
+        List<Vector3Int> tiles = newAngle switch
         {
-            0 => new() { Vector2Int.down, new Vector2Int(-1, -1), new Vector2Int(1, -1) },
-            1 => new() { Vector2Int.right, new Vector2Int(1, -1), new Vector2Int(1, 1) },
-            2 => new() { Vector2Int.up, new Vector2Int(-1, 1), new Vector2Int(1, 1) },
-            3 => new() { Vector2Int.left, new Vector2Int(-1, -1), new Vector2Int(-1, 1) },
-            _ => new() { Vector2Int.down, new Vector2Int(-1, -1), new Vector2Int(1, -1) },
+            1 => new() { Vector3Int.right, new Vector3Int(1, 0, -1), new Vector3Int(1, 0, 1) },
+            2 => new() { Vector3Int.forward, new Vector3Int(-1, 0, 1), new Vector3Int(1, 0, 1) },
+            3 => new() { Vector3Int.left, new Vector3Int(-1, 0, -1), new Vector3Int(-1, 0, 1) },
+            _ => new() { Vector3Int.back, new Vector3Int(-1, 0, -1), new Vector3Int(1, 0, -1) },
         };
 
         return new Attack

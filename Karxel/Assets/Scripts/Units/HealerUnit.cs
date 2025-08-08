@@ -17,28 +17,31 @@ public class HealerUnit : Unit
         {
             for (var y = -radius; y <= radius; y++)
             {
-                var offset = new Vector2Int(x, y);
-                var targetPosition = startPosition + offset;
+                for (var z = -radius; z <= radius; z++)
+                {
+                    var offset = new Vector3Int(x, y, z);
+                    var targetPosition = startPosition + offset;
 
-                if (offset.x * offset.x + offset.y * offset.y > radius * radius) 
-                    continue;
-                
-                var path = GeneratePath(startPosition, targetPosition);
-                moves.Add(new MoveCommand { TargetPosition = targetPosition, Path = path });
+                    if (offset.x * offset.x + offset.y * offset.y + offset.z * offset.z > radius * radius)
+                        continue;
+
+                    var path = GeneratePath(startPosition, targetPosition);
+                    moves.Add(new MoveCommand { TargetPosition = targetPosition, Path = path });
+                }
             }
         }
         
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override List<Vector2Int> GetValidAttackTiles(int attackRange)
+    public override List<Vector3Int> GetValidAttackTiles(int attackRange)
     {
-        return new List<Vector2Int>
+        return new List<Vector3Int>
             {
-                TilePosition + Vector2Int.up, TilePosition + Vector2Int.left,
-                TilePosition + Vector2Int.down, TilePosition + Vector2Int.right,
-                TilePosition + new Vector2Int(1, 1), TilePosition + new Vector2Int(-1, 1),
-                TilePosition + new Vector2Int(1, -1), TilePosition + new Vector2Int(-1, -1)
+                TilePosition + Vector3Int.back, TilePosition + Vector3Int.left,
+                TilePosition + Vector3Int.forward, TilePosition + Vector3Int.right,
+                TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
+                TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1)
             }
             .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList();
     }
@@ -57,11 +60,11 @@ public class HealerUnit : Unit
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector2Int>
+            Tiles = new List<Vector3Int>
                 {
-                    TilePosition + Vector2Int.up, TilePosition + Vector2Int.left, TilePosition + Vector2Int.down, 
-                    TilePosition + Vector2Int.right, TilePosition + new Vector2Int(1, 1), TilePosition + new Vector2Int(-1, 1), 
-                    TilePosition + new Vector2Int(1, -1), TilePosition + new Vector2Int(-1, -1), TilePosition
+                    TilePosition + Vector3Int.back, TilePosition + Vector3Int.left, TilePosition + Vector3Int.forward, 
+                    TilePosition + Vector3Int.right, TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1), 
+                    TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1), TilePosition
                 }
                 .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId

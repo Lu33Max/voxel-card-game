@@ -10,13 +10,13 @@ public class PawnUnit : Unit
     {
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
-        var directions = new List<Vector2Int> { Vector2Int.down, Vector2Int.left, Vector2Int.right, Vector2Int.up };
+        var directions = new List<Vector3Int> { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward };
         
         for (int i = 1; i <= movementRange * baseRange; i++)
         {
             foreach (var direction in directions)
             {
-                var path = new List<Vector2Int>();
+                var path = new List<Vector3Int>();
                 
                 for (int j = 1; j < i; j++)
                     path.Add(startPosition + direction * j);
@@ -28,12 +28,12 @@ public class PawnUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
     
-    public override List<Vector2Int> GetValidAttackTiles(int attackRange)
+    public override List<Vector3Int> GetValidAttackTiles(int attackRange)
     {
-        return new List<Vector2Int>
+        return new List<Vector3Int>
             {
-                TilePosition + Vector2Int.up, TilePosition + Vector2Int.left,
-                TilePosition + Vector2Int.down, TilePosition + Vector2Int.right,
+                TilePosition + Vector3Int.forward, TilePosition + Vector3Int.left,
+                TilePosition + Vector3Int.back, TilePosition + Vector3Int.right,
             }
             .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList();
     }
@@ -41,7 +41,7 @@ public class PawnUnit : Unit
     public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
         Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
     {
-        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition);
+        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition).GetValueOrDefault();
 
         var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up,
             new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
@@ -56,20 +56,18 @@ public class PawnUnit : Unit
         
         hasChanged = true;
 
-        Vector2Int tile = newAngle switch
+        var tile = newAngle switch
         {
-            0 => Vector2Int.down,
-            1 => Vector2Int.right,
-            2 => Vector2Int.up,
-            3 => Vector2Int.left,
-            4 => Vector2Int.down,
-            _ => Vector2Int.up
+            1 => Vector3Int.right,
+            2 => Vector3Int.forward,
+            3 => Vector3Int.left,
+            _ => Vector3Int.back,
         };
 
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector2Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
+            Tiles = new List<Vector3Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }
