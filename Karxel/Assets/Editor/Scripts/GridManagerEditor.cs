@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +8,7 @@ public class GridManagerEditor : Editor
     {
         DrawDefaultInspector();
 
-        GridManager manager = (GridManager)target;
+        var manager = (GridManager)target;
         if (GUILayout.Button("Scan Tiles"))
         {
             manager.ScanTiles();
@@ -18,7 +16,7 @@ public class GridManagerEditor : Editor
     }
 
     [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
-    static void DrawTileGizmos(GridManager manager, GizmoType gizmoType)
+    private static void DrawTileGizmos(GridManager manager, GizmoType gizmoType)
     {
         if (manager.tiles == null) return;
 
