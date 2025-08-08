@@ -1,6 +1,8 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
+/// <summary>
+/// Manager responsible for storing an playing SFX clips and background music
+/// </summary>
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
@@ -27,9 +29,13 @@ public class AudioManager : MonoBehaviour
     public AudioClip UnitAttack => unitAttack;
     public AudioClip UnitHurt => unitHurt;
 
+    /// <summary> Normalized value for the volume of sfx</summary>
     public static float SfxVolume { get; private set; } = 1f;
+    
+    /// <summary> Normalized value for the volume of background music </summary>
     public static float MusicVolume { get; private set; } = 1f;
     
+    /// <summary> Setup the singleton, retrieve the previously saved volume settings and start playing the menu music </summary>
     private void Awake()
     {
         if (Instance != null)
@@ -45,11 +51,13 @@ public class AudioManager : MonoBehaviour
         PlayMusic(menuMusic);
     }
 
+    /// <summary> Plays the given sound clip once with a random pitch between the given min and max </summary>
     public void PlaySfx(AudioClip clip, float minPitch = 0.90f, float maxPitch = 1.1f)
     {
         PlaySfx(sfxSource, clip, minPitch, maxPitch);
     }
 
+    /// <summary> Plays the given music clip on loop </summary>
     public void PlayMusic(AudioClip clip)
     {
         if (musicSource.clip == clip) 
@@ -59,6 +67,7 @@ public class AudioManager : MonoBehaviour
         musicSource.Play();
     }
 
+    /// <summary> Updates the volumes for the sfx and music sources </summary>
     public void SetVolume(float musicVol, float sfxVol)
     {
         MusicVolume = musicVol;
@@ -68,6 +77,7 @@ public class AudioManager : MonoBehaviour
         sfxSource.volume = SfxVolume;
     }
     
+    /// <summary> Used to play sfx with randomized pitch on any given audio source </summary>
     public static void PlaySfx(AudioSource source, AudioClip clip, float minPitch = 0.90f, float maxPitch = 1.1f)
     {
         source.volume = SfxVolume;

@@ -33,6 +33,48 @@ public class GridManager : NetworkBehaviour
     private GameObject _map;
     private int _readyPlayers;
 
+    public class GridTile
+    {
+        public Vector3Int gridPos;
+        public Vector3 worldPos;
+        public bool walkable;
+    }
+    public Dictionary<Vector3Int, GridTile> tiles = new();
+    
+    public void ScanTiles()
+    {
+        tiles.Clear();
+
+        for (int x = 0; x < gridSizeX; x++)
+        {
+            for (int y = 0; y < gridSizeZ; y++)
+            {
+                Ray ray = new Ray(
+                    new Vector3(x * gridResolution + gridResolution / 2, 200, y * gridResolution + gridResolution / 2),
+                    Vector3.down);
+
+                // ReSharper disable once Unity.PreferNonAllocApi
+                RaycastHit[] results = Physics.RaycastAll(ray, 250, groundLayer);
+
+                foreach (var hit in results)
+                {
+                    Vector3Int gridPos = new Vector3Int(
+                        Mathf.RoundToInt(hit.point.x / gridResolution - gridResolution / 2),
+                        Mathf.RoundToInt(hit.point.y / gridResolution - gridResolution / 2),
+                        Mathf.RoundToInt(hit.point.z / gridResolution - gridResolution / 2)
+                    );
+
+                    tiles.TryAdd(gridPos, new GridTile
+                    {
+                        gridPos = gridPos,
+                        worldPos = hit.point,
+                        walkable = true
+                    });
+                }
+            }
+        }
+    }
+    
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -128,6 +170,7 @@ public class GridManager : NetworkBehaviour
 
     // Calculates all tile positions of the board by doing a raycast at each one of them
     // With this method, even uneven play fields can be correctly mapped
+    [Client]
     private void CalculateTilePositions()
     {
         for (int x = 0; x < gridSizeX; x++)

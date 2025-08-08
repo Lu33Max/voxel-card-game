@@ -1,8 +1,6 @@
 using System;
 using UnityEngine;
 using Discord;
-using Mirror;
-using UnityEditor;
 
 public class DiscordManager : MonoBehaviour
 {

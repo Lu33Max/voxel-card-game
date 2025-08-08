@@ -49,6 +49,7 @@ public class HandManager : MonoBehaviour
     {
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
      
+        // TODO: Check if mouse is set in inspector or this is still needed
         mouseFollower = FindObjectOfType<MouseFollower>();
         if (mouseFollower == null)
             Debug.LogWarning("No MouseFollower Object found");

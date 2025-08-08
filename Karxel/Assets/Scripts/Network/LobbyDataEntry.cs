@@ -26,7 +26,7 @@ public class LobbyDataEntry : MonoBehaviour
     public void SetLobbyData(LobbyDetails lobby)
     {
         // Lobby name
-        LobbyDetailsCopyAttributeByKeyOptions copyOptions = new LobbyDetailsCopyAttributeByKeyOptions { AttrKey = "LobbyName" };
+        LobbyDetailsCopyAttributeByKeyOptions copyOptions = new() { AttrKey = "LobbyName" };
         lobby.CopyAttributeByKey(ref copyOptions, out var lobbyNameAttribute);
             
         if (lobbyNameAttribute.HasValue && lobbyNameAttribute.Value.Data.HasValue)

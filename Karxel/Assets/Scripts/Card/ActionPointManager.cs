@@ -59,6 +59,7 @@ public class ActionPointManager : MonoBehaviour
             handManager.DeselectCurrentCard();
     }
 
+    // TODO: Convert to event based version
     public void UpdateActionPointsOnPlay(int valueToAdd)
     {
         ActionPoints = Mathf.Clamp(ActionPoints + valueToAdd, 0, _maxPoints);
