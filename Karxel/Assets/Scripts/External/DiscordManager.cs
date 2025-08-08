@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Discord;
+using JetBrains.Annotations;
 
 public class DiscordManager : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class DiscordManager : MonoBehaviour
     
     public static DiscordManager Instance;
     
-    private Discord.Discord _discord;
+    [CanBeNull] private Discord.Discord _discord;
     private Activity _activity;
     private ActivityState _lastState;
 
@@ -27,19 +28,30 @@ public class DiscordManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         
-        _discord = new Discord.Discord(1342122312463417396, (ulong)CreateFlags.NoRequireDiscord);
         _activity = new Activity();
-        
         UpdateActivity(ActivityState.Menu);
     }
-
-    private void OnDisable()
+    
+    private void Update()
     {
-        _discord.Dispose();
+        _discord?.RunCallbacks();
+    }
+
+    private void OnDestroy()
+    {
+        _discord?.Dispose();
     }
     
     public void UpdateActivity(ActivityState state, Team team = Team.None, int playerCount = 0, int round = 0)
     {
+        // If no client has been set up, retry in case the user has opened the app in the meantime
+        if (_discord == null)
+        {
+            SetupDiscord();
+            
+            if(_discord == null) return;
+        };
+        
         var activityManager = _discord.GetActivityManager();
 
         if (_lastState != state || _activity.Timestamps.Start == 0)
@@ -96,8 +108,8 @@ public class DiscordManager : MonoBehaviour
         });
     }
 
-    private void Update()
+    private void SetupDiscord()
     {
-        _discord.RunCallbacks();
+        _discord = new Discord.Discord(1342122312463417396, (ulong)CreateFlags.NoRequireDiscord);
     }
 }
