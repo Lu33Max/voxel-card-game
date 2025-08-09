@@ -121,18 +121,26 @@ public class GridManager : NetworkBehaviour
 
         foreach (var dir in mainDirections)
         {
-            for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
-            {
-                var target = startPos + dir;
-                target.y += y;
+            var targetTiles = startTile.TileNeighbours.Where(t => t.GridPosition.x == startPos.x + dir.x && t.GridPosition.z == startPos.z + dir.z);
 
-                var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
-                
-                if(targetTile == null) continue;
-                
-                if(validEdgeTypes.Contains(targetTile.EdgeType))
-                    neighbours.Add(target);
+            foreach (var neighbour in targetTiles)
+            {
+                if(validEdgeTypes.Contains(neighbour.EdgeType))
+                    neighbours.Add(neighbour.GridPosition);
             }
+            
+            // for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
+            // {
+            //     var target = startPos + dir;
+            //     target.y += y;
+            //
+            //     var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
+            //     
+            //     if(targetTile == null) continue;
+            //     
+            //     if(validEdgeTypes.Contains(targetTile.EdgeType))
+            //         neighbours.Add(target);
+            // }
         }
 
         if (onlyMainAxis) 
@@ -142,18 +150,26 @@ public class GridManager : NetworkBehaviour
         
         foreach (var dir in crossDirections)
         {
-            for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
-            {
-                var target = startPos + dir;
-                target.y += y;
+            var targetTiles = startTile.TileNeighbours.Where(t => t.GridPosition.x == startPos.x + dir.x && t.GridPosition.z == startPos.z + dir.z);
 
-                var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
-                
-                if(targetTile == null) continue;
-                
-                if(validEdgeTypes.Contains(targetTile.EdgeType))
-                    neighbours.Add(target);
+            foreach (var neighbour in targetTiles)
+            {
+                if(validEdgeTypes.Contains(neighbour.EdgeType))
+                    neighbours.Add(neighbour.GridPosition);
             }
+            
+            // for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
+            // {
+            //     var target = startPos + dir;
+            //     target.y += y;
+            //
+            //     var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
+            //     
+            //     if(targetTile == null) continue;
+            //     
+            //     if(validEdgeTypes.Contains(targetTile.EdgeType))
+            //         neighbours.Add(target);
+            // }
         }
 
         return neighbours.ToArray();

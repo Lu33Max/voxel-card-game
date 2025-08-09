@@ -80,6 +80,9 @@ public class GridManagerEditor : Editor
 
     private static void RenderTileConnections(TileData tile, GridManager manager)
     {
+        if(tile.TileNeighbours == null)
+            return;
+        
         Handles.zTest = CompareFunction.Less;
         
         foreach (var neighbour in tile.TileNeighbours)
@@ -100,8 +103,10 @@ public class GridManagerEditor : Editor
             // Red for completely blocked and unavailable connections
             else if (neighbour.EdgeType == Tile.EdgeType.FullBlockade)
                 Handles.color = Color.red;
-            else
-                return;
+            else if (neighbour.EdgeType == Tile.EdgeType.Jump)
+                Handles.color = Color.cyan;
+            else if (neighbour.EdgeType == Tile.EdgeType.Ladder)
+                Handles.color = new Color(255, 120, 120);
             
             Handles.DrawLine(tile.WorldPosition, endTile.WorldPosition);
         }

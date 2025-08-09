@@ -25,6 +25,8 @@ public class LobbyDataEntry : MonoBehaviour
     
     public void SetLobbyData(LobbyDetails lobby)
     {
+        _lobbyDetails = lobby;
+        
         // Lobby name
         LobbyDetailsCopyAttributeByKeyOptions copyOptions = new() { AttrKey = "LobbyName" };
         lobby.CopyAttributeByKey(ref copyOptions, out var lobbyNameAttribute);
@@ -70,9 +72,9 @@ public class LobbyDataEntry : MonoBehaviour
     {
         if(_lobbyDetails == null || _version != Application.version)
             return;
-        
-        if((_visibility == "1" && _password == passwordInput.text) || _visibility == "0")
-            NetworkManager.singleton.GetComponent<EOSLobby>().JoinLobby(_lobbyDetails, new []{ "LobbyName" });
+
+        if ((_visibility == "1" && _password == passwordInput.text) || _visibility == "0")
+            NetworkManager.singleton.GetComponent<EOSLobby>().JoinLobby(_lobbyDetails, new[] { "LobbyName" });
     }
 
     private void UpdateDisplay()
