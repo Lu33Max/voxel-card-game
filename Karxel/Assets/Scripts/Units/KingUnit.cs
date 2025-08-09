@@ -11,19 +11,34 @@ public class KingUnit : Unit
     {
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
+        Vector3Int[] directions = { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward };
         
-        var directions = new List<Vector3Int> { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward, };
-
-        for (int i = 1; i <= movementRange; i++)
+        foreach (var direction in directions)
         {
-            foreach (var direction in directions)
+            // Key = current Tile, Value = previous Tile
+            Dictionary<Vector3Int, Vector3Int> path = new();
+            
+            var queue = new Queue<Vector3Int>();
+            queue.Enqueue(startPosition);
+
+            while (queue.Count > 0)
             {
-                var path = new List<Vector3Int>();
+                var prevPos = queue.Dequeue();
                 
-                for (int j = 1; j < i; j++)
-                    path.Add(startPosition + direction * j);
-                
-                moves.Add(new MoveCommand { TargetPosition = startPosition + i * direction, Path = path });
+                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
+                    true, data.traversableEdgeTypes);
+
+                var targetPosition = prevPos + direction;
+
+                foreach (var neighbour in validNeighbours.Where(n => n.x == targetPosition.x && n.z == targetPosition.z))
+                {
+                    path.Add(neighbour, prevPos);
+                    var pathToTile = ReconstructPath(path, neighbour, startPosition);
+                    moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
+                    
+                    if(pathToTile.Count < movementRange - 1)
+                        queue.Enqueue(neighbour);
+                }
             }
         }
         
@@ -35,9 +50,9 @@ public class KingUnit : Unit
         return new List<Vector3Int>
             {
                 TilePosition + Vector3Int.forward, TilePosition + Vector3Int.left,
-                TilePosition + Vector3Int.down, TilePosition + Vector3Int.back,
+                TilePosition + Vector3Int.back, TilePosition + Vector3Int.right,
             }
-            .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList();
+            .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
     public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
@@ -45,8 +60,10 @@ public class KingUnit : Unit
     {
         var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition).GetValueOrDefault();
         
-        var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
-        var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
+        var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, 
+            new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
+        var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, 
+            new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
         
         if (newAngle == oldAngle && shouldBreak)
         {
@@ -67,7 +84,7 @@ public class KingUnit : Unit
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector3Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsValidGridPosition(tile)).ToList(),
+            Tiles = new List<Vector3Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsExistingGridPosition(tile)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }
@@ -92,7 +109,7 @@ public class KingUnit : Unit
         var directions = new List<Vector3Int> { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward, };
         foreach (var dir in directions)
         {
-            if(!GridManager.Instance.IsValidGridPosition(TilePosition + dir))
+            if(!GridManager.Instance.IsExistingGridPosition(TilePosition + dir))
                 continue;
             
             var unit = GridManager.Instance.GetTileAtGridPosition(TilePosition + dir).Unit;

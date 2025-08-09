@@ -27,7 +27,7 @@ public abstract class Unit : NetworkBehaviour
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthCounter;
 
-    [Header("Shieldd Visualization")]
+    [Header("Shield Visualization")]
     [SerializeField] private Slider shieldSlider;
     [SerializeField] private TextMeshProUGUI shieldCounter;
 
@@ -67,7 +67,8 @@ public abstract class Unit : NetworkBehaviour
 
     private void Start()
     {
-        _camera = Camera.main.transform;
+        if (Camera.main != null) 
+            _camera = Camera.main.transform;
         _renderer = GetComponentInChildren<MeshRenderer>();
         _sfxSource = GetComponent<AudioSource>();
         
@@ -169,19 +170,20 @@ public abstract class Unit : NetworkBehaviour
     // Move the unit to the given world position
     private IEnumerator Move(Vector3 targetPos)
     {
-        Vector3 startingPos = transform.position;
-        Vector3 direction = targetPos - startingPos;
+        var startingPos = transform.position;
+        var direction = targetPos - startingPos;
         direction.y = 0;
         
-        Quaternion targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
+        var targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
         AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
         
         float elapsedTime = 0;
+        var unitTransform = transform;
         
         while (elapsedTime < data.stepDuration)
         {
             if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
             
             var progression = elapsedTime / data.stepDuration;
             var newPos = Vector3.Lerp(startingPos, targetPos, progression);
@@ -191,30 +193,31 @@ public abstract class Unit : NetworkBehaviour
             var height = 4 * moveArcHeight * progression * (1 - progression);
             newPos.y = baseHeight + height;
 
-            transform.position = newPos;
+            unitTransform.position = newPos;
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
         
-        transform.rotation = targetRotation;
-        transform.position = targetPos;
+        unitTransform.rotation = targetRotation;
+        unitTransform.position = targetPos;
     }
 
     private IEnumerator BlockedAnimation(Vector3 targetPos)
     {
-        Vector3 startingPos = transform.position;
-        Vector3 direction = targetPos - startingPos;
+        var startingPos = transform.position;
+        var direction = targetPos - startingPos;
         direction.y = 0;
         
-        Quaternion targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
+        var targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
         AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
         
         float elapsedTime = 0;
+        var unitTransform = transform;
         
         while (elapsedTime < data.stepDuration / 2)
         {
             if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
             
             var progression = elapsedTime / data.stepDuration;
             var newPos = Vector3.Lerp(startingPos, targetPos, progression);
@@ -224,7 +227,7 @@ public abstract class Unit : NetworkBehaviour
             var height = 4 * moveArcHeight * progression * (1 - progression);
             newPos.y = baseHeight + height;
 
-            transform.position = newPos;
+            unitTransform.position = newPos;
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
@@ -232,7 +235,7 @@ public abstract class Unit : NetworkBehaviour
         while (elapsedTime < data.stepDuration)
         {
             if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
             
             var progression = elapsedTime / data.stepDuration;
             var newPos = Vector3.Lerp(targetPos, startingPos, progression);
@@ -242,13 +245,13 @@ public abstract class Unit : NetworkBehaviour
             var height = 4 * moveArcHeight * progression * (1 - progression);
             newPos.y = baseHeight + height;
 
-            transform.position = newPos;
+            unitTransform.position = newPos;
             elapsedTime += Time.deltaTime;
             yield return new WaitForEndOfFrame();
         }
 
-        transform.rotation = targetRotation;
-        transform.position = startingPos;
+        unitTransform.rotation = targetRotation;
+        unitTransform.position = startingPos;
     }
 
     /// <summary>Used to play animations, sfx etc.</summary>
@@ -266,7 +269,7 @@ public abstract class Unit : NetworkBehaviour
         while (elapsedTime < data.stepDuration)
         {
             if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 15 * Time.deltaTime);
+                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
             
             var newPos = unitTransform.position;
             var progression = elapsedTime / data.stepDuration;
@@ -284,27 +287,21 @@ public abstract class Unit : NetworkBehaviour
         GameManager.Instance.CmdUnitAttackDone();
     }
     
-    /// <summary>Used to generate path of MoveCommand inside of GetValidMoves</summary>
-    protected static List<Vector3Int> GeneratePath(Vector3Int start, Vector3Int end)
+    protected static List<Vector3Int> ReconstructPath(IReadOnlyDictionary<Vector3Int, Vector3Int> path, Vector3Int endPosition, Vector3Int startPosition)
     {
-        var path = new List<Vector3Int>();
-        var current = start;
-
-        while (current != end)
+        List<Vector3Int> constructedPath = new();
+        var currentPosition = endPosition;
+        
+        while (path.TryGetValue(currentPosition, out var prevPosition) && prevPosition != startPosition)
         {
-            var step = new Vector3Int(
-                current.x < end.x ? 1 : (current.x > end.x ? -1 : 0),
-                current.y < end.y ? 1 : (current.y > end.y ? -1 : 0),
-                current.z < end.z ? 1 : (current.z > end.z ? -1 : 0)
-            );
-
-            current += step;
-            
-            if(current != end)
-                path.Add(current);
+            constructedPath.Add(prevPosition);
+            currentPosition = prevPosition;
         }
 
-        return path;
+        // The reconstruction works from end to beginning, so it has to be reversed
+        constructedPath.Reverse();
+
+        return constructedPath;
     }
 
     private void OnHealthUpdated(int old, int newHealth)
@@ -348,11 +345,11 @@ public abstract class Unit : NetworkBehaviour
         var displayCount = actionDisplayParent.childCount;
         
         if(GameManager.Instance.gameState == GameState.Movement)
-            for(int i = 0; i < displayCount - (moveLimit - MoveIntent.Count); i++)
+            for(var i = 0; i < displayCount - (moveLimit - MoveIntent.Count); i++)
                 Destroy(actionDisplayParent.GetChild(i).gameObject);
         
         else if(GameManager.Instance.gameState == GameState.Attack)
-            for(int i = 0; i < displayCount - (attackLimit - AttackIntent.Count); i++)
+            for(var i = 0; i < displayCount - (attackLimit - AttackIntent.Count); i++)
                 Destroy(actionDisplayParent.GetChild(i).gameObject);
     }
 
@@ -360,7 +357,7 @@ public abstract class Unit : NetworkBehaviour
     {
         var childCount = actionDisplayParent.childCount;
         
-        for(int i = 0; i < childCount; i++)
+        for(var i = 0; i < childCount; i++)
             Destroy(actionDisplayParent.GetChild(i).gameObject);
     }
 
@@ -467,14 +464,12 @@ public abstract class Unit : NetworkBehaviour
         _currentHealth = Mathf.Clamp(_currentHealth + changeLeft, 0, data.health);
 
         if (changeAmount < 0)
+        {
             PlayHurtSound();
-        
-        // Logging
-        if(changeAmount < 0)
             ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeLeft},{_currentHealth}]", 
                 null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
-        
-        if(changeAmount > 0)
+        }
+        else if(changeAmount > 0)
             ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "heal", $"[{changeLeft},{_currentHealth}]", 
                 null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }

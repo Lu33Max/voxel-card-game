@@ -46,10 +46,10 @@ public class GridMouseInteraction : MonoBehaviour
             !EventSystem.current.IsPointerOverGameObject() &&
             Physics.Raycast(_mainCamera.ScreenPointToRay(Input.mousePosition), out var hit, groundLayer))
         {
-            var hoveredPosition = GridManager.Instance.WorldToGridPosition(hit.point);
+            var hoveredPosition = GridManager.Instance.WorldToGridPosition(new Vector3(hit.point.x, hit.point.y - 0.01f, hit.point.z));
 
             // Check if the hovered position is one of the tiles
-            var inGrid = GridManager.Instance.IsValidGridPosition(hoveredPosition);
+            var inGrid = GridManager.Instance.IsExistingGridPosition(hoveredPosition);
             if (!inGrid)
             {
                 if(_hoveredTile != null)
@@ -65,7 +65,7 @@ public class GridMouseInteraction : MonoBehaviour
             }
 
             // Check if a tile exists at the given position
-            TileData newHoveredTile = GridManager.Instance.GetTileAtWorldPosition(hit.point);
+            TileData newHoveredTile = GridManager.Instance.GetTileAtWorldPosition(new Vector3(hit.point.x, hit.point.y - 0.01f, hit.point.z));
             
             // Needs to be checked even if hovered tile has not changed
             if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
@@ -132,8 +132,9 @@ public class GridMouseInteraction : MonoBehaviour
             return;
         
         var card = HandManager.Instance.SelectedCard;
+        var commands = newHoveredTile.Unit.GetValidMoves(card.CardData.movementRange);
         
-        foreach (var command in newHoveredTile.Unit.GetValidMoves(card.CardData.movementRange))
+        foreach (var command in commands)
         {
             MarkerManager.Instance.AddMarkerLocal(command.TargetPosition, new MarkerData
             {

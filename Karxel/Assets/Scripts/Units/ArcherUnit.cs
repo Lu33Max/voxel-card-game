@@ -10,18 +10,34 @@ public class ArcherUnit : Unit
     {
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
-        var directions = new List<Vector3Int> { new(1, 0, 1), new(-1, 0, 1), new(1, 0, -1), new(-1, 0, -1) };
+        Vector3Int[] directions = { new(1, 0, 1), new(-1, 0, 1), new(1, 0, -1), new(-1, 0, -1) };
         
-        for (int i = 1; i <= movementRange * baseRange; i++)
+        foreach (var direction in directions)
         {
-            foreach (var direction in directions)
+            // Key = current Tile, Value = previous Tile
+            Dictionary<Vector3Int, Vector3Int> path = new();
+            
+            var queue = new Queue<Vector3Int>();
+            queue.Enqueue(startPosition);
+
+            while (queue.Count > 0)
             {
-                var path = new List<Vector3Int>();
+                var prevPos = queue.Dequeue();
                 
-                for (int j = 1; j < i; j++)
-                    path.Add(startPosition + direction * j);
-                
-                moves.Add(new MoveCommand { TargetPosition = startPosition + i * direction, Path = path });
+                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
+                    false, data.traversableEdgeTypes);
+
+                var targetPosition = prevPos + direction;
+
+                foreach (var neighbour in validNeighbours.Where(n => n.x == targetPosition.x && n.z == targetPosition.z))
+                {
+                    path.Add(neighbour, prevPos);
+                    var pathToTile = ReconstructPath(path, neighbour, startPosition);
+                    moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
+                    
+                    if(pathToTile.Count < movementRange * baseRange - 1)
+                        queue.Enqueue(neighbour);
+                }
             }
         }
         
@@ -30,18 +46,22 @@ public class ArcherUnit : Unit
 
     public override List<Vector3Int> GetValidAttackTiles(int attackRange)
     {
-        List<Vector3Int> directions = new()
+        Vector3Int[] directions =
         {
             new(-1, 0, -3), new(-2, 0, -3), new(-3, 0, -2), new(-3, 0, -1), new(-3, 0, 1), new(-3, 0, 2), new(-2, 0, 3), new(-1, 0, 3),
             new(1, 0, 3), new(2, 0, 3), new(3, 0, 2), new(3, 0, 1), new(3, 0, -1), new(3, 0, -2), new(2, 0, -3), new(1, 0, -3)
         };
-        var tiles = new List<Vector3Int>();
 
-        foreach (var dir in directions)
-            tiles.AddRange(new List<Vector3Int> { TilePosition + dir }
-                .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList());
-
-        return tiles;
+        var singleLayer = directions.Select(dir => TilePosition + dir).ToArray();
+        
+        return singleLayer
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 2, t.z)))
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 3, t.z)))
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 2, t.z)))
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 3, t.z)))
+            .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
     public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
@@ -68,7 +88,7 @@ public class ArcherUnit : Unit
             14 => new(-2, 0, -3),
             13 => new(-3, 0, -2),
             12 => new(-3, 0, -1),
-            11=> new(-3, 0, 1),
+            11 => new(-3, 0, 1),
             10 => new(-3, 0, 2),
             9 => new(-2, 0, 3),
             8 => new(-1, 0, 3),
@@ -82,12 +102,20 @@ public class ArcherUnit : Unit
             0 => new(1, 0, -3),
             _ => new(1, 0, -3),
         };
+
+        List<Vector3Int> tiles = new();
+
+        for (var i = -3; i < 3; i++)
+        {
+            var newTile = TilePosition + tile;
+            newTile.y += i;
+            tiles.Add(newTile);
+        }
         
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector3Int> { TilePosition + tile }
-                .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList(),
+            Tiles = tiles.Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }

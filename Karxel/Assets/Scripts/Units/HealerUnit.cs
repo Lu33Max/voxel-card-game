@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,23 +12,36 @@ public class HealerUnit : Unit
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
         
-        var radius = movementRange * baseRange + 1;
+        // Key = current Tile, Value = previous Tile
+        Dictionary<Vector3Int, Vector3Int> path = new();
         
-        for (var x = -radius; x <= radius; x++)
+        var queue = new Queue<Vector3Int>();
+        queue.Enqueue(startPosition);
+
+        while (queue.Count > 0)
         {
-            for (var y = -radius; y <= radius; y++)
+            var prevPos = queue.Dequeue();
+            
+            var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
+                false, data.traversableEdgeTypes);
+            
+            foreach (var neighbour in validNeighbours)
             {
-                for (var z = -radius; z <= radius; z++)
-                {
-                    var offset = new Vector3Int(x, y, z);
-                    var targetPosition = startPosition + offset;
-
-                    if (offset.x * offset.x + offset.y * offset.y + offset.z * offset.z > radius * radius)
-                        continue;
-
-                    var path = GeneratePath(startPosition, targetPosition);
-                    moves.Add(new MoveCommand { TargetPosition = targetPosition, Path = path });
-                }
+                if(neighbour == startPosition)
+                    continue;
+                
+                var relativePos = startPosition - neighbour;
+                
+                if(Math.Pow(relativePos.x, 2) + Math.Pow(relativePos.y, 2) + Math.Pow(relativePos.z, 2) > Math.Pow(baseRange * movementRange + 0.5f, 2))
+                    continue;
+                
+                if(!path.TryAdd(neighbour, prevPos))
+                    continue;
+                
+                var pathToTile = ReconstructPath(path, neighbour, startPosition);
+                moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
+                
+                queue.Enqueue(neighbour);
             }
         }
         
@@ -36,14 +50,17 @@ public class HealerUnit : Unit
 
     public override List<Vector3Int> GetValidAttackTiles(int attackRange)
     {
-        return new List<Vector3Int>
-            {
-                TilePosition + Vector3Int.back, TilePosition + Vector3Int.left,
-                TilePosition + Vector3Int.forward, TilePosition + Vector3Int.right,
-                TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
-                TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1)
-            }
-            .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList();
+        Vector3Int[] singleLayer =
+        {
+            TilePosition + Vector3Int.back, TilePosition + Vector3Int.left, TilePosition + Vector3Int.forward,
+            TilePosition + Vector3Int.right, TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
+            TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1), TilePosition
+        };
+
+        return singleLayer
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
+            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
+            .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
     public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
@@ -57,16 +74,20 @@ public class HealerUnit : Unit
 
         hasChanged = true;
 
+        List<Vector3Int> singleLayer = new()
+        {
+            TilePosition + Vector3Int.back, TilePosition + Vector3Int.left, TilePosition + Vector3Int.forward,
+            TilePosition + Vector3Int.right, TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
+            TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1), TilePosition
+        };
+
         return new Attack
         {
             Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector3Int>
-                {
-                    TilePosition + Vector3Int.back, TilePosition + Vector3Int.left, TilePosition + Vector3Int.forward, 
-                    TilePosition + Vector3Int.right, TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1), 
-                    TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1), TilePosition
-                }
-                .Where(t => GridManager.Instance.IsValidGridPosition(t)).ToList(),
+            Tiles = singleLayer
+                .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
+                .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
+                .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList(),
             PlayerId = (int)GameManager.Instance.localPlayer.netId
         };
     }

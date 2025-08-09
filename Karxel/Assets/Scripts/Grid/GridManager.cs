@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -24,55 +25,14 @@ public class GridManager : NetworkBehaviour
     [Header("Unit Setup")]
     [SerializeField] private Transform blueParent;
     [SerializeField] private Transform redParent;
-
     
     private Dictionary<Vector3Int, TileData> _tiles = new();
     private GameObject _map;
     private int _readyPlayers;
-
-    public class GridTile
-    {
-        public Vector3Int gridPos;
-        public Vector3 worldPos;
-        public bool walkable;
-    }
-    public Dictionary<Vector3Int, GridTile> tiles = new();
     
-    public void ScanTiles()
-    {
-        tiles.Clear();
-
-        for (int x = 0; x < mapSize.x; x++)
-        {
-            for (int z = 0; z < mapSize.z; z++)
-            {
-                Ray ray = new Ray(
-                    new Vector3(x * tileSize.x + tileSize.x / 2, 200, z * tileSize.z + tileSize.z / 2),
-                    Vector3.down);
-
-                // ReSharper disable once Unity.PreferNonAllocApi
-                RaycastHit[] results = Physics.RaycastAll(ray, 250, groundLayer);
-
-                foreach (var hit in results)
-                {
-                    Vector3Int gridPos = new Vector3Int(
-                        Mathf.RoundToInt(hit.point.x / tileSize.x - tileSize.x / 2),
-                        Mathf.RoundToInt(hit.point.y / tileSize.y - tileSize.y / 2),
-                        Mathf.RoundToInt(hit.point.z / tileSize.z - tileSize.z / 2)
-                    );
-                    
-                    if(gridPos.x < 0 || gridPos.x > mapSize.x || gridPos.y < 0 || gridPos.y > mapSize.y || gridPos.z < 0 || gridPos.z > mapSize.z) return;
-
-                    tiles.TryAdd(gridPos, new GridTile
-                    {
-                        gridPos = gridPos,
-                        worldPos = hit.point,
-                        walkable = true
-                    });
-                }
-            }
-        }
-    }
+    #if UNITY_EDITOR
+    public Dictionary<Vector3Int, TileData> Tiles => _tiles;
+    #endif
     
     private void Awake()
     {
@@ -87,6 +47,7 @@ public class GridManager : NetworkBehaviour
     private void Start()
     {
         CalculateTilePositions();
+        CmdSetupReady();
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
@@ -113,7 +74,7 @@ public class GridManager : NetworkBehaviour
     /// <summary>Convert a grid position into world coordinates</summary>
     public Vector3? GridToWorldPosition(Vector3Int gridPosition)
     {
-        if (!IsValidGridPosition(gridPosition))
+        if (!IsExistingGridPosition(gridPosition))
             return null;
         
         return _tiles[gridPosition].WorldPosition;
@@ -128,7 +89,7 @@ public class GridManager : NetworkBehaviour
     }
 
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
-    public bool IsValidGridPosition(Vector3Int gridPosition)
+    public bool IsExistingGridPosition(Vector3Int gridPosition)
     {
         return _tiles.ContainsKey(gridPosition);
     }
@@ -136,16 +97,66 @@ public class GridManager : NetworkBehaviour
     /// <summary>Checks if the given move is possible to do on the current board configuration</summary>
     public bool IsMoveValid(MoveCommand move)
     {
-        if (!IsValidGridPosition(move.TargetPosition) || _tiles[move.TargetPosition].Unit != null)
+        if (!IsExistingGridPosition(move.TargetPosition) || _tiles[move.TargetPosition].Unit != null)
             return false;
 
-        foreach (var tile in move.Path)
+        return move.Path.All(tile => IsExistingGridPosition(tile) && _tiles[tile].Unit == null);
+    }
+
+    /// <summary>
+    ///     Generates an array of neighbour tile positions around the given <paramref name="startPos"/> that comply
+    ///     with all given restrictions
+    /// </summary>
+    /// <param name="startPos"> Position of the tile to retrieve its neighbours from </param>
+    /// <param name="maxHeightDiff"> The maximum vertical distance between two neighbouring tiles </param>
+    /// <param name="onlyMainAxis"> Whether only the four main axis should be checked or all eight </param>
+    /// <param name="validEdgeTypes"> All the <see cref="Tile.EdgeType"/>s that can be traversed by the unit </param>
+    public Vector3Int[] GetReachableNeighbours(Vector3Int startPos, int maxHeightDiff, bool onlyMainAxis, Tile.EdgeType[] validEdgeTypes)
+    {
+        if (!_tiles.TryGetValue(startPos, out var startTile)) 
+            return new Vector3Int[] { };
+        ;
+        Vector3Int[] mainDirections = { Vector3Int.back, Vector3Int.forward, Vector3Int.left, Vector3Int.right };
+        List<Vector3Int> neighbours = new();
+
+        foreach (var dir in mainDirections)
         {
-            if (!IsValidGridPosition(tile) || _tiles[tile].Unit != null)
-                return false;
+            for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
+            {
+                var target = startPos + dir;
+                target.y += y;
+
+                var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
+                
+                if(targetTile == null) continue;
+                
+                if(validEdgeTypes.Contains(targetTile.EdgeType))
+                    neighbours.Add(target);
+            }
         }
 
-        return true;
+        if (onlyMainAxis) 
+            return neighbours.ToArray();
+
+        Vector3Int[] crossDirections = { new(1, 0, 1), new(1, 0, -1), new(-1, 0, 1), new(-1, 0, -1) };
+        
+        foreach (var dir in crossDirections)
+        {
+            for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
+            {
+                var target = startPos + dir;
+                target.y += y;
+
+                var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
+                
+                if(targetTile == null) continue;
+                
+                if(validEdgeTypes.Contains(targetTile.EdgeType))
+                    neighbours.Add(target);
+            }
+        }
+
+        return neighbours.ToArray();
     }
 
     /// <summary>Transfers a Unit-reference from a start tile to a target tile</summary>
@@ -165,10 +176,22 @@ public class GridManager : NetworkBehaviour
     {
         CmdUpdateTileUnit(unitPos, null);
     }
+    
+    #if UNITY_EDITOR
+    public void ScanTiles()
+    {
+        _tiles.Clear();
+        CalculateTilePositions();
+    }
+
+    public void GenerateNeighbours()
+    {
+        GenerateTileNeighbours();
+    }
+    #endif
 
     // Calculates all tile positions of the board by doing a raycast at each one of them
     // With this method, even uneven play fields can be correctly mapped
-    [Client]
     private void CalculateTilePositions()
     {
         for (var x = 0; x < mapSize.x; x++)
@@ -184,27 +207,74 @@ public class GridManager : NetworkBehaviour
 
                 foreach (var hit in raycastHits)
                 {
-                    Vector3Int gridPos = new Vector3Int(
-                        Mathf.RoundToInt(hit.point.x / tileSize.x - tileSize.x / 2),
-                        Mathf.RoundToInt(hit.point.y / tileSize.y - tileSize.y / 2),
-                        Mathf.RoundToInt(hit.point.z / tileSize.z - tileSize.z / 2)
+                    var gridPos = new Vector3Int(
+                        Mathf.RoundToInt((hit.point.x - tileSize.x / 2) / tileSize.x),
+                        Mathf.RoundToInt((hit.point.y - tileSize.y) / tileSize.y),
+                        Mathf.RoundToInt((hit.point.z - tileSize.z / 2) / tileSize.z)
                     );
+
+                    var tileNeighbours = hit.collider.gameObject.GetComponent<Tile>().Neighbours;
 
                     _tiles.TryAdd(gridPos, new TileData
                     {
                         TilePosition = gridPos,
                         WorldPosition = hit.point,
+                        TileNeighbours = tileNeighbours,
                     });
                     
                     var worldPos = hit.point;
                     worldPos.y += markerHeight;
-                    MarkerManager.Instance.RegisterTile(gridPos, worldPos, tileSize);
+                    
+                    // Exclude Markers from being registered during edit mode
+                    if (Application.isPlaying)
+                        MarkerManager.Instance.RegisterTile(gridPos, worldPos, tileSize);
                 }
             }
         }
-
-        CmdSetupReady();
     }
+
+    #if UNITY_EDITOR
+    private void GenerateTileNeighbours()
+    {
+        if(_tiles == null) return;
+        
+        Vector3Int[] directions =
+        {
+            Vector3Int.back, Vector3Int.forward, Vector3Int.left, Vector3Int.right,
+            new (1, 0, 1), new (1, 0, -1), new (-1, 0, 1), new (-1, 0, -1)
+        };
+
+        Vector3Int[] heights = { new(0, -1, 0), Vector3Int.zero, new(0, 1, 0) };
+
+        var tileMarkers = FindObjectsOfType<Tile>();
+        
+        foreach (var tileMarker in tileMarkers)
+        {
+            tileMarker.ResetNeighbours();
+            var tile = GetTileAtWorldPosition(tileMarker.transform.position);
+
+            foreach (var dir in directions)
+            {
+                foreach (var height in heights)
+                {
+                    if(!_tiles.TryGetValue(tile.TilePosition + dir + height, out var neighbour)) continue;
+
+                    var newNeighbour = new Tile.TileNeighbour
+                        { EdgeType = Tile.EdgeType.None, GridPosition = neighbour.TilePosition };
+                    
+                    // Already connected to the Tile Component because C# lists are refs
+                    tile.TileNeighbours.Add(newNeighbour);
+                }
+            }
+            
+            #if UNITY_EDITOR
+            EditorUtility.SetDirty(tileMarker);
+            #endif
+        }
+        
+        Debug.Log("[GridManager] Done Connection Update");
+    }
+    #endif
 
     // Read placed units from the board and write them to the tiles
     [Server]
@@ -219,9 +289,13 @@ public class GridManager : NetworkBehaviour
 
                 var unitPosition = unit.position;
                 
-                Vector3Int gridPos = WorldToGridPosition(unitPosition);
+                var gridPos = WorldToGridPosition(unitPosition);
+                gridPos.y -= 1;
+                
+                if(unitScript.Data.unitName.Equals("KING"))
+                    Debug.Log(gridPos);
             
-                if(!IsValidGridPosition(gridPos))
+                if(!IsExistingGridPosition(gridPos))
                     continue;
             
                 unit.gameObject.SetActive(true);
