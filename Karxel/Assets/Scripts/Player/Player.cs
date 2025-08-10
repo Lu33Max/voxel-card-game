@@ -19,10 +19,8 @@ public class Player : NetworkBehaviour
 
     [HideInInspector] public UnityEvent turnSubmitted = new();
 
-    private bool _hasSubmitted;
+    public bool HasSubmitted { get; private set; }
 
-    public bool HasSubmitted => _hasSubmitted;
-    
     private void Start()
     {
         if(!isLocalPlayer)
@@ -62,10 +60,10 @@ public class Player : NetworkBehaviour
 
     public void SubmitTurn()
     {
-        if(_hasSubmitted)
+        if(HasSubmitted)
             return;
 
-        _hasSubmitted = true;
+        HasSubmitted = true;
         turnSubmitBtn.interactable = false;
         turnSubmitted?.Invoke();
         
@@ -83,7 +81,7 @@ public class Player : NetworkBehaviour
             case GameState.Movement:
             case GameState.Attack:
                 turnSubmitBtn.interactable = true;
-                _hasSubmitted = false;
+                HasSubmitted = false;
                 break;
         }
     }

@@ -14,64 +14,70 @@ public class CameraController : MonoBehaviour
     [SerializeField] private Vector3 maxPosition;
     
     private Vector3 _focusPoint;
+    private bool _disabled;
 
     private void Update()
     {
-        HandleMovement();
+        if(_disabled) return;
+        
+        var newPosition = HandleMovement();
+        var newFocusPoint = CalculateNewFocusPoint(newPosition);
+        
+        ClampPosition(newPosition, newFocusPoint);
         HandleRotation();
         HandleZoom();
-        ClampPosition();
     }
 
-    private void UpdateFocusPoint()
+    public void DisableMovement(bool shouldDisable)
     {
-        Ray ray = new Ray(transform.position, transform.forward);
-        RaycastHit hit;
-
-        // Prüfe, ob der Raycast einen Punkt auf dem Spielbrett trifft
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, focusLayer))
-        {
-            _focusPoint = hit.point;
-        }
-        else
-        {
-            // Berechne den Schnittpunkt des Ray mit der Ebene y = 0
-            float rayDirectionY = ray.direction.y;
-            if (Mathf.Abs(rayDirectionY) > Mathf.Epsilon) // Sicherstellen, dass keine Division durch 0 passiert
-            {
-                float t = -ray.origin.y / rayDirectionY; // Parameter t für den Schnittpunkt
-                _focusPoint = ray.origin + ray.direction * t; // Schnittpunkt berechnen
-            }
-            else
-            {
-                // Falls der Ray parallel zur Ebene ist (extrem unwahrscheinlich), Standardwert nehmen
-                _focusPoint = ray.origin + ray.direction * 2f; // Beliebige Default-Distanz
-                _focusPoint.y = 0;
-            }
-        }
+        _disabled = shouldDisable;
     }
 
-    private void HandleMovement()
+    private Vector3 CalculateNewFocusPoint(Vector3 potentialNewPosition)
     {
-        // Bewegung auf der Ebene
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        var ray = new Ray(potentialNewPosition, transform.forward);
+
+        // Draw a line from the camera to the ground and check, if it collides with the map
+        // if (Physics.Raycast(ray, out var hit, Mathf.Infinity, focusLayer))
+        //     return hit.point;
+        
+        // If no collision with the ground was made, instead look for an interception with the plane y = 0
+        var rayDirectionY = ray.direction.y;
+        
+        // Check that the camera isn't oriented parallel to the ground
+        if (Mathf.Abs(rayDirectionY) > Mathf.Epsilon) 
+        {
+            var t = -ray.origin.y / rayDirectionY;
+            return ray.origin + ray.direction * t;
+        }
+
+        // Default point in case the ground was never intersected
+        var defaultPoint = ray.origin + ray.direction * 2f;
+        defaultPoint.y = 0;
+
+        return defaultPoint;
+    }
+
+    private Vector3 HandleMovement()
+    {
+        var cameraTransform = transform;
+        var horizontal = Input.GetAxisRaw("Horizontal");
+        var vertical = Input.GetAxisRaw("Vertical");
         
         if (horizontal == 0f && vertical == 0f)
-            return;
+            return cameraTransform.position;
         
-        var forwardVec = transform.forward;
-        var rightVec = transform.right;
+        var forwardVec = cameraTransform.forward;
+        var rightVec = cameraTransform.right;
 
-        Vector3 direction = forwardVec * vertical + rightVec * horizontal;
+        var direction = forwardVec * vertical + rightVec * horizontal;
         direction = new Vector3(direction.x, 0, direction.z);
         
-        transform.position += direction.normalized * (moveSpeed * Time.deltaTime);
+        return cameraTransform.position + direction.normalized * (moveSpeed * Time.deltaTime);
     }
 
     private void HandleRotation()
     {
-        // Rotation um den Fokuspunkt
         if (Input.GetKey(KeyCode.Q))
             RotateAroundFocus(1);
         else if (Input.GetKey(KeyCode.E))
@@ -80,10 +86,8 @@ public class CameraController : MonoBehaviour
 
     private void RotateAroundFocus(float direction)
     {
-        UpdateFocusPoint();
-        
-        Vector3 directionToFocus = transform.position - _focusPoint;
-        Quaternion rotation = Quaternion.AngleAxis(direction * rotationSpeed * Time.deltaTime, Vector3.up);
+        var directionToFocus = transform.position - _focusPoint;
+        var rotation = Quaternion.AngleAxis(direction * rotationSpeed * Time.deltaTime, Vector3.up);
         directionToFocus = rotation * directionToFocus;
 
         transform.position = _focusPoint + directionToFocus;
@@ -93,27 +97,36 @@ public class CameraController : MonoBehaviour
     private void HandleZoom()
     {
         // Zoom via Mouse Wheel
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll != 0f)
-        {
-            Vector3 direction = transform.forward * (scroll * zoomSpeed);
-            Vector3 newPosition = transform.position + direction;
+        var scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll == 0f) return;
+        
+        var direction = transform.forward * (scroll * zoomSpeed);
+        var newPosition = transform.position + direction;
 
-            var yPosition = newPosition.y;
+        var yPosition = newPosition.y;
             
-            // Cap maximum/minimum zoom
-            if (yPosition >= minZoom && yPosition <= maxZoom)
-                transform.position = newPosition;
-        }
+        // Cap maximum/minimum zoom
+        if (yPosition >= minZoom && yPosition <= maxZoom)
+            transform.position = newPosition;
     }
 
-    private void ClampPosition()
+    private void ClampPosition(Vector3 newPosition, Vector3 newFocusPoint)
     {
-        var pos = transform.position;
-        
-        transform.position = new Vector3(
-            Mathf.Clamp(pos.x, minPosition.x, maxPosition.x), Mathf.Clamp(pos.y, minPosition.y, maxPosition.y), 
-            Math.Clamp(pos.z, minPosition.z, maxPosition.z)
-        );
+        // If the newly calculated focus point is within the boundaries, all movements can be applied
+        if (newFocusPoint.x >= minPosition.x && newFocusPoint.x <= maxPosition.x && newFocusPoint.z >= minPosition.z &&
+            newFocusPoint.z <= maxPosition.z)
+        {
+            _focusPoint = newFocusPoint;
+            transform.position = newPosition;
+            return;
+        }
+
+        _focusPoint = new Vector3(
+            Mathf.Clamp(newFocusPoint.x, minPosition.x, maxPosition.x),
+            newFocusPoint.y,
+            Math.Clamp(newFocusPoint.z, minPosition.z, maxPosition.z));
+
+        var relativeHeight = transform.position.y - _focusPoint.y;
+        transform.position = _focusPoint + (-transform.forward * (relativeHeight / -transform.forward.y));
     }
 }
