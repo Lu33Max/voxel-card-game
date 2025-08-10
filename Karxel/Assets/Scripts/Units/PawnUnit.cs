@@ -54,37 +54,17 @@ public class PawnUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
-    public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
-        Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
+    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier)
     {
-        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition).GetValueOrDefault();
+        var allTiles = GetValidAttackTiles(attackRange);
 
-        var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up,
-            new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
-        var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up,
-            new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
-        
-        if (newAngle == oldAngle && shouldBreak)
-        {
-            hasChanged = false;
-            return null;
-        }
-        
-        hasChanged = true;
-
-        var tile = newAngle switch
-        {
-            1 => Vector3Int.right,
-            2 => Vector3Int.forward,
-            3 => Vector3Int.left,
-            _ => Vector3Int.back,
-        };
+        if (!allTiles.Contains(hoveredPos)) return null;
 
         return new Attack
         {
-            Damage = data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector3Int> { TilePosition + tile }.Where(tile => GridManager.Instance.IsExistingGridPosition(tile)).ToList(),
-            PlayerId = (int)GameManager.Instance.localPlayer.netId
+            Damage = Data.attackDamage * damageMultiplier,
+            Tiles = new List<Vector3Int>{ hoveredPos },
+            PlayerId = (int)GameManager.Instance.localPlayer.netId,
         };
     }
 }

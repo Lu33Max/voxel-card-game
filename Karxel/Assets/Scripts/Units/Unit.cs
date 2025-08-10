@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -54,16 +55,9 @@ public abstract class Unit : NetworkBehaviour
     public abstract List<MoveCommand> GetValidMoves(int movementRange);
 
     public abstract List<Vector3Int> GetValidAttackTiles(int attackRange);
-
-    /// <summary>Get all tiles that would be effected by an attack. Only includes valid tiles.</summary>
-    /// <param name="attackRange">The attack range given by the played card</param>
-    /// <param name="damageMultiplier">The damage multiplier given by the played card</param>
-    /// <param name="hoveredPosition">Mouse position on the board</param>
-    /// <param name="previousPosition">Previous Mouse position on the board</param>
-    /// <param name="shouldBreak">Whether the method should return early in case of the same calc results</param>
-    /// <param name="hasChanged">Whether the effected tiles have changed because of mouse movements compared to the last calculation</param>
-    public abstract Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
-        Vector3 previousPosition, bool shouldBreak, out bool hasChanged);
+    
+    [CanBeNull]
+    public abstract Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier);
 
     private void Start()
     {

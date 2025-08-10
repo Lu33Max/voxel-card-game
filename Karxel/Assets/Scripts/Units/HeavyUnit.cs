@@ -62,42 +62,37 @@ public class HeavyUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
-    public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
-        Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
+    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier)
     {
-        var worldPos = GridManager.Instance.GridToWorldPosition(TilePosition).GetValueOrDefault();
+        var allTiles = GetValidAttackTiles(attackRange);
+
+        if (!allTiles.Contains(hoveredPos)) return null;
         
-        var newAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, 
-            new Vector2(hoveredPosition.x, hoveredPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
-        var oldAngle = Mathf.RoundToInt((Vector2.SignedAngle(Vector2.up, 
-            new Vector2(previousPosition.x, previousPosition.z) - new Vector2(worldPos.x, worldPos.z)) + 180) / 90f);
-        
-        if (newAngle == oldAngle && shouldBreak)
+        List<Vector3Int> tilesToAttack = new(){ hoveredPos };
+
+        // Clicked on the main axis
+        if (Mathf.Abs(TilePosition.x - hoveredPos.x) != Mathf.Abs(TilePosition.z - hoveredPos.z))
         {
-            hasChanged = false;
-            return null;
+            tilesToAttack.Add(new Vector3Int(hoveredPos.x + (TilePosition.z - hoveredPos.z), TilePosition.y,
+                hoveredPos.z + (TilePosition.x - hoveredPos.x)));
+            tilesToAttack.Add(new Vector3Int(hoveredPos.x - (TilePosition.z - hoveredPos.z), TilePosition.y,
+                hoveredPos.z - (TilePosition.x - hoveredPos.x)));
         }
-        
-        hasChanged = true;
-
-        var relativeLayer = newAngle switch
+        // Clicked on a diagonal
+        else
         {
-            1 => new List<Vector3Int> { Vector3Int.right, new (1, 0, -1), new (1, 0, 1) },
-            2 => new List<Vector3Int> { Vector3Int.forward, new (-1, 0, 1), new (1, 0, 1) },
-            3 => new List<Vector3Int> { Vector3Int.left, new (-1, 0, -1), new (-1, 0, 1) },
-            _ => new List<Vector3Int> { Vector3Int.back, new (-1, 0, -1), new (1, 0, -1) },
-        };
-
-        var singleLayer = relativeLayer.Select(t => TilePosition + t).ToArray();
+            tilesToAttack.Add(new Vector3Int(hoveredPos.x, TilePosition.y, TilePosition.z));
+            tilesToAttack.Add(new Vector3Int(TilePosition.x, TilePosition.y, hoveredPos.z));
+        }
 
         return new Attack
         {
-            Damage = data.attackDamage * damageMultiplier,
-            Tiles = singleLayer
-                .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
-                .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
-                .Where(tile => GridManager.Instance.IsExistingGridPosition(tile)).ToList(),
-            PlayerId = (int)GameManager.Instance.localPlayer.netId
+            Damage = Data.attackDamage * damageMultiplier,
+            Tiles = tilesToAttack
+                        .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
+                        .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
+                        .ToList(),
+            PlayerId = (int)GameManager.Instance.localPlayer.netId,
         };
     }
 }

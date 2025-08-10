@@ -12,7 +12,6 @@ public class GridMouseInteraction : MonoBehaviour
     private Unit _selectedUnit;
     private UnitStatDisplay _statDisplay;
     
-    private Vector3 _prevMousePos;
     private List<MoveCommand> _highlightedMoveTiles = new();
     private List<Vector3Int> _previewTiles = new();
     private Attack _currentAttack;
@@ -46,15 +45,17 @@ public class GridMouseInteraction : MonoBehaviour
             !EventSystem.current.IsPointerOverGameObject() &&
             Physics.Raycast(_mainCamera.ScreenPointToRay(Input.mousePosition), out var hit, groundLayer))
         {
-            var hoveredPosition = GridManager.Instance.WorldToGridPosition(new Vector3(hit.point.x, hit.point.y - 0.01f, hit.point.z));
+            // Move the hit "into" the block for more accurate grid conversion
+            var correctedHoverPosition = hit.point - hit.normal * 0.01f;
+            var hoveredGridPosition = GridManager.Instance.WorldToGridPosition(correctedHoverPosition);
 
             // Check if the hovered position is one of the tiles
-            var inGrid = GridManager.Instance.IsExistingGridPosition(hoveredPosition);
-            if (!inGrid)
+            if (!GridManager.Instance.IsExistingGridPosition(hoveredGridPosition))
             {
+                // If a tile was previously hovered, remove the hover marker
                 if(_hoveredTile != null)
                     MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile.TilePosition, MarkerType.Hover, _playerId);
-
+                
                 HideUnitDisplay();
                 
                 if (GameManager.Instance.gameState == GameState.Movement)
@@ -65,16 +66,13 @@ public class GridMouseInteraction : MonoBehaviour
             }
 
             // Check if a tile exists at the given position
-            TileData newHoveredTile = GridManager.Instance.GetTileAtWorldPosition(new Vector3(hit.point.x, hit.point.y - 0.01f, hit.point.z));
+            var newHoveredTile = GridManager.Instance.GetTileAtGridPosition(hoveredGridPosition);
             
-            // Needs to be checked even if hovered tile has not changed
-            if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
-                DisplayAttackTiles(hit.point, _hoveredTile == null);
-            
-            _prevMousePos = hit.point;
-
-            if (_hoveredTile == null || _hoveredTile.TilePosition != hoveredPosition)
+            if (_hoveredTile == null || _hoveredTile.TilePosition != hoveredGridPosition)
             {
+                if (GameManager.Instance.gameState == GameState.Attack && _selectedUnit != null)
+                    DisplayAttackTiles(hoveredGridPosition);
+                
                 if (HandManager.Instance != null && HandManager.Instance.SelectedCard != null)
                 {
                     var cardData = HandManager.Instance.SelectedCard.CardData;
@@ -92,7 +90,7 @@ public class GridMouseInteraction : MonoBehaviour
                     }
                 }
                 
-                UpdateHoverMarker(hoveredPosition);
+                UpdateHoverMarker(hoveredGridPosition);
                 _hoveredTile = newHoveredTile;
                 
                 CheckForUnitHovered();
@@ -198,18 +196,20 @@ public class GridMouseInteraction : MonoBehaviour
         });
     }
 
-    private void DisplayAttackTiles(Vector3 hit, bool prevNotHovered)
+    private void DisplayAttackTiles(Vector3Int hoveredGridPosition)
     {
         var cardValues = HandManager.Instance.SelectedCard.CardData;
-        var attack = _selectedUnit.GetRotationalAttackTiles(cardValues.attackRange, cardValues.attackDamage, hit,
-            _prevMousePos, false, out bool hasChanged);
-
-        if (!hasChanged && !prevNotHovered) return;
+        var attack =
+            _selectedUnit.GetAttackForHoverPosition(hoveredGridPosition, cardValues.attackRange,
+                cardValues.attackDamage);
         
-        foreach (var tile in _currentAttack.Tiles)
-            MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
+        if(_currentAttack != null)
+            foreach (var tile in _currentAttack.Tiles)
+                MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, _playerId);
 
         _currentAttack = attack;
+        
+        if (attack == null) return;
 
         foreach (var tile in _currentAttack.Tiles)
         {
@@ -310,8 +310,11 @@ public class GridMouseInteraction : MonoBehaviour
                 // Player can only issue an attack command to a unit once per round
                 case GameState.Attack:
                     // If the unit was selected this frame it should always generate the highlight tiles
-                    _currentAttack = _selectedUnit.GetRotationalAttackTiles(cardValues.attackRange, cardValues.attackDamage,
-                        _prevMousePos, _prevMousePos, false, out _);
+                    _currentAttack = _selectedUnit.GetAttackForHoverPosition(_hoveredTile.TilePosition,
+                        cardValues.attackRange, cardValues.attackDamage);
+                    
+                    if(_currentAttack == null)
+                        return;
                     
                     foreach (var tile in _currentAttack.Tiles)
                     {
@@ -342,6 +345,8 @@ public class GridMouseInteraction : MonoBehaviour
             }
             return;
         }
+        
+        // From here: unit is currently selected
 
         switch (gameState)
         {
@@ -359,8 +364,8 @@ public class GridMouseInteraction : MonoBehaviour
 
                 break;
             case GameState.Attack:
-                // If the player clicked on a tile within the current attack radius
-                if (_currentAttack.Tiles.Contains(_hoveredTile.TilePosition))
+                // currentAttack is only set, if the player currently hovers a tile that is being covered by the attack
+                if (_currentAttack != null)
                 {
                     // Logging
                     _selectedUnit.LogAttack(cardValues, _currentAttack);

@@ -63,32 +63,17 @@ public class HealerUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
-    public override Attack GetRotationalAttackTiles(int attackRange, int damageMultiplier, Vector3 hoveredPosition,
-        Vector3 previousPosition, bool shouldBreak, out bool hasChanged)
+    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier)
     {
-        if (shouldBreak)
-        {
-            hasChanged = false;
-            return null;
-        }
+        var allTiles = GetValidAttackTiles(attackRange);
 
-        hasChanged = true;
-
-        List<Vector3Int> singleLayer = new()
-        {
-            TilePosition + Vector3Int.back, TilePosition + Vector3Int.left, TilePosition + Vector3Int.forward,
-            TilePosition + Vector3Int.right, TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
-            TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1), TilePosition
-        };
+        if (!allTiles.Contains(hoveredPos)) return null;
 
         return new Attack
         {
-            Damage = data.attackDamage * damageMultiplier,
-            Tiles = singleLayer
-                .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
-                .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
-                .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList(),
-            PlayerId = (int)GameManager.Instance.localPlayer.netId
+            Damage = Data.attackDamage * damageMultiplier,
+            Tiles = new List<Vector3Int>{ hoveredPos },
+            PlayerId = (int)GameManager.Instance.localPlayer.netId,
         };
     }
 }
