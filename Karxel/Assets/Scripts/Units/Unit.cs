@@ -9,6 +9,12 @@ using UnityEngine.UI;
 
 public abstract class Unit : NetworkBehaviour
 {
+    public enum UnitState
+    {
+        Alive,
+        Dead,
+    }
+    
     [SyncVar] public Team owningTeam = Team.None;
     [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
@@ -45,6 +51,7 @@ public abstract class Unit : NetworkBehaviour
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
     [SyncVar(hook = nameof(OnShieldUpdated))] private int _currentShield;
     [SyncVar(hook = nameof(OnTurnSkipUpdated))] private GameState _turnToSkip = GameState.Empty;
+    [SyncVar] private UnitState _state = UnitState.Alive;
     
     private Transform _camera;
     private MeshRenderer _renderer;
@@ -129,10 +136,10 @@ public abstract class Unit : NetworkBehaviour
 
     public bool CanBeSelected()
     {
-        var state = GameManager.Instance.gameState;
+        var gameState = GameManager.Instance.gameState;
         
-        return ((state == GameState.Attack && AttackIntent.Count < attackLimit) ||
-               (state == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip != state;
+        return _state == UnitState.Alive && ((gameState == GameState.Attack && AttackIntent.Count < attackLimit) ||
+               (gameState == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip != gameState;
     }
     
     // Move the unit along the given path from tile to tile
@@ -462,6 +469,9 @@ public abstract class Unit : NetworkBehaviour
             PlayHurtSound();
             ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeLeft},{_currentHealth}]", 
                 null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+            
+            if(_currentHealth <= 0)
+                StartCoroutine(Die());
         }
         else if(changeAmount > 0)
             ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "heal", $"[{changeLeft},{_currentHealth}]", 
@@ -486,7 +496,7 @@ public abstract class Unit : NetworkBehaviour
         ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "died", null, 
             null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
         
-        Die();
+        StartCoroutine(Die());
     }
 
     #region Networking
@@ -595,11 +605,24 @@ public abstract class Unit : NetworkBehaviour
     }
 
     [ClientRpc]
-    protected virtual void Die()
+    protected virtual void RpcDie()
     {
         GameManager.Instance.UnitDefeated(TilePosition);
         GridManager.Instance.RemoveUnit(TilePosition);
         Destroy(gameObject);
+    }
+
+    [Server]
+    protected virtual IEnumerator Die()
+    {
+        _state = UnitState.Dead;
+        
+        // Play death animation coroutine and sfx
+        // yield return StartCoroutine(...);
+
+        yield return new WaitForSeconds(1);
+        
+        RpcDie();
     }
 
     #endregion

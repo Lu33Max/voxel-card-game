@@ -11,7 +11,12 @@ public class StormEvent : StageEventBase
         public float stormDuration = 2f;
     }
     
-    public override void Execute(StageEventParameters parameters)
+    public override void Setup()
+    {
+        
+    }
+    
+    public override void Execute(StageEventParameters parameters, MonoBehaviour runner)
     {
         StormParameters p = (StormParameters)parameters;
         Debug.Log($"Storm triggered! Wind: {p.windSpeed}, Duration: {p.stormDuration}");

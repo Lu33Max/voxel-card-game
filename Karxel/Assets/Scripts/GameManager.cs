@@ -25,9 +25,9 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     /// <summary>SERVER ONLY<br/>List of all moves to execute when round finishes</summary>
-    public Dictionary<Vector3Int, List<MoveCommand>> MoveIntents = new();
+    private Dictionary<Vector3Int, List<MoveCommand>> MoveIntents = new();
     /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
-    public Dictionary<Vector3Int, List<Attack>> AttackIntents = new();
+    private Dictionary<Vector3Int, List<Attack>> AttackIntents = new();
 
     public static UnityEvent PlayersReady = new();
     public static UnityEvent RoundTimerUp = new();
@@ -173,6 +173,7 @@ public class GameManager : NetworkBehaviour
     [Server]
     public void UnitDefeated(Vector3Int unitPos)
     {
+        MoveIntents.Remove(unitPos);
         AttackIntents.Remove(unitPos);
     }
 

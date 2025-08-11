@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,8 @@ public class GridManager : NetworkBehaviour
     [Header("Unit Setup")]
     [SerializeField] private Transform blueParent;
     [SerializeField] private Transform redParent;
+
+    public Vector3 TileSize => tileSize;
     
     private Dictionary<Vector3Int, TileData> _tiles = new();
     private GameObject _map;
@@ -108,10 +111,9 @@ public class GridManager : NetworkBehaviour
     ///     with all given restrictions
     /// </summary>
     /// <param name="startPos"> Position of the tile to retrieve its neighbours from </param>
-    /// <param name="maxHeightDiff"> The maximum vertical distance between two neighbouring tiles </param>
     /// <param name="onlyMainAxis"> Whether only the four main axis should be checked or all eight </param>
     /// <param name="validEdgeTypes"> All the <see cref="Tile.EdgeType"/>s that can be traversed by the unit </param>
-    public Vector3Int[] GetReachableNeighbours(Vector3Int startPos, int maxHeightDiff, bool onlyMainAxis, Tile.EdgeType[] validEdgeTypes)
+    public IEnumerable<Vector3Int> GetReachableNeighbours(Vector3Int startPos, bool onlyMainAxis, Tile.EdgeType[] validEdgeTypes, TileData.TileState[] validTileStates)
     {
         if (!_tiles.TryGetValue(startPos, out var startTile)) 
             return new Vector3Int[] { };
@@ -123,24 +125,11 @@ public class GridManager : NetworkBehaviour
         {
             var targetTiles = startTile.TileNeighbours.Where(t => t.GridPosition.x == startPos.x + dir.x && t.GridPosition.z == startPos.z + dir.z);
 
-            foreach (var neighbour in targetTiles)
-            {
-                if(validEdgeTypes.Contains(neighbour.EdgeType))
-                    neighbours.Add(neighbour.GridPosition);
-            }
-            
-            // for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
-            // {
-            //     var target = startPos + dir;
-            //     target.y += y;
-            //
-            //     var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
-            //     
-            //     if(targetTile == null) continue;
-            //     
-            //     if(validEdgeTypes.Contains(targetTile.EdgeType))
-            //         neighbours.Add(target);
-            // }
+            neighbours.AddRange(
+                from neighbour in targetTiles
+                where validEdgeTypes.Contains(neighbour.EdgeType) 
+                where validTileStates.Contains(_tiles[neighbour.GridPosition].State)
+                select neighbour.GridPosition);
         }
 
         if (onlyMainAxis) 
@@ -152,27 +141,21 @@ public class GridManager : NetworkBehaviour
         {
             var targetTiles = startTile.TileNeighbours.Where(t => t.GridPosition.x == startPos.x + dir.x && t.GridPosition.z == startPos.z + dir.z);
 
-            foreach (var neighbour in targetTiles)
-            {
-                if(validEdgeTypes.Contains(neighbour.EdgeType))
-                    neighbours.Add(neighbour.GridPosition);
-            }
-            
-            // for (var y = -maxHeightDiff; y <= maxHeightDiff; y++)
-            // {
-            //     var target = startPos + dir;
-            //     target.y += y;
-            //
-            //     var targetTile = startTile.TileNeighbours.Find(t => t.GridPosition == target);
-            //     
-            //     if(targetTile == null) continue;
-            //     
-            //     if(validEdgeTypes.Contains(targetTile.EdgeType))
-            //         neighbours.Add(target);
-            // }
+            neighbours.AddRange(
+                from neighbour in targetTiles 
+                where validEdgeTypes.Contains(neighbour.EdgeType) 
+                where validTileStates.Contains(_tiles[neighbour.GridPosition].State)
+                select neighbour.GridPosition);
         }
 
         return neighbours.ToArray();
+    }
+
+    /// <summary> Filter all tiles on the board by the given filter function and return them. </summary>
+    /// <param name="tileFilter"> Function to filter tiles. True means the tile should be returned </param>
+    public IEnumerable<TileData> GetTilesFiltered(Func<TileData, bool> tileFilter)
+    {
+        return _tiles.Values.Where(tileFilter);
     }
 
     /// <summary>Transfers a Unit-reference from a start tile to a target tile</summary>
@@ -236,6 +219,7 @@ public class GridManager : NetworkBehaviour
                         TilePosition = gridPos,
                         WorldPosition = hit.point,
                         TileNeighbours = tileNeighbours,
+                        State = TileData.TileState.Normal
                     });
                     
                     var worldPos = hit.point;
@@ -308,9 +292,6 @@ public class GridManager : NetworkBehaviour
                 var gridPos = WorldToGridPosition(unitPosition);
                 gridPos.y -= 1;
                 
-                if(unitScript.Data.unitName.Equals("KING"))
-                    Debug.Log(gridPos);
-            
                 if(!IsExistingGridPosition(gridPos))
                     continue;
             

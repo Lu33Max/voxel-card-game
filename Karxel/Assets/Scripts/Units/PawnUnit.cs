@@ -24,8 +24,8 @@ public class PawnUnit : Unit
             {
                 var prevPos = queue.Dequeue();
                 
-                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
-                    true, data.traversableEdgeTypes);
+                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
+                    true, data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
 
                 var targetPosition = prevPos + direction;
 

@@ -21,9 +21,9 @@ public class HealerUnit : Unit
         while (queue.Count > 0)
         {
             var prevPos = queue.Dequeue();
-            
-            var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
-                false, data.traversableEdgeTypes);
+
+            var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
+                false, data.traversableEdgeTypes, new[] { TileData.TileState.Normal });
             
             foreach (var neighbour in validNeighbours)
             {

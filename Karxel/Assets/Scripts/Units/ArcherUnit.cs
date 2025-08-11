@@ -24,8 +24,8 @@ public class ArcherUnit : Unit
             {
                 var prevPos = queue.Dequeue();
                 
-                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
-                    false, data.traversableEdgeTypes);
+                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
+                    false, data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
 
                 var targetPosition = prevPos + direction;
 

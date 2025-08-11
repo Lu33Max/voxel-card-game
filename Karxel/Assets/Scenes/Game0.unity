@@ -34432,6 +34432,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: WaterGround
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 3180eb9a3bc2ae7478e743c86c5a85be,
+        type: 3}
+      propertyPath: m_TagString
+      value: Water
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3180eb9a3bc2ae7478e743c86c5a85be, type: 3}
 --- !u!1 &1875106915

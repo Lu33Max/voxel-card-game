@@ -25,8 +25,8 @@ public class KingUnit : Unit
             {
                 var prevPos = queue.Dequeue();
                 
-                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos, data.maxHeightDiff,
-                    true, data.traversableEdgeTypes);
+                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
+                    true, data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
 
                 var targetPosition = prevPos + direction;
 
@@ -69,14 +69,13 @@ public class KingUnit : Unit
         };
     }
 
-    protected override void Die()
+    protected override IEnumerator Die()
     {
-        base.Die();
+        if(isServer)
+            GameManager.Instance.KingDefeated(owningTeam);
         
-        if(!isServer)
-            return;
-        
-        GameManager.Instance.KingDefeated(owningTeam);
+        base.RpcDie();
+        yield break;
     }
 
     protected override void OnGameStateChanged(GameState newState)
