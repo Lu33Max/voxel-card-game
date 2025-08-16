@@ -10530,6 +10530,7 @@ PrefabInstance:
     - {fileID: 6505779614707281561, guid: 8643b8558dd9db049b6cb9ead28c0130, type: 3}
     - {fileID: 3613775905637500990, guid: 8643b8558dd9db049b6cb9ead28c0130, type: 3}
     - {fileID: 8107571260214127857, guid: 8643b8558dd9db049b6cb9ead28c0130, type: 3}
+    - {fileID: 3762293425089757762, guid: 8643b8558dd9db049b6cb9ead28c0130, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 8643b8558dd9db049b6cb9ead28c0130, type: 3}
 --- !u!1001 &493298510
 PrefabInstance:
@@ -14396,6 +14397,7 @@ PrefabInstance:
     - {fileID: 6505779614707281561, guid: d5b3bb61b23f5de40a8d62f027f3beec, type: 3}
     - {fileID: 1867893550523916427, guid: d5b3bb61b23f5de40a8d62f027f3beec, type: 3}
     - {fileID: 3626784166634124738, guid: d5b3bb61b23f5de40a8d62f027f3beec, type: 3}
+    - {fileID: 2913917453513363306, guid: d5b3bb61b23f5de40a8d62f027f3beec, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: d5b3bb61b23f5de40a8d62f027f3beec, type: 3}
 --- !u!1001 &689676370
 PrefabInstance:
@@ -15669,7 +15671,7 @@ MonoBehaviour:
   autoCreatePlayer: 1
   playerSpawnMethod: 0
   spawnPrefabs: []
-  exceptionsDisconnect: 0
+  exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
     bufferLimit: 32
@@ -17838,6 +17840,7 @@ PrefabInstance:
     - {fileID: 1867893550523916427, guid: 885989f7cf4e39040ad9a93a584608db, type: 3}
     - {fileID: 6505779614707281561, guid: 885989f7cf4e39040ad9a93a584608db, type: 3}
     - {fileID: 414771989852758167, guid: 885989f7cf4e39040ad9a93a584608db, type: 3}
+    - {fileID: 2582222450847270497, guid: 885989f7cf4e39040ad9a93a584608db, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 885989f7cf4e39040ad9a93a584608db, type: 3}
 --- !u!1 &892654280
 GameObject:

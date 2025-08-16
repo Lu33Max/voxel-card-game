@@ -734,6 +734,7 @@ GameObject:
   - component: {fileID: 6505779614707281561}
   - component: {fileID: 3613775905637500990}
   - component: {fileID: 8107571260214127857}
+  - component: {fileID: 3762293425089757762}
   m_Layer: 0
   m_Name: Archer_Blue
   m_TagString: Untagged
@@ -903,6 +904,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &3762293425089757762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5633764496343281651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca178c951220d7c4b84cbf8578a6ad05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  pathPrefab: {fileID: 5595884773812028496, guid: 19b785b7f5f363045be122a3ffd98883,
+    type: 3}
 --- !u!1 &6518011584807965773
 GameObject:
   m_ObjectHideFlags: 0

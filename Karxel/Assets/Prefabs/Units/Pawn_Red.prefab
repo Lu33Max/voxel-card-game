@@ -661,6 +661,7 @@ GameObject:
   - component: {fileID: 6629697987774451715}
   - component: {fileID: 6505779614707281561}
   - component: {fileID: 1452972950127354965}
+  - component: {fileID: 7210943450429226786}
   m_Layer: 0
   m_Name: Pawn_Red
   m_TagString: Untagged
@@ -830,6 +831,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7210943450429226786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5633764496343281651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca178c951220d7c4b84cbf8578a6ad05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  pathPrefab: {fileID: 5595884773812028496, guid: 19b785b7f5f363045be122a3ffd98883,
+    type: 3}
 --- !u!1 &6518011584807965773
 GameObject:
   m_ObjectHideFlags: 0

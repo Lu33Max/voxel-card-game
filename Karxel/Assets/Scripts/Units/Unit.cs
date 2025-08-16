@@ -56,6 +56,7 @@ public abstract class Unit : NetworkBehaviour
     private Transform _camera;
     private MeshRenderer _renderer;
     private AudioSource _sfxSource;
+    private PathManager _pathManager;
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -72,6 +73,8 @@ public abstract class Unit : NetworkBehaviour
             _camera = Camera.main.transform;
         _renderer = GetComponentInChildren<MeshRenderer>();
         _sfxSource = GetComponent<AudioSource>();
+        _pathManager = GetComponent<PathManager>();
+        _pathManager.Setup(this);
         
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         
@@ -528,8 +531,8 @@ public abstract class Unit : NetworkBehaviour
     [Command(requiresAuthority = false)]
     public void CmdRegisterMoveIntent(MoveCommand moveCommand)
     {
-        PathManager.Instance.CreatePath(moveCommand,
-            MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition, TilePosition);
+        _pathManager.CreatePath(moveCommand,
+            MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition);
 
         GameManager.Instance.RegisterMoveIntent(TilePosition, moveCommand);
         

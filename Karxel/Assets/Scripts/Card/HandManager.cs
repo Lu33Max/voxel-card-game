@@ -150,10 +150,8 @@ public class HandManager : MonoBehaviour
             ActionPointManager.Instance.UpdateActionPoints(actionsGained);
         }
         
-        Debug.Log("Loop over " + discardContainer.childCount + " children with count " + _discardCount);
         for (int i = 0; i < discardContainer.childCount; i++)
         {
-            Debug.Log("Loop " + i);
             var cardImage = discardContainer.GetChild(i).GetComponent<Image>();
             cardImage.color = i < _discardCount ? Color.white : Color.gray;
         }

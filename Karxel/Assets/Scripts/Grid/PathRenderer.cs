@@ -4,7 +4,7 @@ using System.Linq;
 using Mirror;
 using UnityEngine;
 
-public class PathRenderer : NetworkBehaviour
+public class PathRenderer : MonoBehaviour
 {
     [SerializeField] private LineRenderer lineRenderer;
     [SerializeField] private float groundOffset = 0.01f;
@@ -20,19 +20,20 @@ public class PathRenderer : NetworkBehaviour
         foreach (var tile in command.Path.Append(command.TargetPosition))
         {
             var tilePos = GridManager.Instance.GridToWorldPosition(tile).GetValueOrDefault();
+            tilePos.y += groundOffset;
 
             if (Math.Abs(tilePos.y - positions.Last().y) > 0.1)
             {
                 var previous = positions.Last();
-                var diffVec = tilePos - previous;
+                var diffVec = previous - tilePos;
 
-                positions.Add(new Vector3(previous.x + diffVec.x / 2 + Sign(diffVec.x) * groundOffset,
-                    previous.y + groundOffset, previous.z + diffVec.z / 2 + Sign(diffVec.z) * groundOffset));
-                positions.Add(new Vector3(previous.x + diffVec.x / 2 + Sign(diffVec.x) * groundOffset,
-                    tilePos.y + groundOffset, previous.z + diffVec.z / 2 + Sign(diffVec.z) * groundOffset));
+                var sign = diffVec.y >= 0 ? -1 : 1;
+                var halfPoint = (previous + tilePos) / 2f + diffVec.normalized * (groundOffset * sign);
+                
+                positions.Add(new Vector3(halfPoint.x, previous.y, halfPoint.z));
+                positions.Add(new Vector3(halfPoint.x, tilePos.y, halfPoint.z));
             }
-
-            tilePos.y += groundOffset;
+            
             positions.Add(tilePos);
         }
         
@@ -44,36 +45,33 @@ public class PathRenderer : NetworkBehaviour
 
     public void AppendToPath(MoveCommand command)
     {
-        List<Vector3> positions = new();
-        positions.Add(lineRenderer.GetPosition(lineRenderer.positionCount - 1));
-        
+        List<Vector3> positions = new() { lineRenderer.GetPosition(lineRenderer.positionCount - 1) };
+
         foreach (var tile in command.Path.Append(command.TargetPosition))
         {
             var tilePos = GridManager.Instance.GridToWorldPosition(tile).GetValueOrDefault();
-
-            if (Math.Abs(tilePos.y - positions.Last().y) > 0.01)
+            tilePos.y += groundOffset;
+            
+            if (Math.Abs(tilePos.y - positions.Last().y) > 0.1)
             {
                 var previous = positions.Last();
-                var diffVec = tilePos - previous;
+                var diffVec = previous - tilePos;
 
-                positions.Add(new Vector3(previous.x + diffVec.x / 2 + Sign(diffVec.x) * groundOffset,
-                    previous.y + groundOffset, previous.z + diffVec.z / 2 + Sign(diffVec.z) * groundOffset));
-                positions.Add(new Vector3(previous.x + diffVec.x / 2 + Sign(diffVec.x) * groundOffset,
-                    tilePos.y + groundOffset, previous.z + diffVec.z / 2 + Sign(diffVec.z) * groundOffset));
+                var sign = diffVec.y >= 0 ? -1 : 1;
+                var halfPoint = (previous + tilePos) / 2f + diffVec.normalized * (groundOffset * sign);
+                
+                positions.Add(new Vector3(halfPoint.x, previous.y, halfPoint.z));
+                positions.Add(new Vector3(halfPoint.x, tilePos.y, halfPoint.z));
             }
-
-            tilePos.y += groundOffset;
+            
             positions.Add(tilePos);
-
-            var positionCount = lineRenderer.positionCount;
-            positionCount++;
-            lineRenderer.positionCount = positionCount;
-            lineRenderer.SetPosition(positionCount - 1, tilePos);
         }
-    }
-
-    private static float Sign(float num)
-    {
-        return num > 0 ? 1f : num < 0 ? -1f : 0f;
+        
+        var positionCount = lineRenderer.positionCount;
+        
+        // Exclude the duplicate first position
+        lineRenderer.positionCount = positionCount + positions.Count - 1;
+        for (var i = 1; i < positions.Count; i++)
+            lineRenderer.SetPosition(positionCount + i - 1, positions[i]);   
     }
 }
