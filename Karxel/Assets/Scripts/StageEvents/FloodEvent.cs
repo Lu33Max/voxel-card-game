@@ -38,7 +38,15 @@ public class FloodEvent : StageEventBase
                 tile.Unit.CmdUpdateHealth(-999);
         }
 
-        runner.StartCoroutine(RiseWater(p.floodHeight, p.risingSpeed));
+        var cleanTiles = GridManager.Instance.GetTilesFiltered(tile => tile.TilePosition.y >= p.floodHeight);
+
+        foreach (var tile in cleanTiles)
+        {
+            if (tile.State == TileData.TileState.Flooded)
+                tile.State = TileData.TileState.Normal;
+        }
+
+        runner.StartCoroutine(UpdateWaterPosition(p.floodHeight, p.risingSpeed));
     }
 
     public override StageEventParameters CreateDefaultParameters()
@@ -46,19 +54,24 @@ public class FloodEvent : StageEventBase
         return new FloodParameters();
     }
 
-    private IEnumerator RiseWater(int floodHeight, float speed)
+    private IEnumerator UpdateWaterPosition(int floodHeight, float speed)
     {
         var tileHeight = GridManager.Instance.TileSize.y;
         
         var targetHeight = _originalHeight + floodHeight * tileHeight;
+        var startHeight = _water.transform.position.y;
+        var totalDuration = Mathf.Abs(targetHeight - startHeight) / speed;
+        
+        var elapsed = 0f;
 
-        while (_water.transform.position.y < targetHeight)
+        while (elapsed < totalDuration)
         {
-            var waterPosition = _water.transform.position;
+            elapsed += Time.deltaTime;
             
-            _water.transform.position = new Vector3(waterPosition.x, waterPosition.y + tileHeight * speed * Time.deltaTime,
-                waterPosition.z);
-
+            var waterPosition = _water.transform.position;
+            _water.transform.position = new Vector3(waterPosition.x,
+                Mathf.Lerp(startHeight, targetHeight, elapsed / totalDuration), waterPosition.z);
+            
             yield return new WaitForEndOfFrame();
         }
 

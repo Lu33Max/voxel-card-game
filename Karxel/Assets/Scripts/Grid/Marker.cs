@@ -1,20 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using UnityEngine;
 
 public class Marker : MonoBehaviour
 {
-    [SerializeField] private List<MarkerSprite> spriteMap;
+    [SerializeField] private List<MarkerColor> colorMap;
     
     private List<MarkerData> _activeMarkers = new();
-    private MarkerData _currentMarker;
     private SpriteRenderer _renderer;
+    private Material _materialInstance;
+    private static readonly int MainColor = Shader.PropertyToID("_MainColor");
+    private static readonly int SecondaryColor = Shader.PropertyToID("_SecondaryColor");
 
     private void Start()
     {
         _renderer = GetComponent<SpriteRenderer>();
+        _materialInstance = _renderer.material;
     }
 
     public void AddMarker(MarkerData markerData)
@@ -35,53 +37,43 @@ public class Marker : MonoBehaviour
     
     private void UpdateCurrentMarker()
     {
-        if (_activeMarkers.Count == 0)
-        {
-            _currentMarker = null;
-            ClearVisuals();
-            return;
-        }
+        _activeMarkers.Sort((m, n) => m.Priority - n.Priority);
         
-        _currentMarker = _activeMarkers.OrderBy(m => m.Priority).First();
-        ApplyVisuals(_currentMarker);
+        _materialInstance.SetColor(MainColor,
+            _activeMarkers.Count > 0
+                ? colorMap.Find(c => c.type == _activeMarkers[0].Type).color
+                : new Color(0, 0, 0, 0));
+        
+        _materialInstance.SetColor(SecondaryColor,
+            _activeMarkers.Count > 1
+                ? colorMap.Find(c => c.type == _activeMarkers[1].Type).color
+                : new Color(0, 0, 0, 0));
     }
 
     public void ClearAllMarkers()
     {
-        _currentMarker = null;
         _activeMarkers.Clear();
         ClearVisuals();
     }
     
     private void ClearVisuals()
     {
-        _renderer.color = new Color(0, 0, 0, 0);
-    }
-    
-    private void ApplyVisuals(MarkerData markerData)
-    {
-        // if(markerData.MarkerIcon == null)
-        //     _renderer.color = markerData.MarkerColor;
-        // else
-        // {
-            _renderer.sprite = spriteMap.First(m => m.Type == markerData.Type).Sprite;
-            _renderer.color = new Color(1, 1, 1, 1);
-        // }
+        _materialInstance.SetColor(MainColor, new Color(0, 0, 0, 0));
+        _materialInstance.SetColor(SecondaryColor, new Color(0, 0, 0, 0));
     }
 }
 
 [Serializable]
-public class MarkerSprite
+public class MarkerColor
 {
-    public MarkerType Type;
-    public Sprite Sprite;
+    public MarkerType type;
+    public Color color;
 }
 
 public class MarkerData
 {
     public MarkerType Type;
     public int Priority;
-    public Color MarkerColor;
     public string Visibility;
 }
 

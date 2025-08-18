@@ -164,7 +164,6 @@ public class GameManager : NetworkBehaviour
             {
                 Type = MarkerType.Attack,
                 Priority = 1,
-                MarkerColor = Color.red,
                 Visibility = team == Team.Blue ? "Blue" : "Red"
             });
         }
@@ -397,7 +396,6 @@ public class GameManager : NetworkBehaviour
                 MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
                 {
                     Type = MarkerType.Attack,
-                    MarkerColor = Color.red,
                     Priority = 1,
                     Visibility = "All"
                 });

@@ -62,10 +62,10 @@ public abstract class Unit : NetworkBehaviour
     /// <param name="movementRange">The movement range given by the played card</param>
     public abstract List<MoveCommand> GetValidMoves(int movementRange);
 
-    public abstract List<Vector3Int> GetValidAttackTiles(int attackRange);
+    public abstract List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null);
     
     [CanBeNull]
-    public abstract Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier);
+    public abstract Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier);
 
     private void Start()
     {

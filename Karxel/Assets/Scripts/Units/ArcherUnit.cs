@@ -44,15 +44,16 @@ public class ArcherUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override List<Vector3Int> GetValidAttackTiles(int attackRange)
+    public override List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null)
     {
+        var position = positionOverride ?? TilePosition;
         Vector3Int[] directions =
         {
             new(-1, 0, -3), new(-2, 0, -3), new(-3, 0, -2), new(-3, 0, -1), new(-3, 0, 1), new(-3, 0, 2), new(-2, 0, 3), new(-1, 0, 3),
             new(1, 0, 3), new(2, 0, 3), new(3, 0, 2), new(3, 0, 1), new(3, 0, -1), new(3, 0, -2), new(2, 0, -3), new(1, 0, -3)
         };
 
-        var singleLayer = directions.Select(dir => TilePosition + dir).ToArray();
+        var singleLayer = directions.Select(dir => position + dir).ToArray();
         
         return singleLayer
             .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
@@ -64,9 +65,9 @@ public class ArcherUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
-    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier)
+    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
     {
-        var allTiles = GetValidAttackTiles(attackRange);
+        var allTiles = GetValidAttackTiles();
 
         if (!allTiles.Contains(hoveredPos)) return null;
 

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8734733957958009431}
   - component: {fileID: 2571401456143654375}
   - component: {fileID: 6118525814576646494}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Marker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25,14 +25,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8658472621913123918}
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!212 &2571401456143654375
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -53,7 +53,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 809318d5e8f54354a981579e88f2196f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -79,7 +79,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.16, y: 0.16}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -97,14 +97,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0229e21c817b91f44867e2f42197094e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spriteMap:
-  - Type: 0
-    Sprite: {fileID: 21300000, guid: 03179cf0e272bf740bfc575294f25206, type: 3}
-  - Type: 1
-    Sprite: {fileID: 21300000, guid: 99ebf46eb6f87b044bbca537bcac7363, type: 3}
-  - Type: 2
-    Sprite: {fileID: 21300000, guid: e8846d4a1b6ef2b46a72372a110eca55, type: 3}
-  - Type: 3
-    Sprite: {fileID: 21300000, guid: 7f750cfea11ade249b7ae1f4f7483b2a, type: 3}
-  - Type: 4
-    Sprite: {fileID: 21300000, guid: 7f750cfea11ade249b7ae1f4f7483b2a, type: 3}
+  colorMap:
+  - type: 0
+    color: {r: 0.087417364, g: 1, b: 0, a: 1}
+  - type: 1
+    color: {r: 1, g: 0, b: 0, a: 1}
+  - type: 4
+    color: {r: 1, g: 0.495283, b: 0.495283, a: 1}
+  - type: 2
+    color: {r: 0, g: 0.42371416, b: 1, a: 1}
+  - type: 3
+    color: {r: 0.4764151, g: 0.6981686, b: 1, a: 1}

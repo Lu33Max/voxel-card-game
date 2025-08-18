@@ -47,13 +47,14 @@ public class HeavyUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override List<Vector3Int> GetValidAttackTiles(int attackRange)
+    public override List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null)
     {
+        var position = positionOverride ?? TilePosition;
         Vector3Int[] singleLayer =
         {
-            TilePosition + Vector3Int.back, TilePosition + Vector3Int.left, TilePosition + Vector3Int.forward,
-            TilePosition + Vector3Int.right, TilePosition + new Vector3Int(1, 0, 1), TilePosition + new Vector3Int(-1, 0, 1),
-            TilePosition + new Vector3Int(1, 0, -1), TilePosition + new Vector3Int(-1, 0, -1)
+            position + Vector3Int.back, position + Vector3Int.left, position + Vector3Int.forward,
+            position + Vector3Int.right, position + new Vector3Int(1, 0, 1), position + new Vector3Int(-1, 0, 1),
+            position + new Vector3Int(1, 0, -1), position + new Vector3Int(-1, 0, -1)
         };
         
         return singleLayer
@@ -62,9 +63,9 @@ public class HeavyUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
-    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier)
+    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
     {
-        var allTiles = GetValidAttackTiles(attackRange);
+        var allTiles = GetValidAttackTiles();
 
         if (!allTiles.Contains(hoveredPos)) return null;
         

@@ -45,19 +45,20 @@ public class KingUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override List<Vector3Int> GetValidAttackTiles(int attackRange)
+    public override List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null)
     {
+        var position = positionOverride ?? TilePosition;
         return new List<Vector3Int>
             {
-                TilePosition + Vector3Int.forward, TilePosition + Vector3Int.left,
-                TilePosition + Vector3Int.back, TilePosition + Vector3Int.right,
+                position + Vector3Int.forward, position + Vector3Int.left,
+                position + Vector3Int.back, position + Vector3Int.right,
             }
             .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
     }
 
-    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int attackRange, int damageMultiplier)
+    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
     {
-        var allTiles = GetValidAttackTiles(attackRange);
+        var allTiles = GetValidAttackTiles();
 
         if (!allTiles.Contains(hoveredPos)) return null;
 
