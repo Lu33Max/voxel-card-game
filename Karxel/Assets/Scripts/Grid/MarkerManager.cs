@@ -22,7 +22,7 @@ public class MarkerManager : NetworkBehaviour
         Instance = this;
     }
 
-    /// <summary>Registers new tile upon board creation</summary>
+    /// <summary> Registers new tile upon board creation </summary>
     [Client]
     public void RegisterTile(Vector3Int tilePos, Vector3 worldPos, Vector3 scale)
     {
@@ -33,7 +33,7 @@ public class MarkerManager : NetworkBehaviour
         _markers[tilePos] = marker.GetComponent<Marker>();
     }
 
-    /// <summary>Adds a new Marker to the given position</summary>
+    /// <summary> Adds a new Marker to the given position </summary>
     [ClientRpc]
     public void RPCAddMarker(Vector3Int position, MarkerData markerData)
     {
@@ -65,11 +65,10 @@ public class MarkerManager : NetworkBehaviour
     [Client]
     public void RemoveMarkerLocal(Vector3Int position, MarkerType markerType, string visibility)
     {
-        if (_markers.TryGetValue(position, out Marker tile))
+        if (_markers.TryGetValue(position, out var tile))
             tile.RemoveMarker(markerType, visibility);
     }
-
-    // Entfernt alle Markierungen von einem Tile
+    
     [ClientRpc]
     public void RPCClearMarkers(Vector3Int position)
     {
@@ -84,7 +83,7 @@ public class MarkerManager : NetworkBehaviour
             tile.ClearAllMarkers();
     }
 
-    private bool ShouldIgnore(string visibility)
+    private static bool ShouldIgnore(string visibility)
     {
         if (GameManager.Instance == null || GameManager.Instance.localPlayer == null || visibility == null)
             return true;
@@ -94,6 +93,6 @@ public class MarkerManager : NetworkBehaviour
         return visibility != "All" && ((visibility == "Blue" && player.team != Team.Blue) ||
                                         (visibility == "Red" && player.team != Team.Red) ||
                                         (visibility != "Blue" && visibility != "Red" &&
-                                         visibility != player.netId.ToString()));
+                                         visibility != player.netId.ToString() && visibility != "local"));
     }
 }

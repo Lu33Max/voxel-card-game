@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Mirror;
 using UnityEditor;
 using UnityEngine;
@@ -77,7 +78,7 @@ public class GridManager : NetworkBehaviour
     /// <summary>Convert a grid position into world coordinates</summary>
     public Vector3? GridToWorldPosition(Vector3Int gridPosition)
     {
-        if (!IsExistingGridPosition(gridPosition))
+        if (!IsExistingGridPosition(gridPosition, out _))
             return null;
         
         return _tiles[gridPosition].WorldPosition;
@@ -92,18 +93,18 @@ public class GridManager : NetworkBehaviour
     }
 
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
-    public bool IsExistingGridPosition(Vector3Int gridPosition)
+    public bool IsExistingGridPosition(Vector3Int gridPosition, out TileData tile)
     {
-        return _tiles.ContainsKey(gridPosition);
+        return _tiles.TryGetValue(gridPosition, out tile);
     }
 
     /// <summary>Checks if the given move is possible to do on the current board configuration</summary>
     public bool IsMoveValid(MoveCommand move)
     {
-        if (!IsExistingGridPosition(move.TargetPosition) || _tiles[move.TargetPosition].Unit != null)
+        if (!IsExistingGridPosition(move.TargetPosition, out _) || _tiles[move.TargetPosition].Unit != null)
             return false;
 
-        return move.Path.All(tile => IsExistingGridPosition(tile) && _tiles[tile].Unit == null);
+        return move.Path.All(tile => IsExistingGridPosition(tile, out _) && _tiles[tile].Unit == null);
     }
 
     /// <summary>
@@ -292,7 +293,7 @@ public class GridManager : NetworkBehaviour
                 var gridPos = WorldToGridPosition(unitPosition);
                 gridPos.y -= 1;
                 
-                if(!IsExistingGridPosition(gridPos))
+                if(!IsExistingGridPosition(gridPos, out _))
                     continue;
             
                 unit.gameObject.SetActive(true);

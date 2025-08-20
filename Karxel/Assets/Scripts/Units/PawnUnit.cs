@@ -52,7 +52,7 @@ public class PawnUnit : Unit
                 position + Vector3Int.forward, position + Vector3Int.left,
                 position + Vector3Int.back, position + Vector3Int.right,
             }
-            .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
+            .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList();
     }
 
     public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)

@@ -7,9 +7,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(UnitMarkerManager))]
 public abstract class Unit : NetworkBehaviour
 {
-    public enum UnitState
+    private enum UnitState
     {
         Alive,
         Dead,
@@ -44,7 +45,7 @@ public abstract class Unit : NetworkBehaviour
     
     public Vector3Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
-    public List<Attack> AttackIntent { get; } = new();
+    private List<Attack> AttackIntent { get; } = new();
     public UnitData Data => data;
     public bool SetForSkip => _turnToSkip != GameState.Empty;
 
@@ -57,6 +58,7 @@ public abstract class Unit : NetworkBehaviour
     private MeshRenderer _renderer;
     private AudioSource _sfxSource;
     private PathManager _pathManager;
+    public UnitMarkerManager MarkerManager { get; private set; }
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
@@ -75,6 +77,8 @@ public abstract class Unit : NetworkBehaviour
         _sfxSource = GetComponent<AudioSource>();
         _pathManager = GetComponent<PathManager>();
         _pathManager.Setup(this);
+
+        MarkerManager = GetComponent<UnitMarkerManager>();
         
         GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
         
@@ -143,6 +147,11 @@ public abstract class Unit : NetworkBehaviour
         
         return _state == UnitState.Alive && ((gameState == GameState.Attack && AttackIntent.Count < attackLimit) ||
                (gameState == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip != gameState;
+    }
+
+    public bool HasMoveIntentsRegistered()
+    {
+        return MoveIntent.Count > 0;
     }
     
     // Move the unit along the given path from tile to tile
@@ -259,13 +268,13 @@ public abstract class Unit : NetworkBehaviour
     }
 
     /// <summary>Used to play animations, sfx etc.</summary>
-    protected virtual IEnumerator Attack(Attack attack)
+    private IEnumerator Attack(Attack attack)
     {
-        Vector3 startingPos = transform.position;
-        Vector3 direction = GridManager.Instance.GridToWorldPosition(attack.Tiles[0])!.Value - startingPos;
+        var startingPos = transform.position;
+        var direction = GridManager.Instance.GridToWorldPosition(attack.Tiles[0])!.Value - startingPos;
         direction.y = 0;
         
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        var targetRotation = Quaternion.LookRotation(direction);
         
         var unitTransform = transform;
         var elapsedTime = 0f;

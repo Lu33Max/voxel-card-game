@@ -53,7 +53,7 @@ public class KingUnit : Unit
                 position + Vector3Int.forward, position + Vector3Int.left,
                 position + Vector3Int.back, position + Vector3Int.right,
             }
-            .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
+            .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList();
     }
 
     public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
@@ -89,7 +89,7 @@ public class KingUnit : Unit
         var directions = new List<Vector3Int> { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward, };
         foreach (var dir in directions)
         {
-            if(!GridManager.Instance.IsExistingGridPosition(TilePosition + dir))
+            if(!GridManager.Instance.IsExistingGridPosition(TilePosition + dir, out _))
                 continue;
             
             var unit = GridManager.Instance.GetTileAtGridPosition(TilePosition + dir).Unit;

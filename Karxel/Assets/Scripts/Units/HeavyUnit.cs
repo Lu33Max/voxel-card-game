@@ -60,7 +60,7 @@ public class HeavyUnit : Unit
         return singleLayer
             .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
             .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
-            .Where(t => GridManager.Instance.IsExistingGridPosition(t)).ToList();
+            .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList();
     }
 
     public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
