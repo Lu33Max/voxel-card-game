@@ -133,11 +133,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 4
   rotationSpeed: 120
-  zoomSpeed: 5
+  zoomSpeed: 0.2
   minZoom: 1
   maxZoom: 5
-  focusLayer:
-    serializedVersion: 2
-    m_Bits: 64
   minPosition: {x: -5, y: 0, z: -5}
   maxPosition: {x: 9, y: 5, z: 9}

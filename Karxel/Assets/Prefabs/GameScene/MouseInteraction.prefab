@@ -28,8 +28,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5812765023651213686}
+  m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -48,92 +47,6 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  hoverMarker: {fileID: 21300000, guid: 03179cf0e272bf740bfc575294f25206, type: 3}
-  attackMarker: {fileID: 21300000, guid: 99ebf46eb6f87b044bbca537bcac7363, type: 3}
-  moveMarker: {fileID: 21300000, guid: e8846d4a1b6ef2b46a72372a110eca55, type: 3}
-  previewMarker: {fileID: 21300000, guid: 7f750cfea11ade249b7ae1f4f7483b2a, type: 3}
---- !u!1001 &5683559949729226290
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 5683559949971441770}
-    m_Modifications:
-    - target: {fileID: 2182866295286198080, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_Name
-      value: HoveredTileMarker
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198080, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198082, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_CastShadows
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 5bbf5b056181e9b4aa01624d1b933b74, type: 3}
---- !u!4 &5812765023651213686 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2182866295286198084, guid: 5bbf5b056181e9b4aa01624d1b933b74,
-    type: 3}
-  m_PrefabInstance: {fileID: 5683559949729226290}
-  m_PrefabAsset: {fileID: 0}
+  unitHovered:
+    m_PersistentCalls:
+      m_Calls: []

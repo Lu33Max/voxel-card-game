@@ -8,7 +8,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float zoomSpeed = 5f;
     [SerializeField] private float minZoom = 5f;
     [SerializeField] private float maxZoom = 50f;
-    [SerializeField] private LayerMask focusLayer;
 
     [SerializeField] private Vector3 minPosition;
     [SerializeField] private Vector3 maxPosition;
@@ -16,16 +15,30 @@ public class CameraController : MonoBehaviour
     private Vector3 _focusPoint;
     private bool _disabled;
 
-    private void Update()
+    private Vector2 _moveInput = Vector2.zero;
+    private float _zoomInput;
+    private float _rotateInput;
+
+    private void OnEnable()
     {
-        if(_disabled) return;
-        
-        var newPosition = HandleMovement();
-        var newFocusPoint = CalculateNewFocusPoint(newPosition);
-        
-        ClampPosition(newPosition, newFocusPoint);
-        HandleRotation();
-        HandleZoom();
+        InputManager.Instance.OnMove += OnMovePressed;
+        InputManager.Instance.OnRotate += OnRotatePressed;
+        InputManager.Instance.OnZoom += HandleZoom;;
+    }
+
+    private void OnDisable()
+    {
+        InputManager.Instance.OnMove -= OnMovePressed;
+        InputManager.Instance.OnRotate -= OnRotatePressed;
+        InputManager.Instance.OnZoom -= HandleZoom;;
+    }
+
+    private void OnMovePressed(Vector2 dir) => _moveInput = dir;
+    private void OnRotatePressed(float val) => _rotateInput = val;
+    private void OnZoomPressed(float val)
+    {
+        _zoomInput = val;
+        Debug.Log($"Zooming with {val}");
     }
 
     public void DisableMovement(bool shouldDisable)
@@ -33,15 +46,20 @@ public class CameraController : MonoBehaviour
         _disabled = shouldDisable;
     }
 
+    private void FixedUpdate()
+    {
+        if(_disabled) return;
+        
+        var newPosition = HandleMovement();
+        var newFocusPoint = CalculateNewFocusPoint(newPosition);
+        ClampPosition(newPosition, newFocusPoint);
+        
+        RotateAroundFocus();
+    }
+
     private Vector3 CalculateNewFocusPoint(Vector3 potentialNewPosition)
     {
         var ray = new Ray(potentialNewPosition, transform.forward);
-
-        // Draw a line from the camera to the ground and check, if it collides with the map
-        // if (Physics.Raycast(ray, out var hit, Mathf.Infinity, focusLayer))
-        //     return hit.point;
-        
-        // If no collision with the ground was made, instead look for an interception with the plane y = 0
         var rayDirectionY = ray.direction.y;
         
         // Check that the camera isn't oriented parallel to the ground
@@ -61,47 +79,41 @@ public class CameraController : MonoBehaviour
     private Vector3 HandleMovement()
     {
         var cameraTransform = transform;
-        var horizontal = Input.GetAxisRaw("Horizontal");
-        var vertical = Input.GetAxisRaw("Vertical");
         
-        if (horizontal == 0f && vertical == 0f)
+        if (_moveInput == Vector2.zero)
             return cameraTransform.position;
         
         var forwardVec = cameraTransform.forward;
         var rightVec = cameraTransform.right;
 
-        var direction = forwardVec * vertical + rightVec * horizontal;
+        var direction = forwardVec * _moveInput.y + rightVec * _moveInput.x;
         direction = new Vector3(direction.x, 0, direction.z);
         
         return cameraTransform.position + direction.normalized * (moveSpeed * Time.deltaTime);
     }
 
-    private void HandleRotation()
+    private void RotateAroundFocus()
     {
-        if (Input.GetKey(KeyCode.Q))
-            RotateAroundFocus(1);
-        else if (Input.GetKey(KeyCode.E))
-            RotateAroundFocus(-1);
-    }
-
-    private void RotateAroundFocus(float direction)
-    {
+        if(_rotateInput == 0) return;
+        
         var directionToFocus = transform.position - _focusPoint;
-        var rotation = Quaternion.AngleAxis(direction * rotationSpeed * Time.deltaTime, Vector3.up);
+        var rotation = Quaternion.AngleAxis(_rotateInput * rotationSpeed * Time.deltaTime, Vector3.up);
         directionToFocus = rotation * directionToFocus;
 
         transform.position = _focusPoint + directionToFocus;
         transform.LookAt(_focusPoint);
     }
 
-    private void HandleZoom()
+    private void HandleZoom(float scroll)
     {
-        // Zoom via Mouse Wheel
-        var scroll = Input.GetAxis("Mouse ScrollWheel");
+        Debug.Log(scroll);
+        
         if (scroll == 0f) return;
         
-        var direction = transform.forward * (scroll * zoomSpeed);
-        var newPosition = transform.position + direction;
+        var cameraTransform = transform;
+        
+        var direction = cameraTransform.forward * (scroll * zoomSpeed);
+        var newPosition = cameraTransform.position + direction;
 
         var yPosition = newPosition.y;
             
@@ -120,6 +132,9 @@ public class CameraController : MonoBehaviour
             transform.position = newPosition;
             return;
         }
+        
+        var cameraTransform = transform;
+        var forward = cameraTransform.forward;
 
         _focusPoint = new Vector3(
             Mathf.Clamp(newFocusPoint.x, minPosition.x, maxPosition.x),
@@ -127,6 +142,6 @@ public class CameraController : MonoBehaviour
             Math.Clamp(newFocusPoint.z, minPosition.z, maxPosition.z));
 
         var relativeHeight = transform.position.y - _focusPoint.y;
-        transform.position = _focusPoint + (-transform.forward * (relativeHeight / -transform.forward.y));
+        cameraTransform.position = _focusPoint + -forward * (relativeHeight / -forward.y);
     }
 }
