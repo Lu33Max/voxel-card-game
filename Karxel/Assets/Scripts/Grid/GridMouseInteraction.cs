@@ -8,7 +8,7 @@ public class GridMouseInteraction : MonoBehaviour
 {
     [SerializeField] private LayerMask groundLayer;
 
-    [HideInInspector] public UnityEvent<UnitData> unitHovered = new();
+    public static UnityEvent<UnitData> UnitHovered;
     
     private Camera _mainCamera;
     private TileData _hoveredTile;
@@ -21,6 +21,19 @@ public class GridMouseInteraction : MonoBehaviour
     {
         _mainCamera = Camera.main;
         GameManager.PlayersReady.AddListener(OnPlayersReady);
+
+        // Reassign in case any subscribers did not unsubscribe
+        UnitHovered = new UnityEvent<UnitData>();
+    }
+
+    private void OnEnable()
+    {
+        InputManager.Instance.OnInteract += OnMouseInteraction;
+    }
+
+    private void OnDisable()
+    {
+        InputManager.Instance.OnInteract -= OnMouseInteraction;
     }
 
     private void OnDestroy()
@@ -74,10 +87,7 @@ public class GridMouseInteraction : MonoBehaviour
         
         // If the cursor is over the same tile, do nothing
         if (_hoveredTile?.TilePosition == newHoveredTile.TilePosition)
-        {
-            OnMouseInteraction(); // TODO: Replace with input event listener
             return;
-        }
         
         _selectedUnit?.MarkerManager.UpdatePreviews(newHoveredTile.TilePosition); // Unit can recalculate the displayed preview tiles; attack previews change depending on hovered tile in move phase
         
@@ -87,12 +97,10 @@ public class GridMouseInteraction : MonoBehaviour
         if(newHoveredTile.Unit != _selectedUnit)
             newHoveredTile.Unit?.MarkerManager.DisplayHoverPreviews(newHoveredTile.TilePosition); // Display preview tiles and update stat display
         
-        unitHovered?.Invoke(newHoveredTile.Unit ? newHoveredTile.Unit.Data : null);
+        UnitHovered?.Invoke(newHoveredTile.Unit ? newHoveredTile.Unit.Data : null);
         
         UpdateHoverMarker(newHoveredTile.TilePosition);
         _hoveredTile = newHoveredTile;
-        
-        OnMouseInteraction(); // TODO: Replace with input event listener
     }
 
     private void CleanupWithNoInteraction()
@@ -100,7 +108,7 @@ public class GridMouseInteraction : MonoBehaviour
         if(_hoveredTile == null) return;
             
         _hoveredTile?.Unit?.MarkerManager.ClearHoverPreviews();
-        unitHovered?.Invoke(null);
+        UnitHovered?.Invoke(null);
 
         MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile!.TilePosition, MarkerType.Hover, _playerId);
         _hoveredTile = null;
@@ -135,8 +143,14 @@ public class GridMouseInteraction : MonoBehaviour
     private void OnMouseInteraction()
     {
         // Interaction with units can only occur if a card is currently selected
-        if (!Input.GetMouseButtonDown(0) || HandManager.Instance.SelectedCard == null || _hasSubmitted) 
+        if (HandManager.Instance.SelectedCard == null || _hasSubmitted || !ShouldCheckForInteraction())
             return;
+
+        if (_hoveredTile == null)
+        {
+            DeselectUnit();
+            return;
+        }
         
         var cardValues = HandManager.Instance.SelectedCard.CardData;
         var gameState = GameManager.Instance.gameState;
@@ -146,7 +160,6 @@ public class GridMouseInteraction : MonoBehaviour
         {
             if (cardValues.IsDisposable()) PlaySelectedItemCard(cardValues);
             else SelectHoveredUnit();
-            
             return;
         }
         
@@ -156,16 +169,15 @@ public class GridMouseInteraction : MonoBehaviour
             case GameState.Movement:
                 var moveCommand = _selectedUnit.GetValidMoves(cardValues.movementRange)
                     .FirstOrDefault(move => move.TargetPosition == _hoveredTile.TilePosition);
-                if (moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand))
-                {
-                    // Logging
-                    _selectedUnit.LogMovement(cardValues, moveCommand);
-                    
-                    _selectedUnit.CmdRegisterMoveIntent(moveCommand);
-                    HandManager.Instance.PlaySelectedCard();
-                }
-
+                
+                if (moveCommand == null || !GridManager.Instance.IsMoveValid(moveCommand)) 
+                    break;
+                
+                _selectedUnit.LogMovement(cardValues, moveCommand);
+                _selectedUnit.CmdRegisterMoveIntent(moveCommand);
+                HandManager.Instance.PlaySelectedCard();
                 break;
+            
             case GameState.Attack:
                 var attackCommand =
                     _selectedUnit.GetAttackForHoverPosition(_hoveredTile.TilePosition, cardValues.attackDamage);
@@ -173,10 +185,8 @@ public class GridMouseInteraction : MonoBehaviour
                 if (attackCommand == null) break;
 
                 _selectedUnit.LogAttack(cardValues, attackCommand);
-                
                 _selectedUnit.CmdRegisterAttackIntent(attackCommand);
                 HandManager.Instance.PlaySelectedCard();
-
                 break;
         }
         
@@ -188,7 +198,7 @@ public class GridMouseInteraction : MonoBehaviour
     /// <exception cref="ArgumentException"> The given cardData was no item type </exception>
     private void PlaySelectedItemCard(CardData cardValues)
     {
-        if(_hoveredTile.Unit == null) return;
+        if(_hoveredTile?.Unit == null) return;
         
         var player = GameManager.Instance.localPlayer;
 
