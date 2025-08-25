@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using UnityEngine;
 
@@ -6,7 +5,7 @@ public class StageEventManager : MonoBehaviour
 {
     public static StageEventManager Instance { get; private set; }
     
-    public StageEventInstance[] events;
+    [SerializeField] private StageEventInstance[] events;
 
     private void Awake()
     {
@@ -20,7 +19,7 @@ public class StageEventManager : MonoBehaviour
 
     private void Start()
     {
-        GameManager.NewRound.AddListener(OnRoundStart);
+        GameManager.Instance.NewRound += OnRoundStart;
         
         foreach (var e in events)
             e.eventType.Setup();
@@ -28,7 +27,7 @@ public class StageEventManager : MonoBehaviour
 
     private void OnDisable()
     {
-        GameManager.NewRound.RemoveListener(OnRoundStart);
+        GameManager.Instance.NewRound -= OnRoundStart;
         StopAllCoroutines();
     }
 
@@ -47,11 +46,12 @@ public class StageEventManager : MonoBehaviour
                      .FirstOrDefault(eventInstance => eventInstance.triggerRound > currentRound);
     }
 
+    /// <summary> Whenever a new round starts, check if there are any events that have to be executed this round </summary>
+    /// <param name="currentRound"> The current round counter </param>
     private void OnRoundStart(int currentRound)
     {
         foreach (var e in events)
             if (e.triggerRound == currentRound)
                 e.eventType.Execute(e.parameters, this);
-
     }
 }

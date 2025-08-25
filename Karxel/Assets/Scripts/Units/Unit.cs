@@ -89,8 +89,8 @@ public abstract class Unit : NetworkBehaviour
             return;
         
         UpdateHealth(data.health);
-        GameManager.AttackExecuted.AddListener(OnAttackExecuted);
-        GameManager.CheckHealth.AddListener(OnCheckHealth);
+        GameManager.Instance.AttackExecuted += OnAttackExecuted;
+        GameManager.Instance.CheckHealth += OnCheckHealth;
     }
 
     private void Update()
@@ -106,8 +106,8 @@ public abstract class Unit : NetworkBehaviour
         if(!isServer)
             return;
         
-        GameManager.AttackExecuted.RemoveListener(OnAttackExecuted);
-        GameManager.CheckHealth.RemoveListener(OnCheckHealth);
+        GameManager.Instance.AttackExecuted -= OnAttackExecuted;
+        GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
     /// <summary>Instantly move the unit to the given tile</summary>

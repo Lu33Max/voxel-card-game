@@ -26,12 +26,12 @@ public class RoundCounter : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.NewRound.AddListener(OnNewRound);
+        GameManager.Instance.NewRound += OnNewRound;
     }
     
     private void OnDisable()
     {
-        GameManager.NewRound.RemoveListener(OnNewRound);
+        GameManager.Instance.NewRound -= OnNewRound;
         StopAllCoroutines();
     }
 

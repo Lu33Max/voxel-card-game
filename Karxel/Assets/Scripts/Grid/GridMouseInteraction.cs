@@ -20,7 +20,7 @@ public class GridMouseInteraction : MonoBehaviour
     private void Start()
     {
         _mainCamera = Camera.main;
-        GameManager.PlayersReady.AddListener(OnPlayersReady);
+        GameManager.Instance.PlayersReady += OnPlayersReady;
 
         // Reassign in case any subscribers did not unsubscribe
         UnitHovered = new UnityEvent<UnitData>();
@@ -38,7 +38,7 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnDestroy()
     {
-        GameManager.PlayersReady.RemoveListener(OnPlayersReady);
+        GameManager.Instance.PlayersReady -= OnPlayersReady;
         GameManager.Instance.GameStateChanged -= OnStateChanged;
         HandManager.Instance.cardDeselected.RemoveListener(OnCardDeselected);
     }

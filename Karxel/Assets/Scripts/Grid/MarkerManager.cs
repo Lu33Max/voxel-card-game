@@ -10,7 +10,6 @@ public class MarkerManager : NetworkBehaviour
     
     private Dictionary<Vector3Int, Marker> _markers = new();
     
-    
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -53,8 +52,7 @@ public class MarkerManager : NetworkBehaviour
         if (_markers.TryGetValue(position, out Marker tile))
             tile.AddMarker(markerData);
     }
-
-    // Entfernt eine Markierung von einem spezifischen Tile
+    
     [ClientRpc]
     public void RPCRemoveMarker(Vector3Int position, MarkerType markerType, string visibility)
     {
@@ -67,13 +65,6 @@ public class MarkerManager : NetworkBehaviour
     {
         if (_markers.TryGetValue(position, out var tile))
             tile.RemoveMarker(markerType, visibility);
-    }
-    
-    [ClientRpc]
-    public void RPCClearMarkers(Vector3Int position)
-    {
-        if (_markers.TryGetValue(position, out Marker tile))
-            tile.ClearAllMarkers();
     }
 
     [ClientRpc]

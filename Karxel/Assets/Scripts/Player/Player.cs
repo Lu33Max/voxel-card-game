@@ -38,24 +38,22 @@ public class Player : NetworkBehaviour
         
         GameManager.Instance.localPlayer = this;
         GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        GameManager.Instance.RoundTimerUp += SubmitTurn;
         GameManager.Instance.CmdPlayerSpawned();
         
         DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, team, NetworkServer.connections.Count, 1);
-        
-        GameManager.RoundTimerUp.AddListener(SubmitTurn);
-        
+
         CmdAddToPlayerList(team);
     }
     
     private void OnDestroy()
     {
-        GameManager.RoundTimerUp.RemoveListener(SubmitTurn);
-        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
-        
         // Only execute if leaving during play mode
         if(GameManager.Instance == null)
             return;
         
+        GameManager.Instance.RoundTimerUp -= SubmitTurn;
+        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
         GameManager.Instance.CmdLeaveLobby();
     }
 

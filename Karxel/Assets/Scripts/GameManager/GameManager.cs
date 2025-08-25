@@ -20,6 +20,7 @@ public enum GameState
     Empty
 }
 
+// TODO: Turn GameManager into server-only component
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -28,17 +29,18 @@ public class GameManager : NetworkBehaviour
     private Dictionary<Vector3Int, List<MoveCommand>> MoveIntents = new();
     /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
     private Dictionary<Vector3Int, List<Attack>> AttackIntents = new();
-
-    public static UnityEvent PlayersReady = new();
-    public static UnityEvent RoundTimerUp = new();
-    public static UnityEvent<Attack> AttackExecuted = new();
-    public static UnityEvent CheckHealth = new();
-    public static UnityEvent<int> NewRound = new();
-
-    public event Action<float> TimerUpdated;
-    public event Action<GameState> GameStateChanged; 
     
-    [HideInInspector] public UnityEvent<int, int> updateActionPoints = new();
+    public event Action PlayersReady;
+    public event Action RoundTimerUp;
+    public event Action<Attack> AttackExecuted;
+    public event Action CheckHealth;
+    public event Action<int> NewRound;
+    /// <summary> Called every frame the remaining time gets updated </summary>
+    public event Action<float> TimerUpdated;
+    /// <summary> Called whenever the GameState gets updated, sending the new status with it </summary>
+    public event Action<GameState> GameStateChanged; 
+    /// <summary> Called on every new round, sending the number of blue and red players </summary>
+    public event Action<int, int> UpdateActionPoints;
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
     [HideInInspector] public Player localPlayer;
@@ -418,7 +420,7 @@ public class GameManager : NetworkBehaviour
             ActionLogger.Instance.LogAction("server", "server", "phaseSwitch", $"[{_roundCounter + (gameState == GameState.Movement ? 1 : 0)}]", null, null, null, null);
 
         if (gameState is GameState.Movement)
-            UpdateActionPoints(bluePlayers.Count, redPlayers.Count);
+            RpcUpdateActionPoints(bluePlayers.Count, redPlayers.Count);
         
         RPCInvokeStateUpdate(newState);
     }
@@ -621,9 +623,9 @@ public class GameManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void UpdateActionPoints(int blueCount, int redCount)
+    private void RpcUpdateActionPoints(int blueCount, int redCount)
     {
-        updateActionPoints.Invoke(blueCount, redCount);
+        UpdateActionPoints?.Invoke(blueCount, redCount);
     }
 
     [ClientRpc]
@@ -670,7 +672,7 @@ public class GameManager : NetworkBehaviour
         if(!isServer)
             return;
         
-        for(int i = 0; i < gameOverScreen.transform.childCount; i++)
+        for(var i = 0; i < gameOverScreen.transform.childCount; i++)
             gameOverScreen.transform.GetChild(i).gameObject.SetActive(true);
     }
     
