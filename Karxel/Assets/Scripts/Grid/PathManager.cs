@@ -26,13 +26,13 @@ public class PathManager : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged += OnGameStateChanged;
     }
 
     public override void OnStopServer()
     {
         base.OnStopServer();
-        GameManager.Instance.gameStateChanged.RemoveListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
     [Server]

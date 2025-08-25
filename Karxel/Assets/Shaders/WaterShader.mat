@@ -46,7 +46,7 @@ Material:
     - _Distortion: 0.5
     - _FoamDistance: 0.2
     - _Metallic: 0.5
-    - _NoiseScale: 0.3
+    - _NoiseScale: 0.4
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Refraction: 0.05

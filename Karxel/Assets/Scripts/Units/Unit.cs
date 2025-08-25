@@ -80,7 +80,7 @@ public abstract class Unit : NetworkBehaviour
 
         MarkerManager = GetComponent<UnitMarkerManager>();
         
-        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged += OnGameStateChanged;
         
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
         shieldSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
@@ -101,7 +101,7 @@ public abstract class Unit : NetworkBehaviour
     private void OnDestroy()
     {
         StopAllCoroutines();
-        GameManager.Instance.gameStateChanged.RemoveListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
         
         if(!isServer)
             return;

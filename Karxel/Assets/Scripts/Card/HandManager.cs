@@ -47,7 +47,7 @@ public class HandManager : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged += OnGameStateChanged;
      
         // TODO: Check if mouse is set in inspector or this is still needed
         mouseFollower = FindObjectOfType<MouseFollower>();
@@ -57,7 +57,7 @@ public class HandManager : MonoBehaviour
 
     private void OnDisable()
     {
-        GameManager.Instance.gameStateChanged.RemoveListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
     /// <summary>Adds new card to the deck and does the setup for its values</summary>

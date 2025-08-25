@@ -37,7 +37,7 @@ public class Player : NetworkBehaviour
         GetComponentInChildren<ActionPointManager>().Initialize();
         
         GameManager.Instance.localPlayer = this;
-        GameManager.Instance.gameStateChanged.AddListener(OnGameStateChanged);
+        GameManager.Instance.GameStateChanged += OnGameStateChanged;
         GameManager.Instance.CmdPlayerSpawned();
         
         DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, team, NetworkServer.connections.Count, 1);
@@ -50,6 +50,7 @@ public class Player : NetworkBehaviour
     private void OnDestroy()
     {
         GameManager.RoundTimerUp.RemoveListener(SubmitTurn);
+        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
         
         // Only execute if leaving during play mode
         if(GameManager.Instance == null)

@@ -34,8 +34,10 @@ public class GameManager : NetworkBehaviour
     public static UnityEvent<Attack> AttackExecuted = new();
     public static UnityEvent CheckHealth = new();
     public static UnityEvent<int> NewRound = new();
+
+    public event Action<float> TimerUpdated;
+    public event Action<GameState> GameStateChanged; 
     
-    [HideInInspector] public UnityEvent<GameState> gameStateChanged = new();
     [HideInInspector] public UnityEvent<int, int> updateActionPoints = new();
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
@@ -48,11 +50,8 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI blueReadyUIText;
     
     [Header("Timer")]
-    [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private int movementTime;
     [SerializeField] private int submitTime;
-    [SerializeField] private AudioClip timerRegular;
-    [SerializeField] private AudioClip timerEnding;
 
     [Header("Phase Display")]
     [SerializeField] private List<Image> phaseDisplays;
@@ -363,7 +362,6 @@ public class GameManager : NetworkBehaviour
         
         if (!attacksToExecute.Any())
         {
-            RPCPlayRoundChangeSound();
             UpdateGameState(GameState.Movement);
             
             _roundCounter++;
@@ -460,21 +458,9 @@ public class GameManager : NetworkBehaviour
         NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
-    private void UpdateTimerText(float old, float newTime)
+    private void UpdateTimerText(float _, float newTime)
     {
-        var totalSeconds = Mathf.FloorToInt(newTime);
-        var minuteDisplay = Mathf.FloorToInt(totalSeconds / 60f);
-        var secondDisplay = (totalSeconds - minuteDisplay * 60).ToString().PadLeft(2, '0');
-        var newText = $"{minuteDisplay}:{secondDisplay}";
-
-        if (_timeLeft <= submitTime + 1 && _timeLeft > 0 && timerText.text != newText)
-        {
-            var pitch = 1 + (submitTime - totalSeconds) * 0.02f;
-            AudioManager.PlaySfx(_timerAudio, _timeLeft >= 4 ? timerRegular : timerEnding, pitch, pitch);
-        }
-        
-        timerText.color = _timeLeft > submitTime + 1 ? Color.white : Color.red;
-        timerText.text = newText;
+        TimerUpdated?.Invoke(newTime);
     }
 
     private void OnUpdateRedText(string old, string newText)
@@ -570,8 +556,7 @@ public class GameManager : NetworkBehaviour
 
         _timeLeft = movementTime;
         _timerActive = true;
-
-        RPCPlayRoundChangeSound();
+        
         UpdateGameState(GameState.Attack);
     }
 
@@ -654,7 +639,7 @@ public class GameManager : NetworkBehaviour
             };
         }
         
-        gameStateChanged?.Invoke(newState);
+        GameStateChanged?.Invoke(newState);
     }
 
     [ClientRpc]
@@ -693,13 +678,6 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokeNewRound(int count)
     {
         NewRound?.Invoke(count);
-    }
-
-    [ClientRpc]
-    private void RPCPlayRoundChangeSound()
-    {
-        AudioManager.PlaySfx(_timerAudio, timerEnding, 1.2f, 1.2f);
-        AudioManager.PlaySfx(_timerAudio, timerEnding, 1.22f, 1.22f);
     }
 
     [Command(requiresAuthority = false)]

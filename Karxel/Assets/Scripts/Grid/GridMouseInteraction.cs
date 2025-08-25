@@ -39,7 +39,7 @@ public class GridMouseInteraction : MonoBehaviour
     private void OnDestroy()
     {
         GameManager.PlayersReady.RemoveListener(OnPlayersReady);
-        GameManager.Instance.gameStateChanged.RemoveListener(OnStateChanged);
+        GameManager.Instance.GameStateChanged -= OnStateChanged;
         HandManager.Instance.cardDeselected.RemoveListener(OnCardDeselected);
     }
 
@@ -270,7 +270,7 @@ public class GridMouseInteraction : MonoBehaviour
         GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
         _playerId = GameManager.Instance.localPlayer.netId.ToString();
         
-        GameManager.Instance.gameStateChanged.AddListener(OnStateChanged);
+        GameManager.Instance.GameStateChanged += OnStateChanged;
         HandManager.Instance.cardDeselected.AddListener(OnCardDeselected);
     }
 
