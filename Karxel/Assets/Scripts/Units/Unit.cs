@@ -113,32 +113,10 @@ public abstract class Unit : NetworkBehaviour
     /// <summary>Instantly move the unit to the given tile</summary>
     public void MoveToTile(Vector3Int tilePos)
     {
-        Vector3? worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
+        var worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
         
         if(worldPos != null)
             CmdChangePosition(worldPos.Value, tilePos);
-    }
-
-    /// <summary>Step to a target tile while passing over all the given tiles in the path</summary>
-    public void StepToTile(MoveCommand moveCommand)
-    {
-        //StartCoroutine(MoveToPositions(moveCommand));
-        CmdStep(moveCommand);
-        GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
-    }
-
-    public void LogMovement(CardData cardValues, MoveCommand move)
-    {
-        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
-            owningTeam.ToString(), "move", $"[{cardValues.movementRange}]", move.TargetPosition.ToString(), 
-            gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
-    }
-    
-    public void LogAttack(CardData cardValues, Attack attack)
-    {
-        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), 
-            owningTeam.ToString(), "attack", $"[{cardValues.attackRange},{cardValues.attackDamage}]", $"[{string.Join(",", attack.Tiles.Select(t => t.ToString()).ToList())}]", 
-            gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
     }
 
     public bool CanBeSelected()
@@ -529,12 +507,6 @@ public abstract class Unit : NetworkBehaviour
     private void CmdChangePosition(Vector3 position, Vector3Int tilePos)
     {
         RPCChangePosition(position, tilePos);
-    }
-
-    [Command(requiresAuthority = false)]
-    private void CmdStep(MoveCommand moveCommand)
-    {
-        RPCStep(moveCommand);
     }
 
     [Command(requiresAuthority = false)]

@@ -55,11 +55,6 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private int movementTime;
     [SerializeField] private int submitTime;
 
-    [Header("Phase Display")]
-    [SerializeField] private List<Image> phaseDisplays;
-    [SerializeField] private Sprite moveSprite;
-    [SerializeField] private Sprite attackSprite;
-
     [Header("Game Over")] 
     [SerializeField] private GameObject gameOverScreen;
 
@@ -80,11 +75,11 @@ public class GameManager : NetworkBehaviour
     private int _unitsToAttack;
     private int _unitsDoneAttacking;
 
-    private HashSet<Team> _defeatedKings = new();
+    private readonly HashSet<Team> _defeatedKings = new();
     private AudioSource _timerAudio;
 
     private bool _timerActive;
-    [SyncVar(hook = nameof(UpdateTimerText))] private float _timeLeft;
+    [SyncVar(hook = nameof(OnTimeLeftUpdated))] private float _timeLeft;
 
     private void Awake()
     {
@@ -134,12 +129,12 @@ public class GameManager : NetworkBehaviour
         }
 
         // Start the movement phase once all players are ready
-        if (bluePlayers.Count + redPlayers.Count == NetworkServer.connections.Count)
-        {
-            UpdateGameState(GameState.Movement);
-            _timeLeft = movementTime;
-            _timerActive = true;
-        }
+        if (bluePlayers.Count + redPlayers.Count != NetworkServer.connections.Count) 
+            return;
+        
+        UpdateGameState(GameState.Movement);
+        _timeLeft = movementTime;
+        _timerActive = true;
     }
 
     [Server]
@@ -460,7 +455,7 @@ public class GameManager : NetworkBehaviour
         NetworkManager.singleton.ServerChangeScene("Lobby");
     }
 
-    private void UpdateTimerText(float _, float newTime)
+    private void OnTimeLeftUpdated(float _, float newTime)
     {
         TimerUpdated?.Invoke(newTime);
     }
@@ -631,16 +626,6 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void RPCInvokeStateUpdate(GameState newState)
     {
-        foreach (var display in phaseDisplays)
-        {
-            display.sprite = newState switch
-            {
-                GameState.Attack => attackSprite,
-                GameState.Movement => moveSprite,
-                _ => display.sprite
-            };
-        }
-        
         GameStateChanged?.Invoke(newState);
     }
 
@@ -680,12 +665,5 @@ public class GameManager : NetworkBehaviour
     private void RPCInvokeNewRound(int count)
     {
         NewRound?.Invoke(count);
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdLogAction(string playerId, string team, string actionType, [CanBeNull] string actionValues,
-        [CanBeNull] string target, [CanBeNull] string unitId, [CanBeNull] string unitName, [CanBeNull] string startPos)
-    {
-        ActionLogger.Instance.LogAction(playerId, team, actionType, actionValues, target, unitId, unitName, startPos);
     }
 }

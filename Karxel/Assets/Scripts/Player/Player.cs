@@ -66,10 +66,6 @@ public class Player : NetworkBehaviour
         turnSubmitBtn.interactable = false;
         turnSubmitted?.Invoke();
         
-        // Logging
-        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), team.ToString(), "submit",
-            $"AP: {ActionPointManager.ActionPoints}", null, null, null, null);
-        
         GameManager.Instance.CmdSubmitTurn(team);
     }
 
@@ -83,12 +79,6 @@ public class Player : NetworkBehaviour
                 HasSubmitted = false;
                 break;
         }
-    }
-
-    [Command(requiresAuthority = false)]
-    private void CmdUpdateTeam(Team team)
-    {
-        this.team = team;
     }
 
     [Command(requiresAuthority = false)]

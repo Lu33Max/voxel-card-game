@@ -60,32 +60,25 @@ public class HandManager : MonoBehaviour
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
-    /// <summary>Adds new card to the deck and does the setup for its values</summary>
+    /// <summary> Adds new card to the deck and does the setup for its values </summary>
     public void AddCardToHand(CardData newCardData)
     {
-        GameObject newCardObject = Instantiate(cardPrefab, transform);
-        Card newCard = newCardObject.GetComponent<Card>();
+        var newCardObject = Instantiate(cardPrefab, transform);
+        var newCard = newCardObject.GetComponent<Card>();
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
         _handCards = _handCards.OrderBy(c => c.CardData.cardType).ThenBy(c => c.CardData.cardName).ToList();
-
-        // Logging
-        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(),
-            GameManager.Instance.localPlayer.team.ToString(), "drawCard", $"[{newCardData.cardName}]", null, null, null,
-            null);
         
-        if(SelectedCard != null)
-            DeselectCurrentCard();
-        else
-            AudioManager.Instance.PlaySfx(drawCardSound);
+        if(SelectedCard != null) DeselectCurrentCard();
+        else AudioManager.Instance.PlaySfx(drawCardSound);
         
         UpdateCardPositions(GameManager.Instance.gameState);
     }
 
     /// <summary>
-    /// Handle the logic for selecting and deselecting a card depending on whether it was already selected. At this point
-    /// it is already checked whether the card is actually selectable.
+    ///     Handle the logic for selecting and deselecting a card depending on whether it was already selected. At this 
+    ///     point it is already checked whether the card is actually selectable.
     /// </summary>
     public void CardClicked(Card clickedCard)
     {
@@ -140,9 +133,6 @@ public class HandManager : MonoBehaviour
             return;
 
         _discardCount++;
-        
-        GameManager.Instance.CmdLogAction(GameManager.Instance.localPlayer.netId.ToString(), GameManager.Instance.localPlayer.team.ToString(), "discard", $"{{count: {_discardCount}, card: {card.CardData.cardName}}}", 
-            null, null, null, null);
 
         if (_discardCount == discardForActionCount)
         {
@@ -150,7 +140,7 @@ public class HandManager : MonoBehaviour
             ActionPointManager.Instance.UpdateActionPoints(actionsGained);
         }
         
-        for (int i = 0; i < discardContainer.childCount; i++)
+        for (var i = 0; i < discardContainer.childCount; i++)
         {
             var cardImage = discardContainer.GetChild(i).GetComponent<Image>();
             cardImage.color = i < _discardCount ? Color.white : Color.gray;
@@ -201,7 +191,7 @@ public class HandManager : MonoBehaviour
                 continue;
             }
         
-            for (int i = 0; i < cardRow.Count; i++)
+            for (var i = 0; i < cardRow.Count; i++)
             {
                 cardRow[i].UpdatePosition(new Vector2(Mathf.Lerp(startPos, lastPos, i / (cardRow.Count - 1f)),
                     cardRow[i].IsCorrectPhase(state) ? cardRegularY : cardLoweredY));

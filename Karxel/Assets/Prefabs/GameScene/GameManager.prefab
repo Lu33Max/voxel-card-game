@@ -769,6 +769,11 @@ MonoBehaviour:
   timerRegular: {fileID: 8300000, guid: 6ae92b92612ae3c44a9929bc3fe1181b, type: 3}
   timerEnding: {fileID: 8300000, guid: 16ede05d100be4446bd4c2c378e7fee5, type: 3}
   pitchIncrease: 0.02
+  phaseDisplays:
+  - {fileID: 2667252884832699418}
+  - {fileID: 2667252884058542828}
+  moveSprite: {fileID: 21300000, guid: 48107ef0ecbdbf949b36c0efff39ee48, type: 3}
+  attackSprite: {fileID: 21300000, guid: 0d153de8076d59240b511ca4fc86bd39, type: 3}
 --- !u!1 &2667252884058542830
 GameObject:
   m_ObjectHideFlags: 0
@@ -1030,9 +1035,6 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  updateActionPoints:
-    m_PersistentCalls:
-      m_Calls: []
   gameState: 0
   localPlayer: {fileID: 0}
   redPlayers: []

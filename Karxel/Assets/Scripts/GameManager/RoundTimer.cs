@@ -1,18 +1,34 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary> Handles the display and sound effects of the countdown timer during rounds </summary>
 [RequireComponent(typeof(AudioSource))]
 public class RoundTimer : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI timerText;
-    [SerializeField] private int countdownStart;
-    [SerializeField] private int countdownDramatic;
+    [Header("Countdown Display")]
+    [SerializeField, Tooltip("Reference to the text display element showing the remaining seconds")] 
+    private TextMeshProUGUI timerText;
+    [SerializeField, Tooltip("Number of seconds at which the countdown starts playing")] 
+    private int countdownStart;
+    [SerializeField, Tooltip("Number of seconds at which the countdown sfx gets swapped")] 
+    private int countdownDramatic;
     
-    [SerializeField] private AudioClip timerRegular;
-    [SerializeField] private AudioClip timerEnding;
-    [SerializeField] private float pitchIncrease = 0.02f;
+    [Header("Countdown SFX")]
+    [SerializeField, Tooltip("Regular sfx that gets played on every second during the countdown")] 
+    private AudioClip timerRegular;
+    [SerializeField, Tooltip("Sfx that gets played during the last few seconds of the countdown")] 
+    private AudioClip timerEnding;
+    [SerializeField, Tooltip("Increase in pitch for every sfx that gets played")] 
+    private float pitchIncrease = 0.02f;
     
+    [Header("Phase Display")]
+    [SerializeField] private List<Image> phaseDisplays;
+    [SerializeField] private Sprite moveSprite;
+    [SerializeField] private Sprite attackSprite;
+    
+    /// <summary> AudioSource used to play all countdown sfx from </summary>
     private AudioSource _timerAudio;
 
     private void Start()
@@ -32,6 +48,8 @@ public class RoundTimer : MonoBehaviour
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
+    /// <summary> Updates the timer display every frame the remaining time gets updated in the GameManager </summary>
+    /// <param name="newTime"> Newly remaining time in seconds </param>
     private void OnTimerUpdated(float newTime)
     {
         var totalSeconds = Mathf.FloorToInt(newTime);
@@ -49,10 +67,14 @@ public class RoundTimer : MonoBehaviour
         timerText.text = newText;
     }
 
+    /// <summary> Plays phase-switch sfx whenever the move or attack phase begins and switch phase icons </summary>
     private void OnGameStateChanged(GameState newState)
     {
         if(newState is not GameState.Attack and not GameState.Movement) 
             return;
+
+        foreach (var display in phaseDisplays)
+            display.sprite = newState == GameState.Attack ? attackSprite : moveSprite;
         
         AudioManager.PlaySfx(_timerAudio, timerEnding, 1.2f, 1.2f);
         AudioManager.PlaySfx(_timerAudio, timerEnding, 1.22f, 1.22f);

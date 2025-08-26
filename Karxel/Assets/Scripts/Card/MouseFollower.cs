@@ -39,7 +39,7 @@ public class MouseFollower : MonoBehaviour
 
     public void ClearUIElement()
     {
-        for(int i = 0; i < transform.childCount; i++)
+        for(var i = 0; i < transform.childCount; i++)
             Destroy(transform.GetChild(i).gameObject);
     }
 }

@@ -268,9 +268,7 @@ public class GridManager : NetworkBehaviour
                 }
             }
             
-            #if UNITY_EDITOR
             EditorUtility.SetDirty(tileMarker);
-            #endif
         }
         
         Debug.Log("[GridManager] Done Connection Update");

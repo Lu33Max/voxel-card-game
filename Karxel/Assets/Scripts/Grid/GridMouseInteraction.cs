@@ -173,9 +173,9 @@ public class GridMouseInteraction : MonoBehaviour
                 if (moveCommand == null || !GridManager.Instance.IsMoveValid(moveCommand)) 
                     break;
                 
-                _selectedUnit.LogMovement(cardValues, moveCommand);
                 _selectedUnit.CmdRegisterMoveIntent(moveCommand);
                 HandManager.Instance.PlaySelectedCard();
+                // ^^ Replace with UnitActionManager.Instance.RegisterMove(_selectedUnit, moveCommand);
                 break;
             
             case GameState.Attack:
@@ -183,8 +183,7 @@ public class GridMouseInteraction : MonoBehaviour
                     _selectedUnit.GetAttackForHoverPosition(_hoveredTile.TilePosition, cardValues.attackDamage);
                 
                 if (attackCommand == null) break;
-
-                _selectedUnit.LogAttack(cardValues, attackCommand);
+                
                 _selectedUnit.CmdRegisterAttackIntent(attackCommand);
                 HandManager.Instance.PlaySelectedCard();
                 break;
@@ -207,31 +206,18 @@ public class GridMouseInteraction : MonoBehaviour
             case CardType.Stun:
                 if(_hoveredTile.Unit.owningTeam == player.team || _hoveredTile.Unit.SetForSkip)
                     return;
-
-                GameManager.Instance.CmdLogAction(player.netId.ToString(), player.team.ToString(), "insult_card", null,
-                    _hoveredTile.TilePosition.ToString(), _hoveredTile.Unit.gameObject.GetInstanceID().ToString(),
-                    _hoveredTile.Unit.Data.unitName, null);
-            
                 _hoveredTile.Unit.CmdUpdateTurnSkip();
                 break;
             
             case CardType.Heal:
-                if(_hoveredTile.Unit.owningTeam != player.team) return;
-
-                GameManager.Instance.CmdLogAction(player.netId.ToString(), player.team.ToString(), "heal_card",
-                    $"[{cardValues.otherValue}]", _hoveredTile.TilePosition.ToString(),
-                    _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
-                
+                if(_hoveredTile.Unit.owningTeam != player.team)
+                    return;
                 _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
                 break;
             
             case CardType.Shield:
-                if(_hoveredTile.Unit.owningTeam != player.team) return;
-
-                GameManager.Instance.CmdLogAction(player.netId.ToString(), player.team.ToString(), "shield_card",
-                    $"[{cardValues.otherValue}]", _hoveredTile.TilePosition.ToString(),
-                    _hoveredTile.Unit.gameObject.GetInstanceID().ToString(), _hoveredTile.Unit.Data.unitName, null);
-                
+                if(_hoveredTile.Unit.owningTeam != player.team) 
+                    return;
                 _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
                 break;
             

@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -16,7 +15,6 @@ public class RoundCounter : MonoBehaviour
     private float _alphaValue;
     private float _fadeTime;
     
-    // Start is called before the first frame update
     private void Start()
     {
         _alphaValue = counterText.color.a;
