@@ -576,8 +576,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 10
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: e82c6d1359ace4a44bc19c2d5f58521a, type: 2}
-  m_sharedMaterial: {fileID: 8446513022921677657, guid: e82c6d1359ace4a44bc19c2d5f58521a,
+  m_fontAsset: {fileID: 11400000, guid: d423e6a5cd67ef24aa4cdb2af879ccc3, type: 2}
+  m_sharedMaterial: {fileID: -650857617000142008, guid: d423e6a5cd67ef24aa4cdb2af879ccc3,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -608,7 +608,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -918,6 +918,7 @@ GameObject:
   - component: {fileID: 1867893550523916427}
   - component: {fileID: 3626784166634124738}
   - component: {fileID: 2913917453513363306}
+  - component: {fileID: 3552397333349525215}
   m_Layer: 0
   m_Name: Heavy_Red
   m_TagString: Untagged
@@ -1103,6 +1104,18 @@ MonoBehaviour:
   syncInterval: 0
   pathPrefab: {fileID: 5595884773812028496, guid: 19b785b7f5f363045be122a3ffd98883,
     type: 3}
+--- !u!114 &3552397333349525215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5633764496343281651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5020e5825bd035a4191275aa2b966ab3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6381748491608038074
 GameObject:
   m_ObjectHideFlags: 0
@@ -1518,7 +1531,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 10
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: e82c6d1359ace4a44bc19c2d5f58521a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d423e6a5cd67ef24aa4cdb2af879ccc3, type: 2}
   m_sharedMaterial: {fileID: 8446513022921677657, guid: e82c6d1359ace4a44bc19c2d5f58521a,
     type: 2}
   m_fontSharedMaterials: []
@@ -1550,7 +1563,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 4
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1583,7 +1596,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &9056803550671637079

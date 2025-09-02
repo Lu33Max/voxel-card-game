@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 5a8a19503d423bb409b3786251346005
+guid: 585188cdc4600544eb408bee749e4b3a
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Jersey 25
+  - ThaleahFat
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 2

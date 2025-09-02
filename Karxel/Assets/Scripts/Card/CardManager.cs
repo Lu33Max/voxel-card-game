@@ -1,16 +1,24 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Mirror;
 using UnityEngine;
+using Random = UnityEngine.Random;
+
+[Serializable]
+public class CardComponent
+{
+    public CardData moveSide;
+    public CardData attackSide;
+}
 
 public class CardManager : MonoBehaviour
 {
     public static CardManager Instance { get; private set; }
-
-    [SerializeField] private List<CardData> deck;
+    
+    [SerializeField] private List<CardComponent> deck;
     [SerializeField] private int drawCardCost = 1;
 
-    private readonly List<CardData> _usedCards = new();
+    private readonly List<CardComponent> _usedCards = new();
     
     public void Initialize()
     {
@@ -32,31 +40,20 @@ public class CardManager : MonoBehaviour
             if(_usedCards.Count == 0)
                 return;
             
+            // Make copy of list and assign it
             deck = _usedCards.ToList();
             _usedCards.Clear();
         }
         
         // Get a random card from the deck and remove it
-        CardData newCard;
-
-        if (Random.Range(0f, 1f) < 0.5f)
-            newCard = deck[Random.Range(0, deck.Count)];
-        else
-        {
-            newCard = deck.FirstOrDefault(c =>
-                c.cardType == (GameManager.Instance.gameState == GameState.Movement ? CardType.Move : CardType.Attack));
-            
-            if(newCard == null)
-                newCard = deck[Random.Range(0, deck.Count)];
-        }
-        
+        var newCard = deck[Random.Range(0, deck.Count)];
         deck.Remove(newCard);
         
         HandManager.Instance.AddCardToHand(newCard);
         ActionPointManager.Instance.UpdateActionPoints(-drawCardCost);
     }
 
-    public void AddCardToUsed(CardData card)
+    public void AddCardToUsed(CardComponent card)
     {
         _usedCards.Add(card);
     }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -16,17 +18,31 @@ public class Card : MonoBehaviour
     [SerializeField] private Sprite cardBGRare;
     [SerializeField] private Image backgroundImage;
 
-    public CardData CardData { get; private set; }
-    
+    public CardData CardData => GameManager.Instance != null &&
+                                GameManager.Instance.gameState is GameState.Movement or GameState.MovementExecution
+        ? _cardData.moveSide
+        : _cardData.attackSide;
+
+    private CardComponent _cardData;
     private RectTransform _transform;
     
-    public void Initialize(CardData data, Vector2 startPos)
+    public void Initialize(CardComponent data, Vector2 startPos)
     {
-        CardData = data;
+        _cardData = data;
         
         _transform = GetComponent<RectTransform>();
         _transform.position = new Vector3(0, startPos.y, 0);
 
+        SetCardDesign();
+    }
+
+    public void SwapActiveFace()
+    {
+        StartCoroutine(RotateCard());
+    }
+
+    private void SetCardDesign()
+    {
         pointText.text = CardData.cost.ToString();
         nameText.text = CardData.cardName;
         cardImage.sprite = CardData.cardSprite;
@@ -43,6 +59,7 @@ public class Card : MonoBehaviour
     private void OnDisable()
     {
         ActionPointManager.Instance.actionPointsUpdated.RemoveListener(OnActionPointsUpdated);
+        StopAllCoroutines();
     }
 
     public void UpdatePosition(Vector2 newPos)
@@ -70,11 +87,31 @@ public class Card : MonoBehaviour
 
     public void RemoveCard()
     {
-        CardManager.Instance.AddCardToUsed(CardData);
+        CardManager.Instance.AddCardToUsed(_cardData);
         Destroy(gameObject);
     }
 
-    public bool IsCorrectPhase(GameState state)
+    private IEnumerator RotateCard()
+    {
+        while (transform.rotation.eulerAngles.y < 90)
+        {
+            transform.Rotate(new Vector3(0, 5, 0));
+            yield return new WaitForEndOfFrame();
+        }
+        
+        SetCardDesign();
+        transform.rotation = Quaternion.Euler(0, 270, 0);
+        
+        while (transform.rotation.eulerAngles.y > 5)
+        {
+            transform.Rotate(new Vector3(0, 5, 0));
+            yield return new WaitForEndOfFrame();
+        }
+        
+        transform.rotation = Quaternion.Euler(0, 0, 0);
+    }
+
+    private bool IsCorrectPhase(GameState state)
     {
         return state == GameState.Movement && CardData.cardType != CardType.Attack ||
                state == GameState.Attack && CardData.cardType != CardType.Move;

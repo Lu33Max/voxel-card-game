@@ -61,7 +61,7 @@ public class HandManager : MonoBehaviour
     }
 
     /// <summary> Adds new card to the deck and does the setup for its values </summary>
-    public void AddCardToHand(CardData newCardData)
+    public void AddCardToHand(CardComponent newCardData)
     {
         var newCardObject = Instantiate(cardPrefab, transform);
         var newCard = newCardObject.GetComponent<Card>();
@@ -162,46 +162,37 @@ public class HandManager : MonoBehaviour
 
     private void UpdateCardPositions(GameState state)
     {
-        var cardRows = new List<List<Card>> { _handCards.Where(c => c.IsCorrectPhase(state)).ToList() };
-        cardRows.Add(_handCards.Except(cardRows[0]).ToList());
-        
         var cardCount = 0;
         
-        foreach (var cardRow in cardRows)
-        {
-            var hasOverflow = cardRow.Count * cardWidth > canvasWidth - 2 * borderWidth;
-        
-            var startPos = hasOverflow 
-                ? borderWidth + cardWidth / 2f - canvasWidth / 2 
-                : -cardRow.Count / 2f * cardWidth + cardWidth / 2f;
-        
-            var lastPos = hasOverflow 
-                ? -borderWidth - cardWidth / 2f + canvasWidth / 2
-                : cardRow.Count / 2f * cardWidth - cardWidth / 2f;
+        var hasOverflow = _handCards.Count * cardWidth > canvasWidth - 2 * borderWidth;
+    
+        var startPos = hasOverflow 
+            ? borderWidth + cardWidth / 2f - canvasWidth / 2 
+            : -_handCards.Count / 2f * cardWidth + cardWidth / 2f;
+    
+        var lastPos = hasOverflow 
+            ? -borderWidth - cardWidth / 2f + canvasWidth / 2
+            : _handCards.Count / 2f * cardWidth - cardWidth / 2f;
 
-            if (cardRow.Count == 1)
-            {
-                cardRow[0].UpdatePosition(new Vector2(startPos,
-                    cardRow[0].IsCorrectPhase(state) ? cardRegularY : cardLoweredY));
-                
-                cardRow[0].transform.SetSiblingIndex(cardCount);
-                cardCount++;
-                
-                cardRow[0].UpdateState(state);
-                continue;
-            }
-        
-            for (var i = 0; i < cardRow.Count; i++)
-            {
-                cardRow[i].UpdatePosition(new Vector2(Mathf.Lerp(startPos, lastPos, i / (cardRow.Count - 1f)),
-                    cardRow[i].IsCorrectPhase(state) ? cardRegularY : cardLoweredY));
-                
-                cardRow[i].transform.SetSiblingIndex(cardCount);
-                cardCount++;
-                
-                cardRow[i].UpdateState(state);
-            }  
+        if (_handCards.Count == 1)
+        {
+            _handCards[0].UpdatePosition(new Vector2(startPos, cardRegularY));
+            
+            _handCards[0].transform.SetSiblingIndex(cardCount);
+            _handCards[0].UpdateState(state);
+            return;
         }
+    
+        for (var i = 0; i < _handCards.Count; i++)
+        {
+            _handCards[i]
+                .UpdatePosition(new Vector2(Mathf.Lerp(startPos, lastPos, i / (_handCards.Count - 1f)), cardRegularY));
+            
+            _handCards[i].transform.SetSiblingIndex(cardCount);
+            cardCount++;
+            
+            _handCards[i].UpdateState(state);
+        }  
     }
 
     // Deselect cards on end of turn
@@ -209,8 +200,13 @@ public class HandManager : MonoBehaviour
     {
         if(SelectedCard != null)
             DeselectCurrentCard();
+
+        if (newState is not (GameState.Attack or GameState.Movement)) return;
+
+        foreach (var card in _handCards)
+            card.SwapActiveFace();
         
-        if(newState is GameState.Attack or GameState.Movement)
-            UpdateCardPositions(newState);
+        _handCards = _handCards.OrderBy(c => c.CardData.cardType).ThenBy(c => c.CardData.cardName).ToList();
+        UpdateCardPositions(newState);
     }
 }

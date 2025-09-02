@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5768b0b63810d714ab09676cd5f6df9f, type: 3}
   m_Name: Attack2
   m_EditorClassIdentifier: 
-  cardName: Attack x2
+  cardName: ATK x2
   cost: 1
   cardType: 0
   rarity: 1
