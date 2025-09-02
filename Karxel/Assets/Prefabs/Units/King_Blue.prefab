@@ -550,6 +550,7 @@ GameObject:
   - component: {fileID: 6505779614707281561}
   - component: {fileID: 7336481499346766993}
   - component: {fileID: 1892973466292325482}
+  - component: {fileID: 3552397333349525215}
   m_Layer: 0
   m_Name: King_Blue
   m_TagString: Untagged
@@ -736,6 +737,18 @@ MonoBehaviour:
   syncInterval: 0
   pathPrefab: {fileID: 5595884773812028496, guid: 19b785b7f5f363045be122a3ffd98883,
     type: 3}
+--- !u!114 &3552397333349525215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5633764496343281651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5020e5825bd035a4191275aa2b966ab3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &5749807047863921157
 GameObject:
   m_ObjectHideFlags: 0
@@ -1208,7 +1221,7 @@ RectTransform:
   m_GameObject: {fileID: 7266540698928596100}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.005, y: 0.005, z: 0.005}
+  m_LocalScale: {x: 0.003, y: 0.003, z: 0.003}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 5772580595941873496}

@@ -19,18 +19,22 @@ public class CameraController : MonoBehaviour
     private float _zoomInput;
     private float _rotateInput;
 
+    private float _scaleFactor = 1f;
+
     private void OnEnable()
     {
         InputManager.Instance.OnMove += OnMovePressed;
         InputManager.Instance.OnRotate += OnRotatePressed;
-        InputManager.Instance.OnZoom += HandleZoom;;
+        InputManager.Instance.OnZoom += HandleZoom;
+
+        _scaleFactor = GridManager.Instance.TileSize.x;
     }
 
     private void OnDisable()
     {
         InputManager.Instance.OnMove -= OnMovePressed;
         InputManager.Instance.OnRotate -= OnRotatePressed;
-        InputManager.Instance.OnZoom -= HandleZoom;;
+        InputManager.Instance.OnZoom -= HandleZoom;
     }
 
     private void OnMovePressed(Vector2 dir) => _moveInput = dir;
@@ -89,7 +93,7 @@ public class CameraController : MonoBehaviour
         var direction = forwardVec * _moveInput.y + rightVec * _moveInput.x;
         direction = new Vector3(direction.x, 0, direction.z);
         
-        return cameraTransform.position + direction.normalized * (moveSpeed * Time.deltaTime);
+        return cameraTransform.position + direction.normalized * (moveSpeed * Time.deltaTime * _scaleFactor);
     }
 
     private void RotateAroundFocus()
@@ -113,7 +117,7 @@ public class CameraController : MonoBehaviour
         var cameraTransform = transform;
         
         var direction = cameraTransform.forward * (scroll * zoomSpeed);
-        var newPosition = cameraTransform.position + direction;
+        var newPosition = cameraTransform.position + direction * _scaleFactor;
 
         var yPosition = newPosition.y;
             

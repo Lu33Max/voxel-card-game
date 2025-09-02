@@ -46,9 +46,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cb33ffc4c650e846a5193c814f335ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
   lineRenderer: {fileID: 6519333211152891141}
   groundOffset: 0.02
 --- !u!120 &6519333211152891141
@@ -104,7 +101,7 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.3888893
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0

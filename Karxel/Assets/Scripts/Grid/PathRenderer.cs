@@ -8,6 +8,7 @@ public class PathRenderer : MonoBehaviour
 {
     [SerializeField] private LineRenderer lineRenderer;
     [SerializeField] private float groundOffset = 0.01f;
+    [SerializeField] private float lineWidth = 0.1f;
     
     public void DrawPath(MoveCommand command, Vector3Int start)
     {
@@ -40,7 +41,7 @@ public class PathRenderer : MonoBehaviour
         lineRenderer.positionCount = positions.Count;
         lineRenderer.SetPositions(positions.ToArray());
         lineRenderer.generateLightingData = false;
-        lineRenderer.widthMultiplier = 0.05f;
+        lineRenderer.widthMultiplier = lineWidth;
     }
 
     public void AppendToPath(MoveCommand command)
