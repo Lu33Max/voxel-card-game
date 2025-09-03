@@ -7,7 +7,7 @@ public class HealerUnit : Unit
 {
     [SerializeField] private int baseRange = 1;
     
-    public override List<MoveCommand> GetValidMoves(int movementRange)
+    public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;

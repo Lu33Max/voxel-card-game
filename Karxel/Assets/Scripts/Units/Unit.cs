@@ -10,10 +10,26 @@ using UnityEngine.UI;
 [RequireComponent(typeof(UnitMarkerManager))]
 public abstract class Unit : NetworkBehaviour
 {
-    private enum UnitState
+    private enum LiveStatus
     {
         Alive,
         Dead,
+    }
+    
+    public enum StatusEffect
+    {
+        Shielded,
+        Stunned,
+    }
+    
+    /// <summary> Used to attach status effects to a unit for a given amount of turns </summary>
+    public class UnitStatus
+    {
+        /// <summary> Type of status effect to attach to the unit </summary>
+        public StatusEffect Status;
+        
+        /// <summary> Number of turns this effect stays active for. Negative numbers indicate infinite duration </summary>
+        public int Duration;
     }
     
     [SyncVar] public Team owningTeam = Team.None;
@@ -25,7 +41,7 @@ public abstract class Unit : NetworkBehaviour
     [SerializeField] private int attackLimit = 1;
     
     [Header("Movement")] 
-    [SerializeField] private float moveArcHeight = 0.1f;
+    [SerializeField] private float moveArcHeight = 0.3f;
     
     [Header("Visualization")]
     [SerializeField] private GameObject canvas;
@@ -47,12 +63,12 @@ public abstract class Unit : NetworkBehaviour
     protected List<MoveCommand> MoveIntent { get; } = new();
     private List<Attack> AttackIntent { get; } = new();
     public UnitData Data => data;
-    public bool SetForSkip => _turnToSkip != GameState.Empty;
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
     [SyncVar(hook = nameof(OnShieldUpdated))] private int _currentShield;
-    [SyncVar(hook = nameof(OnTurnSkipUpdated))] private GameState _turnToSkip = GameState.Empty;
-    [SyncVar] private UnitState _state = UnitState.Alive;
+    [SyncVar] private LiveStatus _status = LiveStatus.Alive;
+    
+    private SyncList<UnitStatus> _statusEffects = new();
     
     private Transform _camera;
     private MeshRenderer _renderer;
@@ -62,7 +78,7 @@ public abstract class Unit : NetworkBehaviour
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
-    public abstract List<MoveCommand> GetValidMoves(int movementRange);
+    public abstract IEnumerable<MoveCommand> GetValidMoves(int movementRange);
 
     public abstract List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null);
     
@@ -110,7 +126,7 @@ public abstract class Unit : NetworkBehaviour
         GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
-    /// <summary>Instantly move the unit to the given tile</summary>
+    /// <summary> Instantly move the unit to the given tile </summary>
     public void MoveToTile(Vector3Int tilePos)
     {
         var worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
@@ -122,14 +138,26 @@ public abstract class Unit : NetworkBehaviour
     public bool CanBeSelected()
     {
         var gameState = GameManager.Instance.gameState;
-        
-        return _state == UnitState.Alive && ((gameState == GameState.Attack && AttackIntent.Count < attackLimit) ||
-               (gameState == GameState.Movement && MoveIntent.Count < moveLimit)) && _turnToSkip != gameState;
+
+        return _status == LiveStatus.Alive && ((gameState == GameState.Attack && AttackIntent.Count < attackLimit) ||
+                                               (gameState == GameState.Movement && MoveIntent.Count < moveLimit)) &&
+               !IsStunned;
     }
 
     public bool HasMoveIntentsRegistered()
     {
         return MoveIntent.Count > 0;
+    }
+
+    /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
+    public bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
+
+    /// <summary> Checks whether the given type is currently active on the unit </summary>
+    /// <param name="effect"> Type of StatusEffect to search for </param>
+    /// <param name="duration"> Optional parameter on the duration of turns left </param>
+    public bool HasEffectOfTypeActive(StatusEffect effect, int duration = 0)
+    {
+        return _statusEffects.Find(s => s.Status == effect && (duration == 0 || s.Duration == duration)) != null;
     }
     
     // Move the unit along the given path from tile to tile
@@ -360,12 +388,7 @@ public abstract class Unit : NetworkBehaviour
         
         ClearActionDisplay();
 
-        if (_turnToSkip != GameState.Empty)
-        {
-            var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
-            newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Stun);
-        }
-        else if(newState == GameState.Movement)
+        if(newState == GameState.Movement)
             for(var i = 0; i < moveLimit; i++)
             {
                 var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
@@ -381,42 +404,22 @@ public abstract class Unit : NetworkBehaviour
 
     protected virtual void OnGameStateChanged(GameState newState)
     {
-        if(isServer)
-            CheckForSkipMove(newState);
+        if(isServer && newState is GameState.Attack or GameState.Movement)
+            CheckForStatusDurations();
         
         UpdateActionDisplayOnStateUpdate(newState);
     }
 
+    /// <summary> Updates the duration of all status effects and removes expired ones </summary>
     [Server]
-    private void CheckForSkipMove(GameState newState)
+    private void CheckForStatusDurations()
     {
-        if(newState != GameState.Attack && newState != GameState.Movement)
-            return;
-        
-        if (newState == _turnToSkip)
-            return;
-        
-        _turnToSkip = GameState.Empty;
-    }
-
-    private void OnTurnSkipUpdated(GameState old, GameState newTurnToSkip)
-    {
-        if (owningTeam == GameManager.Instance.localPlayer.team)
+        foreach (var effect in _statusEffects.Where(effect => effect.Duration >= 0))
         {
-            if (newTurnToSkip == GameState.Empty)
-                UpdateActionDisplayOnStateUpdate(GameManager.Instance.gameState);
-            
-            return;
+            effect.Duration--;
+            if (effect.Duration == 0) 
+                _statusEffects.Remove(effect);
         }
-
-        if (newTurnToSkip == GameState.Empty && actionDisplayParent.childCount > 0)
-        {
-            Destroy(actionDisplayParent.GetChild(0).gameObject); 
-            return;
-        }
-
-        var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
-        newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Stun);
     }
 
     [Server]
@@ -532,12 +535,6 @@ public abstract class Unit : NetworkBehaviour
     {
         isControlled = newState;
     }
-
-    [Command(requiresAuthority = false)]
-    public void CmdUpdateTurnSkip()
-    {
-        _turnToSkip = GameManager.Instance.gameState == GameState.Movement ? GameState.Attack : GameState.Movement;
-    }
     
     [ClientRpc]
     private void RPCChangePosition(Vector3 position, Vector3Int tilePos)
@@ -599,7 +596,7 @@ public abstract class Unit : NetworkBehaviour
     [Server]
     protected virtual IEnumerator Die()
     {
-        _state = UnitState.Dead;
+        _status = LiveStatus.Dead;
         
         // Play death animation coroutine and sfx
         // yield return StartCoroutine(...);
@@ -607,6 +604,13 @@ public abstract class Unit : NetworkBehaviour
         yield return new WaitForSeconds(1);
         
         RpcDie();
+    }
+
+    /// <summary> Adds the given UnitStatus to the list of active StatusEffects </summary>
+    [Command(requiresAuthority = false)]
+    public void AddNewStatusEffect(UnitStatus newEffect)
+    {
+        _statusEffects.Add(newEffect);
     }
 
     #endregion

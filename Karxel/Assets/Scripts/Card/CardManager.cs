@@ -20,6 +20,7 @@ public class CardManager : MonoBehaviour
 
     private readonly List<CardComponent> _usedCards = new();
     
+    // TODO: Investigate for a better solution with basic Awake singleton setup
     public void Initialize()
     {
         if (Instance != null && Instance != this)

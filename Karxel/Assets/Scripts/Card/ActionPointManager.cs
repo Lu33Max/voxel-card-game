@@ -1,5 +1,3 @@
-using System;
-using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;

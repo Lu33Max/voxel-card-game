@@ -3,21 +3,16 @@ using System.IO;
 using JetBrains.Annotations;
 using UnityEngine;
 
-public class ActionLogger : MonoBehaviour
+public class ActionLogger : Singleton<ActionLogger>
 {
-    [SerializeField] private bool shouldLog = false;
-    
-    public static ActionLogger Instance { get; private set; }
+    [SerializeField] private bool shouldLog;
     
     private string _currentPhase = "attack";
     private string _logFilePath;
 
-    private void Awake()
+    protected override void Awake()
     {
-        if (Instance != null)
-            return;
-        
-        Instance = this;
+        base.Awake();
         _logFilePath = Path.Combine(Application.persistentDataPath, $"KarxelLog_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.json");
     }
 

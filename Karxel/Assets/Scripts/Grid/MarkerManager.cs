@@ -2,24 +2,11 @@ using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
-public class MarkerManager : NetworkBehaviour
+public class MarkerManager : NetworkSingleton<MarkerManager>
 {
     [SerializeField] private GameObject markerPrefab;
     
-    public static MarkerManager Instance { get; private set; }
-    
     private Dictionary<Vector3Int, Marker> _markers = new();
-    
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        
-        Instance = this;
-    }
 
     /// <summary> Registers new tile upon board creation </summary>
     [Client]

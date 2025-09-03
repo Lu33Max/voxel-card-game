@@ -3,7 +3,7 @@ using UnityEngine;
 using Discord;
 using JetBrains.Annotations;
 
-public class DiscordManager : MonoBehaviour
+public class DiscordManager : Singleton<DiscordManager>
 {
     public enum ActivityState {
         Menu,
@@ -11,21 +11,13 @@ public class DiscordManager : MonoBehaviour
         Game
     }
     
-    public static DiscordManager Instance;
-    
     [CanBeNull] private Discord.Discord _discord;
     private Activity _activity;
     private ActivityState _lastState;
 
-    private void Awake()
+    protected override void Awake()
     {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
+        base.Awake();
         DontDestroyOnLoad(gameObject);
 
         SetupDiscord();

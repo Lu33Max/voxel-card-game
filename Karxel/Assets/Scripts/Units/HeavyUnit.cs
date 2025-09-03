@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class HeavyUnit : Unit
 {
-    public override List<MoveCommand> GetValidMoves(int movementRange)
+    public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;

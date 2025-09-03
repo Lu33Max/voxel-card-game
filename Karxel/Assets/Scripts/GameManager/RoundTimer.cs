@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -36,16 +37,25 @@ public class RoundTimer : MonoBehaviour
         _timerAudio = GetComponent<AudioSource>();
     }
 
-    private void OnEnable()
+    private IEnumerator SearchGameManager()
     {
+        while (GameManager.Instance == null)
+            yield return new WaitForEndOfFrame();
+        
         GameManager.Instance.TimerUpdated += OnTimerUpdated;
         GameManager.Instance.GameStateChanged += OnGameStateChanged;
+    }
+    
+    private void OnEnable()
+    {
+        StartCoroutine(SearchGameManager());
     }
     
     private void OnDisable()
     {
         GameManager.Instance.TimerUpdated -= OnTimerUpdated;
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        StopAllCoroutines();
     }
 
     /// <summary> Updates the timer display every frame the remaining time gets updated in the GameManager </summary>

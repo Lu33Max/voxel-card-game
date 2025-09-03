@@ -3,10 +3,8 @@ using UnityEngine;
 /// <summary>
 /// Manager responsible for storing an playing SFX clips and background music
 /// </summary>
-public class AudioManager : MonoBehaviour
+public class AudioManager : Singleton<AudioManager>
 {
-    public static AudioManager Instance;
-    
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
     
@@ -36,15 +34,9 @@ public class AudioManager : MonoBehaviour
     public static float MusicVolume { get; private set; } = 1f;
     
     /// <summary> Setup the singleton, retrieve the previously saved volume settings and start playing the menu music </summary>
-    private void Awake()
+    protected override void Awake()
     {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
+        base.Awake();
         DontDestroyOnLoad(gameObject);
             
         SetVolume(PlayerPrefs.GetInt("musicVol", 10) / 10f, PlayerPrefs.GetInt("sfxVol", 10) / 10f);

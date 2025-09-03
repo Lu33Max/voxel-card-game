@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEngine;
 
 /// <summary> Used to create, manage and destroy all local tile markers of the corresponding unit </summary>
-[RequireComponent(typeof(Unit))]
 public class UnitMarkerManager : MonoBehaviour
 {
     /// <summary> Unit script attached to the same GameObject as this script </summary>

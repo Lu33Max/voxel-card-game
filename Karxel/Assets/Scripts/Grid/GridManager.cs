@@ -1,17 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using Mirror;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public class GridManager : NetworkBehaviour
+public class GridManager : NetworkSingleton<GridManager>
 {
-    public static GridManager Instance { get; private set; }
-    
     [Header("Grid Setup")]
     [SerializeField, Tooltip("The maximum dimensions of the map measured in tiles")]
     private Vector3Int mapSize;
@@ -37,16 +33,6 @@ public class GridManager : NetworkBehaviour
     #if UNITY_EDITOR
     public Dictionary<Vector3Int, TileData> Tiles => _tiles;
     #endif
-    
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-    }
     
     private void Start()
     {

@@ -21,10 +21,8 @@ public enum GameState
 }
 
 // TODO: Turn GameManager into server-only component
-public class GameManager : NetworkBehaviour
+public class GameManager : NetworkSingleton<GameManager>
 {
-    public static GameManager Instance { get; private set; }
-
     /// <summary>SERVER ONLY<br/>List of all moves to execute when round finishes</summary>
     private Dictionary<Vector3Int, List<MoveCommand>> MoveIntents = new();
     /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
@@ -81,15 +79,10 @@ public class GameManager : NetworkBehaviour
     private bool _timerActive;
     [SyncVar(hook = nameof(OnTimeLeftUpdated))] private float _timeLeft;
 
-    private void Awake()
+    protected override void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        
-        Instance = this;
+        base.Awake();
+        Debug.LogWarning("[GameManager] GameManager Singleton Setup complete");
         _timerAudio = gameObject.AddComponent<AudioSource>();
         _timerAudio.playOnAwake = false;
     }

@@ -17,10 +17,11 @@ public class GridMouseInteraction : MonoBehaviour
     private bool _hasSubmitted;
     private string _playerId = "";
 
+    private bool _isActive;
+
     private void Start()
     {
         _mainCamera = Camera.main;
-        GameManager.Instance.PlayersReady += OnPlayersReady;
 
         // Reassign in case any subscribers did not unsubscribe
         UnitHovered = new UnityEvent<UnitData>();
@@ -28,7 +29,15 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnEnable()
     {
+        GameManager.OnReady += HandleGameManagerReady;
         InputManager.Instance.OnInteract += OnMouseInteraction;
+    }
+
+    private void HandleGameManagerReady()
+    {
+        GameManager.Instance.PlayersReady += OnPlayersReady;
+        GameManager.Instance.GameStateChanged += OnStateChanged;
+        _isActive = true;
     }
 
     private void OnDisable()
@@ -38,6 +47,7 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnDestroy()
     {
+        GameManager.OnReady -= HandleGameManagerReady;
         GameManager.Instance.PlayersReady -= OnPlayersReady;
         GameManager.Instance.GameStateChanged -= OnStateChanged;
         HandManager.Instance.cardDeselected.RemoveListener(OnCardDeselected);
@@ -45,13 +55,15 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void Update()
     {
+        if(!_isActive) return;
+        
         CheckForHoveredTile();
     }
 
     /// <summary> Calculate whether grid interactions are valid inside the current game phase </summary>
     private static bool ShouldCheckForInteraction()
     {
-        return GameManager.Instance.gameState is GameState.Attack or GameState.Movement;
+        return GameManager.Instance != null && GameManager.Instance.gameState is GameState.Attack or GameState.Movement;
     }
 
     /// <summary> Checks whether the mouse cursor is currently hovering over the stage </summary>
@@ -204,9 +216,10 @@ public class GridMouseInteraction : MonoBehaviour
         switch (cardValues.cardType)
         {
             case CardType.Stun:
-                if(_hoveredTile.Unit.owningTeam == player.team || _hoveredTile.Unit.SetForSkip)
+                if (_hoveredTile.Unit.owningTeam == player.team ||
+                    _hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Stunned, 1))
                     return;
-                _hoveredTile.Unit.CmdUpdateTurnSkip();
+                _hoveredTile.Unit.AddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Stunned, Duration = 2 });
                 break;
             
             case CardType.Heal:
@@ -256,7 +269,6 @@ public class GridMouseInteraction : MonoBehaviour
         GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
         _playerId = GameManager.Instance.localPlayer.netId.ToString();
         
-        GameManager.Instance.GameStateChanged += OnStateChanged;
         HandManager.Instance.cardDeselected.AddListener(OnCardDeselected);
     }
 

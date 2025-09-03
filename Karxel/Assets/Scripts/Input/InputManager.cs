@@ -2,10 +2,8 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class InputManager : MonoBehaviour
+public class InputManager : Singleton<InputManager>
 {
-    public static InputManager Instance { get; private set; }
-
     private PlayerControls _controls;
     
     public event Action<Vector2> OnMove;
@@ -13,17 +11,10 @@ public class InputManager : MonoBehaviour
     public event Action<float> OnZoom;
     public event Action OnInteract; 
 
-    private void Awake()
+    protected override void Awake()
     {
-        // Singleton-Setup
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
+        base.Awake();
         DontDestroyOnLoad(gameObject);
-        
         _controls = new PlayerControls();
     }
 

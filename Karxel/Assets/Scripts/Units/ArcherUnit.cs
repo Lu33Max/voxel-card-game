@@ -6,7 +6,7 @@ public class ArcherUnit : Unit
 {
     [SerializeField] private int baseRange = 2;
     
-    public override List<MoveCommand> GetValidMoves(int movementRange)
+    public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
         var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
@@ -41,7 +41,7 @@ public class ArcherUnit : Unit
             }
         }
         
-        return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
+        return moves.Where(move => GridManager.Instance.IsMoveValid(move));
     }
 
     public override List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null)

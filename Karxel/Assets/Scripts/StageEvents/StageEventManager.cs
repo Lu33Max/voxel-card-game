@@ -1,32 +1,26 @@
 using System.Linq;
 using UnityEngine;
 
-public class StageEventManager : MonoBehaviour
+public class StageEventManager : Singleton<StageEventManager>
 {
-    public static StageEventManager Instance { get; private set; }
-    
     [SerializeField] private StageEventInstance[] events;
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-    }
 
     private void Start()
     {
-        GameManager.Instance.NewRound += OnRoundStart;
+        GameManager.OnReady += HandleGameManagerReady;
         
         foreach (var e in events)
             e.eventType.Setup();
     }
 
+    private void HandleGameManagerReady()
+    {
+        GameManager.Instance.NewRound += OnRoundStart;
+    }
+
     private void OnDisable()
     {
+        GameManager.OnReady -= HandleGameManagerReady;
         GameManager.Instance.NewRound -= OnRoundStart;
         StopAllCoroutines();
     }

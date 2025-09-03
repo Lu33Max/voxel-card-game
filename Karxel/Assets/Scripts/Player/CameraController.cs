@@ -26,8 +26,6 @@ public class CameraController : MonoBehaviour
         InputManager.Instance.OnMove += OnMovePressed;
         InputManager.Instance.OnRotate += OnRotatePressed;
         InputManager.Instance.OnZoom += HandleZoom;
-
-        _scaleFactor = GridManager.Instance.TileSize.x;
     }
 
     private void OnDisable()
