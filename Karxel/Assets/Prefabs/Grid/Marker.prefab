@@ -99,7 +99,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colorMap:
   - type: 0
-    color: {r: 0.087417364, g: 1, b: 0, a: 1}
+    color: {r: 0, g: 1, b: 0.694149, a: 1}
   - type: 1
     color: {r: 1, g: 0, b: 0, a: 1}
   - type: 4

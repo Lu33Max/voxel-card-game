@@ -86,8 +86,6 @@ public class MainMenu : MonoBehaviour
     
     private void DisplayLobbiesEpic(List<LobbyDetails> foundLobbies)
     {
-        Debug.Log("Display all lobbies");
-        
         for(int i = 0; i < lobbyListContent.transform.childCount; i++)
             Destroy(lobbyListContent.transform.GetChild(i).gameObject);
 

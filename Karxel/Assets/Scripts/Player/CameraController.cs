@@ -39,11 +39,6 @@ public class CameraController : MonoBehaviour
 
     private void OnMovePressed(Vector2 dir) => _moveInput = dir;
     private void OnRotatePressed(float val) => _rotateInput = val;
-    private void OnZoomPressed(float val)
-    {
-        _zoomInput = val;
-        Debug.Log($"Zooming with {val}");
-    }
 
     public void DisableMovement(bool shouldDisable)
     {
@@ -110,8 +105,6 @@ public class CameraController : MonoBehaviour
 
     private void HandleZoom(float scroll)
     {
-        Debug.Log(scroll);
-        
         if (scroll == 0f) return;
         
         var cameraTransform = transform;
