@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: 8d6572dade9440246a805350a8834748
+guid: 76bc5ab9b19c8d8469f297c3267be3be
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mat_Beach_Tiles
+    second: {fileID: 2100000, guid: 1a6487f7df9833349b282734d4e66bf1, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
