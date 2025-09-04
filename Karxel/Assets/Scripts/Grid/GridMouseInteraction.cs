@@ -200,8 +200,14 @@ public class GridMouseInteraction : MonoBehaviour
                 HandManager.Instance.PlaySelectedCard();
                 break;
         }
+
+        var shouldRecoverPreview = _hoveredTile.TilePosition == _selectedUnit.TilePosition;
         
         DeselectUnit();
+        
+        // In case the player is hovering over the same unit just deselected, restore its previews
+        if(shouldRecoverPreview)
+            _hoveredTile.Unit!.MarkerManager.DisplayHoverPreviews(_hoveredTile.TilePosition);
     }
 
     /// <summary> Plays the currently selected card and executes its effects depending on the cardType </summary>
@@ -217,9 +223,9 @@ public class GridMouseInteraction : MonoBehaviour
         {
             case CardType.Stun:
                 if (_hoveredTile.Unit.owningTeam == player.team ||
-                    _hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Stunned, 1))
+                    _hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Stunned, 2))
                     return;
-                _hoveredTile.Unit.AddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Stunned, Duration = 2 });
+                _hoveredTile.Unit.CmdAddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Stunned, Duration = 2 });
                 break;
             
             case CardType.Heal:
@@ -229,9 +235,10 @@ public class GridMouseInteraction : MonoBehaviour
                 break;
             
             case CardType.Shield:
-                if(_hoveredTile.Unit.owningTeam != player.team) 
+                if(_hoveredTile.Unit.owningTeam != player.team || 
+                   _hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Shielded)) 
                     return;
-                _hoveredTile.Unit.CmdUpdateShield(cardValues.otherValue);
+                _hoveredTile.Unit.CmdAddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Shielded, Duration = -1});
                 break;
             
             default:

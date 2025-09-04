@@ -51,10 +51,6 @@ public abstract class Unit : NetworkBehaviour
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthCounter;
 
-    [Header("Shield Visualization")]
-    [SerializeField] private Slider shieldSlider;
-    [SerializeField] private TextMeshProUGUI shieldCounter;
-
     [Header("Unit Action Display")]
     [SerializeField] private Transform actionDisplayParent;
     [SerializeField] private GameObject actionImagePrefab;
@@ -65,15 +61,19 @@ public abstract class Unit : NetworkBehaviour
     public UnitData Data => data;
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
-    [SyncVar(hook = nameof(OnShieldUpdated))] private int _currentShield;
     [SyncVar] private LiveStatus _status = LiveStatus.Alive;
     
-    private SyncList<UnitStatus> _statusEffects = new();
+    private readonly SyncList<UnitStatus> _statusEffects = new();
+
+    /// <summary> Boolean to track whether damage was taken in the current round to remove the shield status </summary>
+    private bool _tookDamage;
     
     private Transform _camera;
     private MeshRenderer _renderer;
     private AudioSource _sfxSource;
     private PathManager _pathManager;
+    private UnitEffectDisplay _effectDisplay;
+    
     public UnitMarkerManager MarkerManager { get; private set; }
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
@@ -94,12 +94,13 @@ public abstract class Unit : NetworkBehaviour
         _pathManager = GetComponent<PathManager>();
         _pathManager.Setup(this);
 
+        _effectDisplay = GetComponentInChildren<UnitEffectDisplay>();
+
         MarkerManager = GetComponent<UnitMarkerManager>();
         
         GameManager.Instance.GameStateChanged += OnGameStateChanged;
         
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
-        shieldSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
 
         if(!isServer)
             return;
@@ -150,7 +151,7 @@ public abstract class Unit : NetworkBehaviour
     }
 
     /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
-    public bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
+    private bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
 
     /// <summary> Checks whether the given type is currently active on the unit </summary>
     /// <param name="effect"> Type of StatusEffect to search for </param>
@@ -328,20 +329,6 @@ public abstract class Unit : NetworkBehaviour
         healthSlider.value = (float)newHealth / data.health;
         healthCounter.text = newHealth.ToString();
     }
-    
-    private void OnShieldUpdated(int old, int newShield)
-    {
-        if (newShield <= 0)
-        {
-            shieldSlider.gameObject.SetActive(false);
-            return;
-        }
-            
-        shieldSlider.gameObject.SetActive(true);
-
-        shieldSlider.value = (float)newShield / data.health;
-        shieldCounter.text = newShield.ToString();
-    }
 
     private void OnControlStatusChanged(bool old, bool isNowSelected)
     {
@@ -414,12 +401,29 @@ public abstract class Unit : NetworkBehaviour
     [Server]
     private void CheckForStatusDurations()
     {
-        foreach (var effect in _statusEffects.Where(effect => effect.Duration >= 0))
+        for (var i = _statusEffects.Count - 1; i >= 0; i--)
         {
-            effect.Duration--;
-            if (effect.Duration == 0) 
-                _statusEffects.Remove(effect);
+            var newStatus = new UnitStatus{ Status = _statusEffects[i].Status, Duration = _statusEffects[i].Duration - 1};
+            _statusEffects[i] = newStatus;
+
+            if (newStatus.Status == StatusEffect.Stunned && newStatus.Duration == 1)
+                RpcAddEffectToDisplay(StatusEffect.Stunned, false);
+                
+            if (_statusEffects[i].Duration != 0) continue;
+            
+            if(_statusEffects.Count(e => e.Status == _statusEffects[i].Status) <= 1)
+                RpcRemoveEffectToDisplay(_statusEffects[i].Status);
+                
+            _statusEffects.RemoveAt(i);
         }
+
+        if (!_tookDamage) return;
+        
+        _tookDamage = false;
+        RpcRemoveEffectToDisplay(StatusEffect.Shielded);
+
+        var shieldIndex = _statusEffects.FindIndex(s => s.Status == StatusEffect.Shielded);
+        if(shieldIndex >= 0) _statusEffects.RemoveAt(shieldIndex);
     }
 
     [Server]
@@ -434,53 +438,23 @@ public abstract class Unit : NetworkBehaviour
     [Server]
     private void UpdateHealth(int changeAmount)
     {
-        var changeLeft = changeAmount;
+        var actualChange = changeAmount;
 
-        if (_currentShield > 0 && changeAmount < 0)
-        {
-            if (_currentShield >= Mathf.Abs(changeAmount))
-            {
-                _currentShield += changeAmount;
-                ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{changeAmount},{_currentShield}]", 
-                    null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
-                
-                PlayHurtSound();
-                return;
-            }
-            
-            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_damaged", $"[{_currentShield},{_currentHealth}]", 
-                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
-
-            changeLeft = changeAmount + _currentShield;
-            _currentShield = 0;
-        }
+        if (HasEffectOfTypeActive(StatusEffect.Shielded))
+            actualChange = Mathf.RoundToInt(actualChange / data.dmgReductionFromShield);
         
-        _currentHealth = Mathf.Clamp(_currentHealth + changeLeft, 0, data.health);
+        _currentHealth = Mathf.Clamp(_currentHealth + actualChange, 0, data.health);
 
-        if (changeAmount < 0)
-        {
-            PlayHurtSound();
-            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "damaged", $"[{changeLeft},{_currentHealth}]", 
-                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
-            
-            if(_currentHealth <= 0)
-                StartCoroutine(Die());
-        }
-        else if(changeAmount > 0)
-            ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "heal", $"[{changeLeft},{_currentHealth}]", 
-                null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
+        if(actualChange >= 0) return;
+        
+        PlayHurtSound();
+        _tookDamage = true;
+        
+        if(_currentHealth <= 0) StartCoroutine(Die());
     }
 
     [Server]
-    public void AddShield(int shieldToAdd)
-    {
-        _currentShield = Mathf.Clamp(_currentShield + shieldToAdd, 0, data.health);
-        ActionLogger.Instance.LogAction("server", owningTeam.ToString(), "shield_add", $"[{shieldToAdd},{_currentShield}]", 
-            null, gameObject.GetInstanceID().ToString(), data.unitName, TilePosition.ToString());
-    }
-
-    [Server]
-    protected void OnCheckHealth()
+    private void OnCheckHealth()
     {
         if (_currentHealth > 0) 
             return;
@@ -498,12 +472,6 @@ public abstract class Unit : NetworkBehaviour
     public void CmdUpdateHealth(int changeAmount)
     {
         UpdateHealth(changeAmount);
-    }
-    
-    [Command(requiresAuthority = false)]
-    public void CmdUpdateShield(int changeAmount)
-    {
-        AddShield(changeAmount);
     }
 
     [Command(requiresAuthority = false)]
@@ -608,10 +576,31 @@ public abstract class Unit : NetworkBehaviour
 
     /// <summary> Adds the given UnitStatus to the list of active StatusEffects </summary>
     [Command(requiresAuthority = false)]
-    public void AddNewStatusEffect(UnitStatus newEffect)
+    public void CmdAddNewStatusEffect(UnitStatus newEffect)
     {
         _statusEffects.Add(newEffect);
+        RpcAddEffectToDisplay(newEffect.Status, newEffect.Status == StatusEffect.Stunned);
     }
 
+    [Server]
+    public void ServerAddNewStatusEffect(UnitStatus newEffect)
+    {
+        _statusEffects.Add(newEffect);
+        RpcAddEffectToDisplay(newEffect.Status, false);
+    }
+
+    [ClientRpc]
+    private void RpcAddEffectToDisplay(StatusEffect newEffect, bool checkForTeam)
+    {
+        if(!checkForTeam || GameManager.Instance.localPlayer.team != owningTeam)
+            _effectDisplay.AddEffect(newEffect);
+    }
+    
+    [ClientRpc]
+    private void RpcRemoveEffectToDisplay(StatusEffect effect)
+    {
+        _effectDisplay.RemoveEffect(effect);
+    }
+    
     #endregion
 }

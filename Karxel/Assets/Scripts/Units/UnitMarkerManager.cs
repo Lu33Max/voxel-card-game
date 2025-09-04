@@ -114,13 +114,15 @@ public class UnitMarkerManager : MonoBehaviour
         
                 HashSet<Vector3Int> allReachableAttackTiles = new();
 
-                if (!_unit.isControlled && _registeredMarkers.TryGetValue(MarkerType.MovePreview, out var moveTiles))
+                if (_registeredMarkers.TryGetValue(MarkerType.Move, out var moveTiles))
                 {
+                    var moveCopy = moveTiles.ToList();
+                    
                     // Add the current position in case the unit does not move / only possible when no intent is active
                     if(!_unit.HasMoveIntentsRegistered())
-                        moveTiles.Add(_unit.TilePosition);
+                        moveCopy.Add(_unit.TilePosition);
                     
-                    foreach (var moveTile in moveTiles.SelectMany(moveTile => _unit.GetValidAttackTiles(moveTile)))
+                    foreach (var moveTile in moveCopy.SelectMany(moveTile => _unit.GetValidAttackTiles(moveTile)))
                         allReachableAttackTiles.Add(moveTile);   
                 }
 
@@ -129,7 +131,7 @@ public class UnitMarkerManager : MonoBehaviour
                     : _currentMoveTiles.Contains(hoveredTile)
                         ? _unit.GetValidAttackTiles(hoveredTile).ToArray()
                         : new Vector3Int[] {};
-
+                
                 CreateNewMarkers(attackTiles, MarkerType.AttackPreview, 4);
                 return;
         }
@@ -157,6 +159,8 @@ public class UnitMarkerManager : MonoBehaviour
     /// <param name="position"> Position of the marker to store </param>
     private void AddToMarkers(MarkerType type, Vector3Int position)
     {
+        if(_registeredMarkers.ContainsKey(type) && _registeredMarkers[type].Exists(p => p == position)) return;
+        
         _registeredMarkers.TryAdd(type, new List<Vector3Int>());
         _registeredMarkers[type].Add(position);
     }

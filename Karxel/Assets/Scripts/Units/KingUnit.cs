@@ -85,17 +85,18 @@ public class KingUnit : Unit
         
         if(!isServer || newState != GameState.Attack)
             return;
+
+        var directions = new List<Vector3Int>
+            { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward, };
         
-        var directions = new List<Vector3Int> { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward, };
-        foreach (var dir in directions)
+        foreach (var unit in from dir in directions
+                 where GridManager.Instance.IsExistingGridPosition(TilePosition + dir, out _)
+                 select GridManager.Instance.GetTileAtGridPosition(TilePosition + dir).Unit
+                 into unit
+                 where unit != null && unit.owningTeam == owningTeam && !unit.HasEffectOfTypeActive(StatusEffect.Shielded)
+                 select unit)
         {
-            if(!GridManager.Instance.IsExistingGridPosition(TilePosition + dir, out _))
-                continue;
-            
-            var unit = GridManager.Instance.GetTileAtGridPosition(TilePosition + dir).Unit;
-            
-            if(unit != null && unit.owningTeam == owningTeam)
-                unit.AddShield(shieldGain);
+            unit.ServerAddNewStatusEffect(new UnitStatus{ Status = StatusEffect.Shielded, Duration = -1});
         }
     }
 }

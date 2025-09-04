@@ -82,7 +82,6 @@ public class GameManager : NetworkSingleton<GameManager>
     protected override void Awake()
     {
         base.Awake();
-        Debug.LogWarning("[GameManager] GameManager Singleton Setup complete");
         _timerAudio = gameObject.AddComponent<AudioSource>();
         _timerAudio.playOnAwake = false;
     }
