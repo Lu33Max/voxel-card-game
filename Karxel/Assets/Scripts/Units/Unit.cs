@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,6 +6,7 @@ using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(UnitMarkerManager))]
@@ -22,6 +24,14 @@ public abstract class Unit : NetworkBehaviour
         Stunned,
     }
     
+    [Serializable]
+    private class UnitMaterial
+    {
+        public Material white;
+        public Material black;
+        public Material unavailable;
+    }
+    
     /// <summary> Used to attach status effects to a unit for a given amount of turns </summary>
     public class UnitStatus
     {
@@ -37,8 +47,6 @@ public abstract class Unit : NetworkBehaviour
     
     [Header("UnitData")]
     [SerializeField] protected UnitData data;
-    [SerializeField] private int moveLimit = 3;
-    [SerializeField] private int attackLimit = 1;
     
     [Header("Movement")] 
     [SerializeField] private float moveArcHeight = 0.3f;
@@ -46,6 +54,10 @@ public abstract class Unit : NetworkBehaviour
     [Header("Visualization")]
     [SerializeField] private GameObject canvas;
     [SerializeField] protected Material outlineMaterial;
+
+    [Header("Unit Material")] 
+    [SerializeField] private MeshRenderer meshRenderer;
+    [SerializeField] private UnitMaterial unitMaterial;
     
     [Header("Health Visualization")]
     [SerializeField] private Slider healthSlider;
@@ -65,7 +77,6 @@ public abstract class Unit : NetworkBehaviour
     private bool _tookDamage;
     
     private Transform _camera;
-    private MeshRenderer _renderer;
     private AudioSource _sfxSource;
     private PathManager _pathManager;
     private UnitEffectDisplay _effectDisplay;
@@ -85,18 +96,21 @@ public abstract class Unit : NetworkBehaviour
     {
         if (Camera.main != null) 
             _camera = Camera.main.transform;
-        _renderer = GetComponentInChildren<MeshRenderer>();
+        
+        MarkerManager = GetComponent<UnitMarkerManager>();
         _sfxSource = GetComponent<AudioSource>();
         _pathManager = GetComponent<PathManager>();
-        _pathManager.Setup(this);
-
         _effectDisplay = GetComponentInChildren<UnitEffectDisplay>();
-
-        MarkerManager = GetComponent<UnitMarkerManager>();
-        
-        GameManager.Instance.GameStateChanged += OnGameStateChanged;
         
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
+        _pathManager.Setup(this);
+        
+        GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        HandManager.OnCardSelected += UpdateMaterialForCurrentCard;
+        HandManager.OnCardPlayed += UpdateMaterialToTeamColor;
+        HandManager.OnCardDeselected += UpdateMaterialToTeamColor;
+        
+        UpdateMaterialToTeamColor();
 
         if(!isServer)
             return;
@@ -111,10 +125,13 @@ public abstract class Unit : NetworkBehaviour
         canvas.transform.LookAt(_camera);
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         StopAllCoroutines();
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        HandManager.OnCardSelected -= UpdateMaterialForCurrentCard;
+        HandManager.OnCardPlayed -= UpdateMaterialToTeamColor;
+        HandManager.OnCardDeselected -= UpdateMaterialToTeamColor;
         
         if(!isServer)
             return;
@@ -132,19 +149,11 @@ public abstract class Unit : NetworkBehaviour
             CmdChangePosition(worldPos.Value, tilePos);
     }
 
-    public bool CanBeSelected()
-    {
-        var gameState = GameManager.Instance.gameState;
+    /// <summary> Returns whether the unit can currently be selected by a new player </summary>
+    public bool IsSelectable => _status == LiveStatus.Alive && !IsStunned && MoveAmountLeft > 0 && !isControlled;
 
-        return _status == LiveStatus.Alive && ((gameState == GameState.Attack && AttackIntent.Count < attackLimit) ||
-                                               (gameState == GameState.Movement && MoveIntent.Count < moveLimit)) &&
-               !IsStunned && MoveAmountLeft > 0;
-    }
-
-    public bool HasMoveIntentsRegistered()
-    {
-        return MoveIntent.Count > 0;
-    }
+    /// <summary> Returns true whenever the amount of registered move intents this turn is at least 1 </summary>
+    public bool HasMoveIntentsRegistered => MoveIntent.Count > 0;
 
     /// <summary> Returns the amount of moves this unit is still allowed to do this turn </summary>
     public int MoveAmountLeft => GameManager.Instance.gameState switch
@@ -336,21 +345,48 @@ public abstract class Unit : NetworkBehaviour
 
     private void OnControlStatusChanged(bool old, bool isNowSelected)
     {
+        //TODO: REMOVE
+        if(meshRenderer == null) return;
+        
         // Only display selection highlight for other team members
         if(owningTeam != GameManager.Instance.localPlayer.team)
             return;
         
         var newMaterials = isNowSelected
-            ? _renderer.materials.Append(outlineMaterial).ToArray()
-            : new[] { _renderer.materials.First() };
+            ? meshRenderer.materials.Append(outlineMaterial).ToArray()
+            : new[] { meshRenderer.materials.First() };
         
-        _renderer.materials = newMaterials;
+        meshRenderer.materials = newMaterials;
     }
 
     protected virtual void OnGameStateChanged(GameState newState)
     {
         if(isServer && newState is GameState.Attack or GameState.Movement)
             CheckForStatusDurations();
+    }
+    
+    private void UpdateMaterialToTeamColor()
+    {
+        //TODO: REMOVE
+        if(unitMaterial == null || meshRenderer == null) return;
+        
+        meshRenderer.material = owningTeam == Team.Blue ? unitMaterial.white : unitMaterial.black;
+    }
+
+    private void UpdateMaterialForCurrentCard(CardData selectedCard)
+    {
+        //TODO: REMOVE
+        if(unitMaterial == null || meshRenderer == null) return;
+        
+        if ((owningTeam == GameManager.Instance.localPlayer.team && selectedCard.cardType != CardType.Stun &&
+             (selectedCard.cardType is not CardType.Attack and not CardType.Move || MoveAmountLeft > 0)) ||
+            (owningTeam != GameManager.Instance.localPlayer.team && selectedCard.cardType == CardType.Stun))
+        {
+            UpdateMaterialToTeamColor();
+            return;
+        }
+
+        meshRenderer.material = unitMaterial.unavailable;
     }
 
     /// <summary> Updates the duration of all status effects and removes expired ones </summary>

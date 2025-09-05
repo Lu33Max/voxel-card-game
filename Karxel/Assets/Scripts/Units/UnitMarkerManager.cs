@@ -78,7 +78,7 @@ public class UnitMarkerManager : MonoBehaviour
                 }
 
                 // Add the current position in case the unit does not move / only possible when no intent is active
-                if(!_unit.HasMoveIntentsRegistered())
+                if(!_unit.HasMoveIntentsRegistered)
                     foreach (var end in _unit.GetValidAttackTiles())
                         allReachableAtkTiles.Add(end);
 
@@ -119,7 +119,7 @@ public class UnitMarkerManager : MonoBehaviour
                     var moveCopy = moveTiles.ToList();
                     
                     // Add the current position in case the unit does not move / only possible when no intent is active
-                    if(!_unit.HasMoveIntentsRegistered())
+                    if(!_unit.HasMoveIntentsRegistered)
                         moveCopy.Add(_unit.TilePosition);
                     
                     foreach (var moveTile in moveCopy.SelectMany(moveTile => _unit.GetValidAttackTiles(moveTile)))

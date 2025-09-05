@@ -272,6 +272,9 @@ public class GridManager : NetworkSingleton<GridManager>
                 var unit = parent.transform.GetChild(i);
                 var unitScript = unit.GetComponent<Unit>();
 
+                if (unitScript == null)
+                    unitScript = unit.GetComponentInChildren<Unit>();
+
                 var unitPosition = unit.position;
                 
                 var gridPos = WorldToGridPosition(unitPosition);

@@ -15661,7 +15661,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &756790344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15757,7 +15757,7 @@ MonoBehaviour:
   roomPlayerPrefab: {fileID: 1271043052132975523, guid: 70dc3ef0fc092fa4b890adfa36056340,
     type: 3}
   RoomScene: Assets/Scenes/Lobby.unity
-  GameplayScene: Assets/Scenes/Game0.unity
+  GameplayScene: Assets/Scenes/Game3.unity
   _allPlayersReady: 0
   roomSlots: []
   clientIndex: 0
@@ -24756,7 +24756,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1240296518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24852,7 +24852,7 @@ MonoBehaviour:
   roomPlayerPrefab: {fileID: 1271043052132975523, guid: 70dc3ef0fc092fa4b890adfa36056340,
     type: 3}
   RoomScene: Assets/Scenes/Lobby.unity
-  GameplayScene: Assets/Scenes/Game0.unity
+  GameplayScene: Assets/Scenes/Game3.unity
   _allPlayersReady: 0
   roomSlots: []
   clientIndex: 0

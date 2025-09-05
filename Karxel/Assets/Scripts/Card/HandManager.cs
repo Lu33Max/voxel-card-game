@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,7 +9,9 @@ public class HandManager : MonoBehaviour
 {
     public static HandManager Instance { get; private set; }
 
-    public UnityEvent cardDeselected = new();
+    public static event Action OnCardDeselected;
+    public static event Action<CardData> OnCardSelected;
+    public static event Action OnCardPlayed; 
     
     [SerializeField] private GameObject cardPrefab;
     [SerializeField] private AudioClip drawCardSound;
@@ -94,12 +97,14 @@ public class HandManager : MonoBehaviour
         
         AudioManager.Instance.PlaySfx(drawCardSound);
         
-        cardDeselected.Invoke();
+        OnCardDeselected.Invoke();
         
         SelectedCard = clickedCard;
         SelectedCard.UpdateYPosition(cardRaisedY);
         
         mouseFollower.SetUIElement(SelectedCard.gameObject);
+        
+        OnCardSelected?.Invoke(clickedCard.CardData);
     }
 
     public void PlaySelectedCard()
@@ -114,13 +119,15 @@ public class HandManager : MonoBehaviour
         
         AudioManager.Instance.PlaySfx(drawCardSound);
         UpdateCardPositions(GameManager.Instance.gameState);
+        
+        OnCardPlayed?.Invoke();
     }
 
     public void DeselectCurrentCard()
     {
         AudioManager.Instance.PlaySfx(drawCardSound);
         
-        cardDeselected?.Invoke();
+        OnCardDeselected?.Invoke();
         SelectedCard.UpdateYPosition(cardRegularY);
         SelectedCard = null;
         
@@ -151,7 +158,7 @@ public class HandManager : MonoBehaviour
 
         if (card == SelectedCard)
         {
-            cardDeselected?.Invoke();
+            OnCardDeselected?.Invoke();
             SelectedCard = null;   
             
             mouseFollower.ClearUIElement();

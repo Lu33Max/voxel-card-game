@@ -15,7 +15,7 @@ public class CardData : ScriptableObject
     public int attackDamage;
     public int attackRange;
     public int otherValue;
-
+    
     /// <summary> Returns whether the given card is an item card or an action card </summary>
     public bool IsDisposable()
     {

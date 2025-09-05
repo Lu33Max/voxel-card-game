@@ -29,6 +29,7 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnEnable()
     {
+        HandManager.OnCardDeselected += OnCardDeselected;
         GameManager.OnReady += HandleGameManagerReady;
         InputManager.Instance.OnInteract += OnMouseInteraction;
     }
@@ -43,14 +44,10 @@ public class GridMouseInteraction : MonoBehaviour
     private void OnDisable()
     {
         InputManager.Instance.OnInteract -= OnMouseInteraction;
-    }
-
-    private void OnDestroy()
-    {
         GameManager.OnReady -= HandleGameManagerReady;
         GameManager.Instance.PlayersReady -= OnPlayersReady;
         GameManager.Instance.GameStateChanged -= OnStateChanged;
-        HandManager.Instance.cardDeselected.RemoveListener(OnCardDeselected);
+        HandManager.OnCardDeselected -= OnCardDeselected;
     }
 
     private void Update()
@@ -251,7 +248,7 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void SelectHoveredUnit()
     {
-        if (_hoveredTile?.Unit == null || !_hoveredTile.Unit.CanBeSelected() ||
+        if (_hoveredTile?.Unit == null || !_hoveredTile.Unit.IsSelectable ||
             _hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team) 
             return;
 
@@ -275,8 +272,6 @@ public class GridMouseInteraction : MonoBehaviour
     {
         GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
         _playerId = GameManager.Instance.localPlayer.netId.ToString();
-        
-        HandManager.Instance.cardDeselected.AddListener(OnCardDeselected);
     }
 
     private void OnTurnSubmitted()
