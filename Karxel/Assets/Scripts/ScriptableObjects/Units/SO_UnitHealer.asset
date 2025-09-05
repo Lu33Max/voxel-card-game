@@ -18,6 +18,9 @@ MonoBehaviour:
     PLAYING AN ATTACK CARD
     ON IT LETS IT HEAL OTHER UNITS'
   health: 5
-  moveAmount: 1
+  moveAmount: 3
+  attackAmount: 1
   attackDamage: -2
+  dmgReductionFromShield: 2
+  traversableEdgeTypes: 000000000300000004000000
   stepDuration: 0.15

@@ -18,6 +18,9 @@ MonoBehaviour:
     ATTACKS THREE TILES AT
     ONCE'
   health: 10
-  moveAmount: 1
+  moveAmount: 3
+  attackAmount: 1
   attackDamage: 3
+  dmgReductionFromShield: 2
+  traversableEdgeTypes: 000000000300000004000000
   stepDuration: 0.15

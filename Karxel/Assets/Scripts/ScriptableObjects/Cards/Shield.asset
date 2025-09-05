@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5768b0b63810d714ab09676cd5f6df9f, type: 3}
   m_Name: Shield
   m_EditorClassIdentifier: 
-  cardName: Shd x3
+  cardName: Shield
   cost: 2
   cardType: 3
   rarity: 1
@@ -20,4 +20,4 @@ MonoBehaviour:
   movementRange: 0
   attackDamage: 0
   attackRange: 0
-  otherValue: 3
+  otherValue: 0

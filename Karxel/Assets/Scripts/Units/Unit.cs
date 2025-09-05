@@ -50,10 +50,6 @@ public abstract class Unit : NetworkBehaviour
     [Header("Health Visualization")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthCounter;
-
-    [Header("Unit Action Display")]
-    [SerializeField] private Transform actionDisplayParent;
-    [SerializeField] private GameObject actionImagePrefab;
     
     public Vector3Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
@@ -142,13 +138,21 @@ public abstract class Unit : NetworkBehaviour
 
         return _status == LiveStatus.Alive && ((gameState == GameState.Attack && AttackIntent.Count < attackLimit) ||
                                                (gameState == GameState.Movement && MoveIntent.Count < moveLimit)) &&
-               !IsStunned;
+               !IsStunned && MoveAmountLeft > 0;
     }
 
     public bool HasMoveIntentsRegistered()
     {
         return MoveIntent.Count > 0;
     }
+
+    /// <summary> Returns the amount of moves this unit is still allowed to do this turn </summary>
+    public int MoveAmountLeft => GameManager.Instance.gameState switch
+    {
+        GameState.Movement => Data.moveAmount - MoveIntent.Count,
+        GameState.Attack => Data.attackAmount - AttackIntent.Count,
+        _ => 0
+    };
 
     /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
     private bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
@@ -343,58 +347,10 @@ public abstract class Unit : NetworkBehaviour
         _renderer.materials = newMaterials;
     }
 
-    private void UpdateActionDisplayAfterAction()
-    {
-        if(owningTeam != GameManager.Instance.localPlayer.team)
-            return;
-        
-        var displayCount = actionDisplayParent.childCount;
-        
-        if(GameManager.Instance.gameState == GameState.Movement)
-            for(var i = 0; i < displayCount - (moveLimit - MoveIntent.Count); i++)
-                Destroy(actionDisplayParent.GetChild(i).gameObject);
-        
-        else if(GameManager.Instance.gameState == GameState.Attack)
-            for(var i = 0; i < displayCount - (attackLimit - AttackIntent.Count); i++)
-                Destroy(actionDisplayParent.GetChild(i).gameObject);
-    }
-
-    private void ClearActionDisplay()
-    {
-        var childCount = actionDisplayParent.childCount;
-        
-        for(var i = 0; i < childCount; i++)
-            Destroy(actionDisplayParent.GetChild(i).gameObject);
-    }
-
-    private void UpdateActionDisplayOnStateUpdate(GameState newState)
-    {
-        if(GameManager.Instance == null || GameManager.Instance.localPlayer == null ||
-           owningTeam != GameManager.Instance.localPlayer.team)
-            return;
-        
-        ClearActionDisplay();
-
-        if(newState == GameState.Movement)
-            for(var i = 0; i < moveLimit; i++)
-            {
-                var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
-                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Move);
-            }
-        else if(newState == GameState.Attack)
-            for(var i = 0; i < attackLimit; i++)
-            {
-                var newDisplay = Instantiate(actionImagePrefab, actionDisplayParent);
-                newDisplay.GetComponent<ActionDisplayImage>().SetIcon(ActionDisplayType.Attack);
-            }
-    }
-
     protected virtual void OnGameStateChanged(GameState newState)
     {
         if(isServer && newState is GameState.Attack or GameState.Movement)
             CheckForStatusDurations();
-        
-        UpdateActionDisplayOnStateUpdate(newState);
     }
 
     /// <summary> Updates the duration of all status effects and removes expired ones </summary>
@@ -531,14 +487,12 @@ public abstract class Unit : NetworkBehaviour
     private void RPCAddToMoveIntent(MoveCommand moveCommand)
     {
         MoveIntent.Add(moveCommand);
-        UpdateActionDisplayAfterAction();
     }
 
     [ClientRpc]
     private void RPCAddToAttackIntent(Attack newAttack)
     {
         AttackIntent.Add(newAttack);
-        UpdateActionDisplayAfterAction();
     }
 
     [ClientRpc]

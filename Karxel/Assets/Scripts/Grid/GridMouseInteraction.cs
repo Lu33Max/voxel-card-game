@@ -8,7 +8,7 @@ public class GridMouseInteraction : MonoBehaviour
 {
     [SerializeField] private LayerMask groundLayer;
 
-    public static UnityEvent<UnitData> UnitHovered;
+    public static UnityEvent<Unit> UnitHovered;
     
     private Camera _mainCamera;
     private TileData _hoveredTile;
@@ -24,7 +24,7 @@ public class GridMouseInteraction : MonoBehaviour
         _mainCamera = Camera.main;
 
         // Reassign in case any subscribers did not unsubscribe
-        UnitHovered = new UnityEvent<UnitData>();
+        UnitHovered = new UnityEvent<Unit>();
     }
 
     private void OnEnable()
@@ -109,7 +109,7 @@ public class GridMouseInteraction : MonoBehaviour
         if(newHoveredTile.Unit != _selectedUnit)
             newHoveredTile.Unit?.MarkerManager.DisplayHoverPreviews(newHoveredTile.TilePosition); // Display preview tiles and update stat display
         
-        UnitHovered?.Invoke(newHoveredTile.Unit ? newHoveredTile.Unit.Data : null);
+        UnitHovered?.Invoke(newHoveredTile.Unit);
         
         UpdateHoverMarker(newHoveredTile.TilePosition);
         _hoveredTile = newHoveredTile;

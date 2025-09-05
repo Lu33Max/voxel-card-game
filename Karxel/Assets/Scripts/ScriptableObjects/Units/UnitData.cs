@@ -7,7 +7,8 @@ public class UnitData : ScriptableObject
     [TextArea] public string unitDescription;
 
     public int health;
-    public int moveAmount;
+    public int moveAmount = 3;
+    public int attackAmount = 1;
     public int attackDamage;
     public float dmgReductionFromShield = 2;
     public Tile.EdgeType[] traversableEdgeTypes = { Tile.EdgeType.None, Tile.EdgeType.Jump, Tile.EdgeType.Ladder };
