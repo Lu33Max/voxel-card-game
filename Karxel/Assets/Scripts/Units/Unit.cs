@@ -103,6 +103,9 @@ public class Unit : NetworkBehaviour
         HandManager.OnCardPlayed += UpdateMaterialToTeamColor;
         HandManager.OnCardDeselected += UpdateMaterialToTeamColor;
         
+        _statusEffects.OnAdd += AddEffectToDisplay;
+        _statusEffects.OnRemove += RemoveEffectToDisplay;
+        
         UpdateMaterialToTeamColor();
 
         if(!isServer)
@@ -120,6 +123,9 @@ public class Unit : NetworkBehaviour
         HandManager.OnCardSelected -= UpdateMaterialForCurrentCard;
         HandManager.OnCardPlayed -= UpdateMaterialToTeamColor;
         HandManager.OnCardDeselected -= UpdateMaterialToTeamColor;
+        
+        _statusEffects.OnAdd -= AddEffectToDisplay;
+        _statusEffects.OnRemove -= RemoveEffectToDisplay;
         
         if(!isServer)
             return;
@@ -277,14 +283,8 @@ public class Unit : NetworkBehaviour
         {
             var newStatus = new UnitStatus{ Status = _statusEffects[i].Status, Duration = _statusEffects[i].Duration - 1};
             _statusEffects[i] = newStatus;
-
-            if (newStatus.Status == StatusEffect.Stunned && newStatus.Duration == 1)
-                RpcAddEffectToDisplay(StatusEffect.Stunned, false);
                 
             if (_statusEffects[i].Duration != 0) continue;
-            
-            if(_statusEffects.Count(e => e.Status == _statusEffects[i].Status) <= 1)
-                RpcRemoveEffectToDisplay(_statusEffects[i].Status);
                 
             _statusEffects.RemoveAt(i);
         }
@@ -292,7 +292,6 @@ public class Unit : NetworkBehaviour
         if (!_tookDamage) return;
         
         _tookDamage = false;
-        RpcRemoveEffectToDisplay(StatusEffect.Shielded);
 
         var shieldIndex = _statusEffects.FindIndex(s => s.Status == StatusEffect.Shielded);
         if(shieldIndex >= 0) _statusEffects.RemoveAt(shieldIndex);
@@ -450,27 +449,23 @@ public class Unit : NetworkBehaviour
     public void CmdAddNewStatusEffect(UnitStatus newEffect)
     {
         _statusEffects.Add(newEffect);
-        RpcAddEffectToDisplay(newEffect.Status, newEffect.Status == StatusEffect.Stunned);
     }
 
     [Server]
     public void ServerAddNewStatusEffect(UnitStatus newEffect)
     {
         _statusEffects.Add(newEffect);
-        RpcAddEffectToDisplay(newEffect.Status, false);
-    }
-
-    [ClientRpc]
-    private void RpcAddEffectToDisplay(StatusEffect newEffect, bool checkForTeam)
-    {
-        if(!checkForTeam || GameManager.Instance.localPlayer.team != owningTeam)
-            _effectDisplay.AddEffect(newEffect);
     }
     
-    [ClientRpc]
-    private void RpcRemoveEffectToDisplay(StatusEffect effect)
+    private void AddEffectToDisplay(int addedIndex)
     {
-        _effectDisplay.RemoveEffect(effect);
+        _effectDisplay.AddEffect(_statusEffects[addedIndex].Status);
+    }
+    
+    private void RemoveEffectToDisplay(int _, UnitStatus removedStatus)
+    {
+        if(_statusEffects.Count(e => e.Status == removedStatus.Status) == 0)
+            _effectDisplay.RemoveEffect(removedStatus.Status);
     }
     
     #endregion
