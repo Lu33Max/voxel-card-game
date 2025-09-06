@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -10,9 +9,9 @@ public class GridMouseInteraction : MonoBehaviour
 
     public static UnityEvent<Unit> UnitHovered;
     
-    private Camera _mainCamera;
-    private TileData _hoveredTile;
-    private Unit _selectedUnit;
+    private Camera _mainCamera = null!;
+    private TileData? _hoveredTile;
+    private Unit? _selectedUnit;
     
     private bool _hasSubmitted;
     private string _playerId = "";
@@ -21,6 +20,8 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void Start()
     {
+        if (Camera.main == null) throw new NullReferenceException("[GridMouseInteraction] Camera.main was not set");
+        
         _mainCamera = Camera.main;
 
         // Reassign in case any subscribers did not unsubscribe
@@ -162,41 +163,19 @@ public class GridMouseInteraction : MonoBehaviour
         }
         
         var cardValues = HandManager.Instance.SelectedCard.CardData;
-        var gameState = GameManager.Instance.gameState;
         
         // Case 1: Card selected, no unit selected → Play card or select unit
         if (_selectedUnit == null)
         {
-            if (cardValues.IsDisposable()) PlaySelectedItemCard(cardValues);
-            else SelectHoveredUnit();
+            if (cardValues.IsDisposable() && _hoveredTile.Unit != null) 
+                cardValues.TryUseCard(_hoveredTile, null);
+            else 
+                SelectHoveredUnit();
             return;
         }
         
         // Case 2: Card selected, unit selected → Move or attack
-        switch (gameState)
-        {
-            case GameState.Movement:
-                var moveCommand = _selectedUnit.GetValidMoves(cardValues.movementRange)
-                    .FirstOrDefault(move => move.TargetPosition == _hoveredTile.TilePosition);
-                
-                if (moveCommand == null || !GridManager.Instance.IsMoveValid(moveCommand)) 
-                    break;
-                
-                _selectedUnit.CmdRegisterMoveIntent(moveCommand);
-                HandManager.Instance.PlaySelectedCard();
-                // ^^ Replace with UnitActionManager.Instance.RegisterMove(_selectedUnit, moveCommand);
-                break;
-            
-            case GameState.Attack:
-                var attackCommand =
-                    _selectedUnit.GetAttackForHoverPosition(_hoveredTile.TilePosition, cardValues.attackDamage);
-                
-                if (attackCommand == null) break;
-                
-                _selectedUnit.CmdRegisterAttackIntent(attackCommand);
-                HandManager.Instance.PlaySelectedCard();
-                break;
-        }
+        cardValues.TryUseCard(_hoveredTile, _selectedUnit);
 
         var shouldRecoverPreview = _hoveredTile.TilePosition == _selectedUnit.TilePosition;
         
@@ -205,45 +184,6 @@ public class GridMouseInteraction : MonoBehaviour
         // In case the player is hovering over the same unit just deselected, restore its previews
         if(shouldRecoverPreview)
             _hoveredTile.Unit!.MarkerManager.DisplayHoverPreviews(_hoveredTile.TilePosition);
-    }
-
-    /// <summary> Plays the currently selected card and executes its effects depending on the cardType </summary>
-    /// <param name="cardValues"> Values of the <see cref="HandManager.SelectedCard"/> in the HandManager </param>
-    /// <exception cref="ArgumentException"> The given cardData was no item type </exception>
-    private void PlaySelectedItemCard(CardData cardValues)
-    {
-        if(_hoveredTile?.Unit == null) return;
-        
-        var player = GameManager.Instance.localPlayer;
-
-        switch (cardValues.cardType)
-        {
-            case CardType.Stun:
-                if (_hoveredTile.Unit.owningTeam == player.team ||
-                    _hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Stunned, 2))
-                    return;
-                _hoveredTile.Unit.CmdAddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Stunned, Duration = 2 });
-                break;
-            
-            case CardType.Heal:
-                if(_hoveredTile.Unit.owningTeam != player.team)
-                    return;
-                _hoveredTile.Unit.CmdUpdateHealth(cardValues.otherValue);
-                break;
-            
-            case CardType.Shield:
-                if(_hoveredTile.Unit.owningTeam != player.team || 
-                   _hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Shielded)) 
-                    return;
-                _hoveredTile.Unit.CmdAddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Shielded, Duration = -1});
-                break;
-            
-            default:
-                throw new ArgumentException($"The provided car type {cardValues.cardType} is not a disposable type.");
-        }
-        
-        // Only here if the card action was actually executed
-        HandManager.Instance.PlaySelectedCard();
     }
 
     private void SelectHoveredUnit()

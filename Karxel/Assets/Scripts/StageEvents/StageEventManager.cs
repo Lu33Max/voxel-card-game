@@ -3,13 +3,14 @@ using UnityEngine;
 
 public class StageEventManager : Singleton<StageEventManager>
 {
-    [SerializeField] private StageEventInstance[] events;
+    [SerializeField] private StageEventInstance[]? events;
 
     private void Start()
     {
         if (GameManager.Instance != null) HandleGameManagerReady();
         else GameManager.OnReady += HandleGameManagerReady;
-        
+
+        if (events == null) return;
         foreach (var e in events)
             e.eventType.Setup();
     }
@@ -35,9 +36,9 @@ public class StageEventManager : Singleton<StageEventManager>
     }
 
     /// <summary> Retrieves the event with the lowest triggerRound that is bigger than the given currentRound </summary>
-    public StageEventInstance GetNextEvent(int currentRound)
+    public StageEventInstance? GetNextEvent(int currentRound)
     {
-        return events.OrderBy(e => e.triggerRound)
+        return events?.OrderBy(e => e.triggerRound)
                      .FirstOrDefault(eventInstance => eventInstance.triggerRound > currentRound);
     }
 
@@ -45,8 +46,7 @@ public class StageEventManager : Singleton<StageEventManager>
     /// <param name="currentRound"> The current round counter </param>
     private void OnRoundStart(int currentRound)
     {
-        Debug.Log("Round started");
-        
+        if (events == null) return;
         foreach (var e in events)
             if (e.triggerRound == currentRound)
                 e.eventType.Execute(e.parameters, this);

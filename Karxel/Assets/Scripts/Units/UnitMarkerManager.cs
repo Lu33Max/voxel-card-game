@@ -35,9 +35,9 @@ public class UnitMarkerManager : MonoBehaviour
                 ClearHoverPreviews();
                 
                 var cardData = HandManager.Instance.SelectedCard?.CardData;
-                if(cardData == null) return;
+                if(cardData == null || cardData is not MoveCardData data) return;
                 
-                _currentMoveTiles = _unit.GetValidMoves(cardData.movementRange).Select(m => m.TargetPosition).ToArray();
+                _currentMoveTiles = _unit.GetValidMoves(data.moveDistance).Select(m => m.TargetPosition).ToArray();
                 
                 CreateNewMarkers(_currentMoveTiles, MarkerType.Move, 2);
                 break;
@@ -59,10 +59,11 @@ public class UnitMarkerManager : MonoBehaviour
             case GameState.Movement:
                 var cardData = HandManager.Instance.SelectedCard?.CardData;
                 
-                if(cardData == null) return;
+                if(cardData == null || cardData is not MoveCardData data) return;
 
                 HashSet<Vector3Int> allReachableAtkTiles = new();
-                _currentMoveTiles = _unit.GetValidMoves(cardData.movementRange).Select(m => m.TargetPosition).ToArray();
+                _currentMoveTiles = _unit.GetValidMoves(data.moveDistance).Select(m => m.TargetPosition).ToArray();
+                
                 foreach (var moveTile in _currentMoveTiles)
                 {
                     MarkerManager.Instance.AddMarkerLocal(moveTile, new MarkerData

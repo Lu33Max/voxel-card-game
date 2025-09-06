@@ -71,7 +71,7 @@ public class HandManager : MonoBehaviour
         newCard.Initialize(newCardData, new Vector2(0, 105));
         
         _handCards.Add(newCard);
-        _handCards = _handCards.OrderBy(c => c.CardData.cardType).ThenBy(c => c.CardData.cardName).ToList();
+        _handCards = _handCards.OrderBy(c => c.CardData.type).ThenBy(c => c.CardData.cardName).ToList();
         
         if(SelectedCard != null) DeselectCurrentCard();
         else AudioManager.Instance.PlaySfx(drawCardSound);
@@ -186,7 +186,7 @@ public class HandManager : MonoBehaviour
             _handCards[0].UpdatePosition(new Vector2(startPos, cardRegularY));
             
             _handCards[0].transform.SetSiblingIndex(cardCount);
-            _handCards[0].UpdateState(state);
+            _handCards[0].UpdateState();
             return;
         }
     
@@ -198,7 +198,7 @@ public class HandManager : MonoBehaviour
             _handCards[i].transform.SetSiblingIndex(cardCount);
             cardCount++;
             
-            _handCards[i].UpdateState(state);
+            _handCards[i].UpdateState();
         }  
     }
 
@@ -213,7 +213,7 @@ public class HandManager : MonoBehaviour
         foreach (var card in _handCards)
             card.SwapActiveFace();
         
-        _handCards = _handCards.OrderBy(c => c.CardData.cardType).ThenBy(c => c.CardData.cardName).ToList();
+        _handCards = _handCards.OrderBy(c => c.CardData.type).ThenBy(c => c.CardData.cardName).ToList();
         UpdateCardPositions(newState);
     }
 }

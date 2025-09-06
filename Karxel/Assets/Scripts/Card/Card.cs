@@ -1,30 +1,27 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class Card : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI pointText;
-    [SerializeField] private TextMeshProUGUI nameText;
-    [SerializeField] private TextMeshProUGUI valueText;
-    [SerializeField] private Image cardImage;
+    [SerializeField] private TextMeshProUGUI pointText = null!;
+    [SerializeField] private TextMeshProUGUI nameText = null!;
+    [SerializeField] private TextMeshProUGUI valueText = null!;
+    [SerializeField] private Image cardImage = null!;
 
-    [SerializeField] private Sprite cardBGRegular;
-    [SerializeField] private Sprite cardBGUnselected;
-    [SerializeField] private Sprite cardBGRare;
-    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Sprite cardBGRegular = null!;
+    [SerializeField] private Sprite cardBGUnselected = null!;
+    [SerializeField] private Sprite cardBGRare = null!;
+    [SerializeField] private Image backgroundImage = null!;
 
     public CardData CardData => GameManager.Instance != null &&
                                 GameManager.Instance.gameState is GameState.Movement or GameState.MovementExecution
         ? _cardData.moveSide
         : _cardData.attackSide;
 
-    private CardComponent _cardData;
-    private RectTransform _transform;
+    private CardComponent _cardData = null!;
+    private RectTransform _transform = null!;
     
     public void Initialize(CardComponent data, Vector2 startPos)
     {
@@ -34,21 +31,6 @@ public class Card : MonoBehaviour
         _transform.position = new Vector3(0, startPos.y, 0);
 
         SetCardDesign();
-    }
-
-    public void SwapActiveFace()
-    {
-        StartCoroutine(RotateCard());
-    }
-
-    private void SetCardDesign()
-    {
-        pointText.text = CardData.cost.ToString();
-        nameText.text = CardData.cardName;
-        cardImage.sprite = CardData.cardSprite;
-        backgroundImage.sprite = CardData.rarity == Rarity.Common ? cardBGRegular : cardBGRare;
-        
-        UpdateState(GameManager.Instance.gameState);
     }
 
     private void OnEnable()
@@ -72,16 +54,14 @@ public class Card : MonoBehaviour
         _transform.anchoredPosition = new Vector3(_transform.anchoredPosition.x, newYPos);
     }
 
-    public void UpdateState(GameState state)
+    public void UpdateState()
     {
-        backgroundImage.sprite = !CanBeSelected(state) ? cardBGUnselected : CardData.rarity == Rarity.Common ? cardBGRegular : cardBGRare;
+        backgroundImage.sprite = !CanBeSelected() ? cardBGUnselected : CardData.rarity == CardData.Rarity.Common ? cardBGRegular : cardBGRare;
     }
 
     public void CardClickedButton()
     {
-        if(!CanBeSelected(GameManager.Instance.gameState))
-            return;
-        
+        if(!CanBeSelected()) return;
         HandManager.Instance.CardClicked(this);
     }
 
@@ -89,6 +69,21 @@ public class Card : MonoBehaviour
     {
         CardManager.Instance.AddCardToUsed(_cardData);
         Destroy(gameObject);
+    }
+    
+    public void SwapActiveFace()
+    {
+        StartCoroutine(RotateCard());
+    }
+
+    private void SetCardDesign()
+    {
+        pointText.text = CardData.cost.ToString();
+        nameText.text = CardData.cardName;
+        cardImage.sprite = CardData.cardSprite;
+        backgroundImage.sprite = CardData.rarity == CardData.Rarity.Common ? cardBGRegular : cardBGRare;
+        
+        UpdateState();
     }
 
     private IEnumerator RotateCard()
@@ -110,16 +105,10 @@ public class Card : MonoBehaviour
         
         transform.rotation = Quaternion.Euler(0, 0, 0);
     }
-
-    private bool IsCorrectPhase(GameState state)
-    {
-        return state == GameState.Movement && CardData.cardType != CardType.Attack ||
-               state == GameState.Attack && CardData.cardType != CardType.Move;
-    }
     
-    private bool CanBeSelected(GameState state)
+    private bool CanBeSelected()
     {
-        return ActionPointManager.ActionPoints - CardData.cost >= 0 && IsCorrectPhase(state);
+        return ActionPointManager.ActionPoints - CardData.cost >= 0 && CardData.IsCorrectPhase();
     }
 
     private void OnActionPointsUpdated(int newPoints)

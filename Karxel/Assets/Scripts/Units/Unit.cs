@@ -169,8 +169,7 @@ public class Unit : NetworkBehaviour
     /// </summary>
     /// <param name="hoveredPos"> Position of the currently hovered tile </param>
     /// <param name="damageMultiplier"> DamageMultiplier from the currently active card </param>
-    [CanBeNull]
-    public Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier) =>
+    public Attack? GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier) =>
         _behaviour.GetAttackForHoverPosition(hoveredPos, damageMultiplier);
 
     /// <summary> Returns whether the unit can currently be selected by a new player </summary>
@@ -186,6 +185,9 @@ public class Unit : NetworkBehaviour
         GameState.Attack => Data.attackAmount - AttackIntent.Count,
         _ => 0
     };
+
+    /// <summary> Returns true when the current health equals the maximum health </summary>
+    public bool HasMaxHealth => _currentHealth == Data.health;
 
     /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
     private bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
@@ -382,9 +384,9 @@ public class Unit : NetworkBehaviour
 
     private void UpdateMaterialForCurrentCard(CardData selectedCard)
     {
-        if ((owningTeam == GameManager.Instance.localPlayer.team && selectedCard.cardType != CardType.Stun &&
-             (selectedCard.cardType is not CardType.Attack and not CardType.Move || MoveAmountLeft > 0)) ||
-            (owningTeam != GameManager.Instance.localPlayer.team && selectedCard.cardType == CardType.Stun))
+        if ((selectedCard.IsDisposable() &&
+            selectedCard.CanBeUsed(GridManager.Instance.GetTileAtGridPosition(TilePosition), null)) ||
+            (!selectedCard.IsDisposable() && IsSelectable && owningTeam == GameManager.Instance.localPlayer.team))
         {
             UpdateMaterialToTeamColor();
             return;

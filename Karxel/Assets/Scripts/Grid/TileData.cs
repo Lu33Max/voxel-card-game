@@ -15,5 +15,5 @@ public class TileData
     public List<Tile.TileNeighbour> TileNeighbours;
     public TileState State = TileState.Normal;
 
-    [CanBeNull] public Unit Unit;
+    public Unit? Unit;
 }
