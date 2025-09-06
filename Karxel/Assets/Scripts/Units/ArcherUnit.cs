@@ -2,14 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class ArcherUnit : Unit
+public class ArcherUnit : UnitBehaviour
 {
     [SerializeField] private int baseRange = 2;
-    
+
     public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
-        var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
+        var startPosition = UnitRef.PositionAfterMove;
         Vector3Int[] directions = { new(1, 0, 1), new(-1, 0, 1), new(1, 0, -1), new(-1, 0, -1) };
         
         foreach (var direction in directions)
@@ -25,7 +25,7 @@ public class ArcherUnit : Unit
                 var prevPos = queue.Dequeue();
                 
                 var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
-                    false, data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
+                    false, UnitRef.Data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
 
                 var targetPosition = prevPos + direction;
 
@@ -44,9 +44,8 @@ public class ArcherUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move));
     }
 
-    public override List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null)
+    public override List<Vector3Int> GetValidAttackTiles(Vector3Int position)
     {
-        var position = positionOverride ?? TilePosition;
         Vector3Int[] directions =
         {
             new(-1, 0, -3), new(-2, 0, -3), new(-3, 0, -2), new(-3, 0, -1), new(-3, 0, 1), new(-3, 0, 2), new(-2, 0, 3), new(-1, 0, 3),
@@ -65,15 +64,15 @@ public class ArcherUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList();
     }
 
-    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
+    public override Attack? GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
     {
-        var allTiles = GetValidAttackTiles();
+        var allTiles = GetValidAttackTiles(UnitRef.TilePosition);
 
         if (!allTiles.Contains(hoveredPos)) return null;
 
         return new Attack
         {
-            Damage = Data.attackDamage * damageMultiplier,
+            Damage = UnitRef.Data.attackDamage * damageMultiplier,
             Tiles = new List<Vector3Int>{ hoveredPos },
             PlayerId = (int)GameManager.Instance.localPlayer.netId,
         };

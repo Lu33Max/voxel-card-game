@@ -77,6 +77,27 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1679347640668161739, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: data
+      value: 
+      objectReference: {fileID: 11400000, guid: 8cd68be703d0d3d40934fd654d9f4143,
+        type: 2}
+    - target: {fileID: 1679347640668161739, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: unitMaterial.black
+      value: 
+      objectReference: {fileID: 2100000, guid: 6325b18572710454995a40f918f19ba1, type: 2}
+    - target: {fileID: 1679347640668161739, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: unitMaterial.white
+      value: 
+      objectReference: {fileID: 2100000, guid: 5a32a7d381f650040b2543a3b424ce06, type: 2}
+    - target: {fileID: 1679347640668161739, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: unitMaterial.unavailable
+      value: 
+      objectReference: {fileID: 2100000, guid: ac5592a012398774e9759faf39944a05, type: 2}
     - target: {fileID: 4213534760924973138, guid: da91b61b532d38b4fb642fd978984800,
         type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -126,3 +147,22 @@ PrefabInstance:
         type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: da91b61b532d38b4fb642fd978984800, type: 3}
+--- !u!1 &3489982611465663888 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5633764496343281651, guid: da91b61b532d38b4fb642fd978984800,
+    type: 3}
+  m_PrefabInstance: {fileID: 9097779514323032675}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1913845354716622287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3489982611465663888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e1b06f0249dc9047a04d999863d4ef9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseRange: 2

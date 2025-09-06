@@ -66,6 +66,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Unit_Heavy (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4787049807661300638, guid: cf99756bbfa59e946aff4fdd8d78c102,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4988664047003661153, guid: cf99756bbfa59e946aff4fdd8d78c102,
         type: 3}
       propertyPath: m_RootOrder
@@ -171,6 +176,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7468589708063330406}
     m_Modifications:
+    - target: {fileID: 2390008561815386150, guid: 158d7e785744847459204b85271b6ca3,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2774019411853406425, guid: 158d7e785744847459204b85271b6ca3,
         type: 3}
       propertyPath: m_RootOrder
@@ -305,6 +315,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Unit_Pawn (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7570537282267405480, guid: 66555caf05716bf4487a7adcdc3e4626,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7952156717063394391, guid: 66555caf05716bf4487a7adcdc3e4626,
         type: 3}
@@ -501,6 +516,11 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1717655198885605955, guid: 1caffdd75eb821a4ca8d039683377e12,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2136668532377758228, guid: 1caffdd75eb821a4ca8d039683377e12,
         type: 3}
       propertyPath: owningTeam
@@ -545,6 +565,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Unit_Heavy (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4787049807661300638, guid: cf99756bbfa59e946aff4fdd8d78c102,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4988664047003661153, guid: cf99756bbfa59e946aff4fdd8d78c102,
         type: 3}
@@ -756,6 +781,11 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6688299968232551012, guid: d1b14004f124daf489717ea6fd793e64,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d1b14004f124daf489717ea6fd793e64, type: 3}
 --- !u!4 &1922899932605779935 stripped
@@ -785,6 +815,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Unit_Pawn (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7570537282267405480, guid: 66555caf05716bf4487a7adcdc3e4626,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7952156717063394391, guid: 66555caf05716bf4487a7adcdc3e4626,
         type: 3}
@@ -906,6 +941,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Unit_Heavy
       objectReference: {fileID: 0}
+    - target: {fileID: 4787049807661300638, guid: cf99756bbfa59e946aff4fdd8d78c102,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4988664047003661153, guid: cf99756bbfa59e946aff4fdd8d78c102,
         type: 3}
       propertyPath: m_RootOrder
@@ -1026,6 +1066,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Unit_Pawn (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 7570537282267405480, guid: 66555caf05716bf4487a7adcdc3e4626,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7952156717063394391, guid: 66555caf05716bf4487a7adcdc3e4626,
         type: 3}
       propertyPath: m_RootOrder
@@ -1131,6 +1176,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7468589708063330406}
     m_Modifications:
+    - target: {fileID: 2390008561815386150, guid: 158d7e785744847459204b85271b6ca3,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2774019411853406425, guid: 158d7e785744847459204b85271b6ca3,
         type: 3}
       propertyPath: m_RootOrder
@@ -1266,6 +1316,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Unit_Heavy (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4787049807661300638, guid: cf99756bbfa59e946aff4fdd8d78c102,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4988664047003661153, guid: cf99756bbfa59e946aff4fdd8d78c102,
         type: 3}
       propertyPath: m_RootOrder
@@ -1386,6 +1441,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Unit_Pawn (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 7570537282267405480, guid: 66555caf05716bf4487a7adcdc3e4626,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7952156717063394391, guid: 66555caf05716bf4487a7adcdc3e4626,
         type: 3}
       propertyPath: m_RootOrder
@@ -1505,6 +1565,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Unit_Pawn
+      objectReference: {fileID: 0}
+    - target: {fileID: 7570537282267405480, guid: 66555caf05716bf4487a7adcdc3e4626,
+        type: 3}
+      propertyPath: owningTeam
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7952156717063394391, guid: 66555caf05716bf4487a7adcdc3e4626,
         type: 3}

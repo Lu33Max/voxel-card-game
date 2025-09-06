@@ -7,7 +7,8 @@ public class StageEventManager : Singleton<StageEventManager>
 
     private void Start()
     {
-        GameManager.OnReady += HandleGameManagerReady;
+        if (GameManager.Instance != null) HandleGameManagerReady();
+        else GameManager.OnReady += HandleGameManagerReady;
         
         foreach (var e in events)
             e.eventType.Setup();
@@ -44,6 +45,8 @@ public class StageEventManager : Singleton<StageEventManager>
     /// <param name="currentRound"> The current round counter </param>
     private void OnRoundStart(int currentRound)
     {
+        Debug.Log("Round started");
+        
         foreach (var e in events)
             if (e.triggerRound == currentRound)
                 e.eventType.Execute(e.parameters, this);

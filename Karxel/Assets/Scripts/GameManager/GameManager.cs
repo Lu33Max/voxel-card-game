@@ -89,6 +89,10 @@ public class GameManager : NetworkSingleton<GameManager>
     private void Start()
     {
         AudioManager.Instance.PlayMusic(AudioManager.Instance.CombatMusic);
+        
+        if(!isServer) return;
+
+        Unit.OnUnitDied += HandleUnitDied;
     }
 
     private void Update()
@@ -103,6 +107,18 @@ public class GameManager : NetworkSingleton<GameManager>
         if (Input.GetKeyDown(KeyCode.K))
             _defeatedKings.Add(Team.Blue);
         #endif
+    }
+
+    private void OnDisable()
+    {
+        Unit.OnUnitDied -= HandleUnitDied;
+    }
+
+    [Server]
+    private void HandleUnitDied(UnitBehaviour behaviour, Team owningTeam)
+    {
+        if (behaviour is KingUnit)
+            _defeatedKings.Add(owningTeam);
     }
 
     [Server]
@@ -162,12 +178,6 @@ public class GameManager : NetworkSingleton<GameManager>
     {
         MoveIntents.Remove(unitPos);
         AttackIntents.Remove(unitPos);
-    }
-
-    [Server]
-    public void KingDefeated(Team team)
-    {
-        _defeatedKings.Add(team);
     }
 
     [Server]

@@ -6,11 +6,10 @@ using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(UnitMarkerManager))]
-public abstract class Unit : NetworkBehaviour
+public class Unit : NetworkBehaviour
 {
     private enum LiveStatus
     {
@@ -62,6 +61,11 @@ public abstract class Unit : NetworkBehaviour
     [Header("Health Visualization")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TextMeshProUGUI healthCounter;
+
+    /// <summary> ONLY INVOKED ON SERVER </summary>
+    public static event Action<UnitBehaviour, Team>? OnUnitDied;
+    /// <summary> Called once the unit has been initialized on the server </summary>
+    public event Action? OnServerStarted;
     
     public Vector3Int TilePosition { get; private set; }
     protected List<MoveCommand> MoveIntent { get; } = new();
@@ -81,16 +85,10 @@ public abstract class Unit : NetworkBehaviour
     private PathManager _pathManager;
     private UnitEffectDisplay _effectDisplay;
     
-    public UnitMarkerManager MarkerManager { get; private set; }
-
-    /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
-    /// <param name="movementRange">The movement range given by the played card</param>
-    public abstract IEnumerable<MoveCommand> GetValidMoves(int movementRange);
-
-    public abstract List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null);
+    /// <summary> Contains all unit-specific functionalities like movement and attacking </summary>
+    private UnitBehaviour _behaviour;
     
-    [CanBeNull]
-    public abstract Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier);
+    public UnitMarkerManager MarkerManager { get; private set; }
 
     private void Start()
     {
@@ -100,6 +98,7 @@ public abstract class Unit : NetworkBehaviour
         MarkerManager = GetComponent<UnitMarkerManager>();
         _sfxSource = GetComponent<AudioSource>();
         _pathManager = GetComponent<PathManager>();
+        _behaviour = GetComponent<UnitBehaviour>();
         _effectDisplay = GetComponentInChildren<UnitEffectDisplay>();
         
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
@@ -140,6 +139,12 @@ public abstract class Unit : NetworkBehaviour
         GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        OnServerStarted?.Invoke();
+    }
+
     /// <summary> Instantly move the unit to the given tile </summary>
     public void MoveToTile(Vector3Int tilePos)
     {
@@ -148,6 +153,25 @@ public abstract class Unit : NetworkBehaviour
         if(worldPos != null)
             CmdChangePosition(worldPos.Value, tilePos);
     }
+    
+    /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
+    /// <param name="movementRange">The movement range given by the played card</param>
+    public IEnumerable<MoveCommand> GetValidMoves(int movementRange) => _behaviour.GetValidMoves(movementRange);
+
+    /// <summary> Calculates a list of unique tile positions that can be attacked from the current unit position </summary>
+    /// <param name="positionOverride"> Optional override if the calculation should take place from a different tile </param>
+    public List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null) =>
+        _behaviour.GetValidAttackTiles(positionOverride ?? TilePosition);
+
+    /// <summary>
+    ///     Calculates which tiles should be attacked based on the currently hovered tile. Returns nul if no valid tile
+    ///     is hovered
+    /// </summary>
+    /// <param name="hoveredPos"> Position of the currently hovered tile </param>
+    /// <param name="damageMultiplier"> DamageMultiplier from the currently active card </param>
+    [CanBeNull]
+    public Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier) =>
+        _behaviour.GetAttackForHoverPosition(hoveredPos, damageMultiplier);
 
     /// <summary> Returns whether the unit can currently be selected by a new player </summary>
     public bool IsSelectable => _status == LiveStatus.Alive && !IsStunned && MoveAmountLeft > 0 && !isControlled;
@@ -165,6 +189,9 @@ public abstract class Unit : NetworkBehaviour
 
     /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
     private bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
+    
+    /// <summary> Returns the tile position the unit would have after executing all MoveIntents </summary>
+    public Vector3Int PositionAfterMove => MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
 
     /// <summary> Checks whether the given type is currently active on the unit </summary>
     /// <param name="effect"> Type of StatusEffect to search for </param>
@@ -319,23 +346,6 @@ public abstract class Unit : NetworkBehaviour
         
         GameManager.Instance.CmdUnitAttackDone();
     }
-    
-    protected static List<Vector3Int> ReconstructPath(IReadOnlyDictionary<Vector3Int, Vector3Int> path, Vector3Int endPosition, Vector3Int startPosition)
-    {
-        List<Vector3Int> constructedPath = new();
-        var currentPosition = endPosition;
-        
-        while (path.TryGetValue(currentPosition, out var prevPosition) && prevPosition != startPosition)
-        {
-            constructedPath.Add(prevPosition);
-            currentPosition = prevPosition;
-        }
-
-        // The reconstruction works from end to beginning, so it has to be reversed
-        constructedPath.Reverse();
-
-        return constructedPath;
-    }
 
     private void OnHealthUpdated(int old, int newHealth)
     {
@@ -367,17 +377,11 @@ public abstract class Unit : NetworkBehaviour
     
     private void UpdateMaterialToTeamColor()
     {
-        //TODO: REMOVE
-        if(unitMaterial == null || meshRenderer == null) return;
-        
         meshRenderer.material = owningTeam == Team.Blue ? unitMaterial.white : unitMaterial.black;
     }
 
     private void UpdateMaterialForCurrentCard(CardData selectedCard)
     {
-        //TODO: REMOVE
-        if(unitMaterial == null || meshRenderer == null) return;
-        
         if ((owningTeam == GameManager.Instance.localPlayer.team && selectedCard.cardType != CardType.Stun &&
              (selectedCard.cardType is not CardType.Attack and not CardType.Move || MoveAmountLeft > 0)) ||
             (owningTeam != GameManager.Instance.localPlayer.team && selectedCard.cardType == CardType.Stun))
@@ -555,6 +559,7 @@ public abstract class Unit : NetworkBehaviour
     protected virtual IEnumerator Die()
     {
         _status = LiveStatus.Dead;
+        OnUnitDied?.Invoke(_behaviour, owningTeam);
         
         // Play death animation coroutine and sfx
         // yield return StartCoroutine(...);

@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class HeavyUnit : Unit
+public class HeavyUnit : UnitBehaviour
 {
     public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
     {
         var moves = new List<MoveCommand>();
-        var startPosition = MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
+        var startPosition = UnitRef.PositionAfterMove;
         
         Vector3Int[] directions =
         {
@@ -28,7 +28,7 @@ public class HeavyUnit : Unit
                 var prevPos = queue.Dequeue();
                 
                 var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
-                    false, data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
+                    false, UnitRef.Data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
 
                 var targetPosition = prevPos + direction;
 
@@ -47,9 +47,8 @@ public class HeavyUnit : Unit
         return moves.Where(move => GridManager.Instance.IsMoveValid(move)).ToList();
     }
 
-    public override List<Vector3Int> GetValidAttackTiles(Vector3Int? positionOverride = null)
+    public override List<Vector3Int> GetValidAttackTiles(Vector3Int position)
     {
-        var position = positionOverride ?? TilePosition;
         Vector3Int[] singleLayer =
         {
             position + Vector3Int.back, position + Vector3Int.left, position + Vector3Int.forward,
@@ -63,32 +62,32 @@ public class HeavyUnit : Unit
             .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList();
     }
 
-    public override Attack GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
+    public override Attack? GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
     {
-        var allTiles = GetValidAttackTiles();
-
+        var allTiles = GetValidAttackTiles(UnitRef.TilePosition);
         if (!allTiles.Contains(hoveredPos)) return null;
-        
+
+        var tilePosition = UnitRef.TilePosition;
         List<Vector3Int> tilesToAttack = new(){ hoveredPos };
 
         // Clicked on the main axis
-        if (Mathf.Abs(TilePosition.x - hoveredPos.x) != Mathf.Abs(TilePosition.z - hoveredPos.z))
+        if (Mathf.Abs(tilePosition.x - hoveredPos.x) != Mathf.Abs(tilePosition.z - hoveredPos.z))
         {
-            tilesToAttack.Add(new Vector3Int(hoveredPos.x + (TilePosition.z - hoveredPos.z), TilePosition.y,
-                hoveredPos.z + (TilePosition.x - hoveredPos.x)));
-            tilesToAttack.Add(new Vector3Int(hoveredPos.x - (TilePosition.z - hoveredPos.z), TilePosition.y,
-                hoveredPos.z - (TilePosition.x - hoveredPos.x)));
+            tilesToAttack.Add(new Vector3Int(hoveredPos.x + (tilePosition.z - hoveredPos.z), tilePosition.y,
+                hoveredPos.z + (tilePosition.x - hoveredPos.x)));
+            tilesToAttack.Add(new Vector3Int(hoveredPos.x - (tilePosition.z - hoveredPos.z), tilePosition.y,
+                hoveredPos.z - (tilePosition.x - hoveredPos.x)));
         }
         // Clicked on a diagonal
         else
         {
-            tilesToAttack.Add(new Vector3Int(hoveredPos.x, TilePosition.y, TilePosition.z));
-            tilesToAttack.Add(new Vector3Int(TilePosition.x, TilePosition.y, hoveredPos.z));
+            tilesToAttack.Add(new Vector3Int(hoveredPos.x, tilePosition.y, tilePosition.z));
+            tilesToAttack.Add(new Vector3Int(tilePosition.x, tilePosition.y, hoveredPos.z));
         }
 
         return new Attack
         {
-            Damage = Data.attackDamage * damageMultiplier,
+            Damage = UnitRef.Data.attackDamage * damageMultiplier,
             Tiles = tilesToAttack
                         .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
                         .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
