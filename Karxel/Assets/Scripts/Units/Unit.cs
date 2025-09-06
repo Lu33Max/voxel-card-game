@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -45,30 +44,22 @@ public class Unit : NetworkBehaviour
     [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
     [Header("UnitData")]
-    [SerializeField] protected UnitData data;
+    [SerializeField] protected UnitData data = null!;
     
-    [Header("Movement")] 
-    [SerializeField] private float moveArcHeight = 0.3f;
-    
-    [Header("Visualization")]
-    [SerializeField] private GameObject canvas;
-    [SerializeField] protected Material outlineMaterial;
-
     [Header("Unit Material")] 
-    [SerializeField] private MeshRenderer meshRenderer;
-    [SerializeField] private UnitMaterial unitMaterial;
+    [SerializeField] private MeshRenderer meshRenderer = null!;
+    [SerializeField] private UnitMaterial unitMaterial = null!;
+    [SerializeField] protected Material outlineMaterial = null!;
     
     [Header("Health Visualization")]
-    [SerializeField] private Slider healthSlider;
-    [SerializeField] private TextMeshProUGUI healthCounter;
+    [SerializeField] private Slider healthSlider = null!;
+    [SerializeField] private TextMeshProUGUI healthCounter = null!;
 
     /// <summary> ONLY INVOKED ON SERVER </summary>
     public static event Action<UnitBehaviour, Team>? OnUnitDied;
-    /// <summary> Called once the unit has been initialized on the server </summary>
-    public event Action? OnServerStarted;
     
     public Vector3Int TilePosition { get; private set; }
-    protected List<MoveCommand> MoveIntent { get; } = new();
+    private List<MoveCommand> MoveIntent { get; } = new();
     private List<Attack> AttackIntent { get; } = new();
     public UnitData Data => data;
 
@@ -80,30 +71,33 @@ public class Unit : NetworkBehaviour
     /// <summary> Boolean to track whether damage was taken in the current round to remove the shield status </summary>
     private bool _tookDamage;
     
-    private Transform _camera;
     private AudioSource _sfxSource;
     private PathManager _pathManager;
     private UnitEffectDisplay _effectDisplay;
     
     /// <summary> Contains all unit-specific functionalities like movement and attacking </summary>
-    private UnitBehaviour _behaviour;
+    private UnitBehaviour _behaviour = null!;
+    /// <summary> Plays animations for movement and attacks </summary>
+    private UnitAnimator _animator = null!;
     
     public UnitMarkerManager MarkerManager { get; private set; }
 
-    private void Start()
+    private void Awake()
     {
-        if (Camera.main != null) 
-            _camera = Camera.main.transform;
-        
         MarkerManager = GetComponent<UnitMarkerManager>();
+        
         _sfxSource = GetComponent<AudioSource>();
         _pathManager = GetComponent<PathManager>();
         _behaviour = GetComponent<UnitBehaviour>();
+        _animator = GetComponent<UnitAnimator>();
         _effectDisplay = GetComponentInChildren<UnitEffectDisplay>();
         
         healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
         _pathManager.Setup(this);
-        
+    }
+
+    private void Start()
+    {
         GameManager.Instance.GameStateChanged += OnGameStateChanged;
         HandManager.OnCardSelected += UpdateMaterialForCurrentCard;
         HandManager.OnCardPlayed += UpdateMaterialToTeamColor;
@@ -119,11 +113,6 @@ public class Unit : NetworkBehaviour
         GameManager.Instance.CheckHealth += OnCheckHealth;
     }
 
-    private void Update()
-    {
-        canvas.transform.LookAt(_camera);
-    }
-
     private void OnDisable()
     {
         StopAllCoroutines();
@@ -137,12 +126,6 @@ public class Unit : NetworkBehaviour
         
         GameManager.Instance.AttackExecuted -= OnAttackExecuted;
         GameManager.Instance.CheckHealth -= OnCheckHealth;
-    }
-
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        OnServerStarted?.Invoke();
     }
 
     /// <summary> Instantly move the unit to the given tile </summary>
@@ -190,7 +173,8 @@ public class Unit : NetworkBehaviour
     public bool HasMaxHealth => _currentHealth == Data.health;
 
     /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
-    private bool IsStunned => _statusEffects.Find(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
+    private bool IsStunned =>
+        _statusEffects.FirstOrDefault(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
     
     /// <summary> Returns the tile position the unit would have after executing all MoveIntents </summary>
     public Vector3Int PositionAfterMove => MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
@@ -200,153 +184,41 @@ public class Unit : NetworkBehaviour
     /// <param name="duration"> Optional parameter on the duration of turns left </param>
     public bool HasEffectOfTypeActive(StatusEffect effect, int duration = 0)
     {
-        return _statusEffects.Find(s => s.Status == effect && (duration == 0 || s.Duration == duration)) != null;
+        return _statusEffects
+                    .FirstOrDefault(s => s.Status == effect && (duration == 0 || s.Duration == duration)) != null;
     }
     
-    // Move the unit along the given path from tile to tile
+    /// <summary> Plays the move animation and reports to the <see cref="GameManager"/> once done </summary>
+    /// <param name="moveCommand"> Move chain to execute </param>
     private IEnumerator MoveToPositions(MoveCommand moveCommand)
     {
         foreach (var worldPos in moveCommand.Path
                                              .Select(tile => GridManager.Instance.GridToWorldPosition(tile))
-                                             .Where(worldPos => worldPos.HasValue))
-        {
-            yield return StartCoroutine(Move(worldPos.Value));
-        }
+                                             .Where(worldPos => worldPos != null))
+            yield return StartCoroutine(_animator.PlayMoveAnimation(worldPos!.Value));
         
         var targetPos = GridManager.Instance.GridToWorldPosition(moveCommand.TargetPosition);
         
         if(targetPos.HasValue)
-            yield return StartCoroutine(Move(targetPos.Value));
+            yield return StartCoroutine(_animator.PlayMoveAnimation(targetPos.Value));
 
         if (moveCommand.BlockedPosition.HasValue)
         {
             var blockedPos = GridManager.Instance.GridToWorldPosition(moveCommand.BlockedPosition.Value);
             
             if(blockedPos.HasValue)
-                yield return StartCoroutine(BlockedAnimation(blockedPos.Value));
+                yield return StartCoroutine(_animator.PlayBlockedAnimation(blockedPos.Value));
         }
         
         GameManager.Instance.CmdUnitMovementDone();
     }
 
-    // Move the unit to the given world position
-    private IEnumerator Move(Vector3 targetPos)
+    /// <summary> Plays the attack animation and reports to the <see cref="GameManager"/> once done </summary>
+    /// <param name="attack"> The attack to execute </param>
+    private IEnumerator ExecuteAttack(Attack attack)
     {
-        var startingPos = transform.position;
-        var direction = targetPos - startingPos;
-        direction.y = 0;
-        
-        var targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
-        AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
-        
-        float elapsedTime = 0;
-        var unitTransform = transform;
-        
-        while (elapsedTime < data.stepDuration)
-        {
-            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
-            
-            var progression = elapsedTime / data.stepDuration;
-            var newPos = Vector3.Lerp(startingPos, targetPos, progression);
-            
-            // Parabolic movement
-            var baseHeight = Mathf.Lerp(startingPos.y, targetPos.y, progression);
-            var height = 4 * moveArcHeight * progression * (1 - progression);
-            newPos.y = baseHeight + height;
-
-            unitTransform.position = newPos;
-            elapsedTime += Time.deltaTime;
-            yield return new WaitForEndOfFrame();
-        }
-        
-        unitTransform.rotation = targetRotation;
-        unitTransform.position = targetPos;
-    }
-
-    private IEnumerator BlockedAnimation(Vector3 targetPos)
-    {
-        var startingPos = transform.position;
-        var direction = targetPos - startingPos;
-        direction.y = 0;
-        
-        var targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : transform.rotation;
-        AudioManager.PlaySfx(_sfxSource, AudioManager.Instance.UnitMove);
-        
-        float elapsedTime = 0;
-        var unitTransform = transform;
-        
-        while (elapsedTime < data.stepDuration / 2)
-        {
-            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
-            
-            var progression = elapsedTime / data.stepDuration;
-            var newPos = Vector3.Lerp(startingPos, targetPos, progression);
-            
-            // Parabolic movement
-            var baseHeight = Mathf.Lerp(startingPos.y, targetPos.y, progression);
-            var height = 4 * moveArcHeight * progression * (1 - progression);
-            newPos.y = baseHeight + height;
-
-            unitTransform.position = newPos;
-            elapsedTime += Time.deltaTime;
-            yield return new WaitForEndOfFrame();
-        }
-        
-        while (elapsedTime < data.stepDuration)
-        {
-            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
-            
-            var progression = elapsedTime / data.stepDuration;
-            var newPos = Vector3.Lerp(targetPos, startingPos, progression);
-            
-            // Parabolic movement
-            var baseHeight = Mathf.Lerp(targetPos.y, startingPos.y, progression);
-            var height = 4 * moveArcHeight * progression * (1 - progression);
-            newPos.y = baseHeight + height;
-
-            unitTransform.position = newPos;
-            elapsedTime += Time.deltaTime;
-            yield return new WaitForEndOfFrame();
-        }
-
-        unitTransform.rotation = targetRotation;
-        unitTransform.position = startingPos;
-    }
-
-    /// <summary>Used to play animations, sfx etc.</summary>
-    private IEnumerator Attack(Attack attack)
-    {
-        var startingPos = transform.position;
-        var direction = GridManager.Instance.GridToWorldPosition(attack.Tiles[0])!.Value - startingPos;
-        direction.y = 0;
-        
-        var targetRotation = Quaternion.LookRotation(direction);
-        
-        var unitTransform = transform;
-        var elapsedTime = 0f;
-
-        while (elapsedTime < data.stepDuration)
-        {
-            if (Quaternion.Angle(transform.rotation, targetRotation) > 0.1f)
-                unitTransform.rotation = Quaternion.Lerp(unitTransform.rotation, targetRotation, 15 * Time.deltaTime);
-            
-            var newPos = unitTransform.position;
-            var progression = elapsedTime / data.stepDuration;
-            newPos.y = startingPos.y + 4 * moveArcHeight * progression * (1 - progression);
-            
-            unitTransform.position = newPos;
-            
-            elapsedTime += Time.deltaTime;
-            yield return new WaitForEndOfFrame();
-        }
-
-        unitTransform.position = startingPos;
-        unitTransform.rotation = targetRotation;
-        
-        GameManager.Instance.CmdUnitAttackDone();
+       yield return StartCoroutine(_animator.PlayAttackAnimation(attack));
+       GameManager.Instance.CmdUnitAttackDone();
     }
 
     private void OnHealthUpdated(int old, int newHealth)
@@ -357,9 +229,6 @@ public class Unit : NetworkBehaviour
 
     private void OnControlStatusChanged(bool old, bool isNowSelected)
     {
-        //TODO: REMOVE
-        if(meshRenderer == null) return;
-        
         // Only display selection highlight for other team members
         if(owningTeam != GameManager.Instance.localPlayer.team)
             return;
@@ -382,8 +251,13 @@ public class Unit : NetworkBehaviour
         meshRenderer.material = owningTeam == Team.Blue ? unitMaterial.white : unitMaterial.black;
     }
 
+    /// <summary> Grays out a unit whenever a new card is selected that cannot be played on this unit </summary>
+    /// <param name="selectedCard"> The card currently selected by the player </param>
     private void UpdateMaterialForCurrentCard(CardData selectedCard)
     {
+        // A card can be played on a unit if it...
+        // a) is a disposable card and the card says that it's valid to be used on this unit or
+        // b) is a move or attack card, the unit can be selected and is of the player's own team
         if ((selectedCard.IsDisposable() &&
             selectedCard.CanBeUsed(GridManager.Instance.GetTileAtGridPosition(TilePosition), null)) ||
             (!selectedCard.IsDisposable() && IsSelectable && owningTeam == GameManager.Instance.localPlayer.team))
@@ -540,7 +414,7 @@ public class Unit : NetworkBehaviour
     [ClientRpc]
     public void RPCExecuteAttack(Attack attack)
     {
-        StartCoroutine(Attack(attack));
+        StartCoroutine(ExecuteAttack(attack));
     }
 
     [ClientRpc]

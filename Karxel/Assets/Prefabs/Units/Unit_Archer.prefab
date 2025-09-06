@@ -90,6 +90,21 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1023541898231702531, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1023541898231702531, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1023541898231702531, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1160365348562669108, guid: da91b61b532d38b4fb642fd978984800,
         type: 3}
       propertyPath: m_RootOrder
@@ -235,4 +250,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a65d2614099dcf4db74ba953de0ea11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   baseRange: 2
