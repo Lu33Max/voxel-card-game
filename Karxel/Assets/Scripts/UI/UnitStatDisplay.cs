@@ -73,7 +73,7 @@ public class UnitStatDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExit
         
         moveDisplayParent.gameObject.SetActive(true);
         
-        for (var i = 0; i < hoveredUnit.MoveAmountLeft; i++)
+        for (var i = 0; i < hoveredUnit.ActionAmountLeft; i++)
         {
             if (_moveDisplays.Count <= i)
             {
@@ -97,7 +97,7 @@ public class UnitStatDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExit
             _moveDisplays[i].gameObject.SetActive(_moveDisplays[i].sprite != null);
         }
 
-        for (var i = hoveredUnit.MoveAmountLeft; i < _moveDisplays.Count; i++)
+        for (var i = hoveredUnit.ActionAmountLeft; i < _moveDisplays.Count; i++)
         {
             _moveDisplays[i].sprite = null;
             _moveDisplays[i].gameObject.SetActive(false);

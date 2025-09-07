@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
@@ -8,15 +9,34 @@ public class MarkerManager : NetworkSingleton<MarkerManager>
     
     private Dictionary<Vector3Int, Marker> _markers = new();
 
-    /// <summary> Registers new tile upon board creation </summary>
-    [Client]
-    public void RegisterTile(Vector3Int tilePos, Vector3 worldPos, Vector3 scale)
+    private void Start()
     {
-        var marker = Instantiate(markerPrefab, transform);
-        marker.transform.position = worldPos;
-        marker.transform.localScale = scale;
+        if (GridManager.Instance.IsGridSetup) RegisterTiles();
+        else StartCoroutine(AwaitGridManagerSetup());
+    }
+
+    private IEnumerator AwaitGridManagerSetup()
+    {
+        while (!GridManager.Instance.IsGridSetup)
+            yield return new WaitForEndOfFrame();
         
-        _markers[tilePos] = marker.GetComponent<Marker>();
+        RegisterTiles();
+    }
+
+    /// <summary> Registers new tile upon board creation </summary>
+    private void RegisterTiles()
+    {
+        var scale = GridManager.Instance.TileSize;
+        
+        foreach (var tile in GridManager.Instance.Tiles.Values)
+        {
+            var marker = Instantiate(markerPrefab, transform);
+            marker.transform.position = tile.WorldPosition;
+            marker.transform.position += new Vector3(0, 0.01f, 0);
+            marker.transform.localScale = scale;
+        
+            _markers[tile.TilePosition] = marker.GetComponent<Marker>();   
+        }
     }
 
     /// <summary> Adds a new Marker to the given position </summary>
@@ -36,7 +56,7 @@ public class MarkerManager : NetworkSingleton<MarkerManager>
         if (ShouldIgnore(markerData.Visibility))
             return;
         
-        if (_markers.TryGetValue(position, out Marker tile))
+        if (_markers.TryGetValue(position, out var tile))
             tile.AddMarker(markerData);
     }
     

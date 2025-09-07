@@ -87,7 +87,7 @@ public class GridMouseInteraction : MonoBehaviour
     {
         if(!ShouldCheckForInteraction())
             return;
-
+        
         if (!IsInteractingWithStage(out var hit) ||
             !GridManager.Instance.IsExistingGridPosition(GetHoveredTilePosition(hit), out var newHoveredTile))
         {

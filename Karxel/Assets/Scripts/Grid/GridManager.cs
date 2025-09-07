@@ -25,32 +25,34 @@ public class GridManager : NetworkSingleton<GridManager>
     [SerializeField] private Transform redParent;
 
     public Vector3 TileSize => tileSize;
+    public bool IsGridSetup => _tiles.Count > 0;
     
-    private Dictionary<Vector3Int, TileData> _tiles = new();
     private GameObject _map;
     private int _readyPlayers;
     
-    #if UNITY_EDITOR
-    public Dictionary<Vector3Int, TileData> Tiles => _tiles;
-    #endif
+    private readonly SyncDictionary<Vector3Int, TileData> _tiles = new();
+    
+    public Dictionary<Vector3Int, TileData> Tiles => new (_tiles);
     
     private void Start()
     {
+        if(!isServer) return;
+        
         CalculateTilePositions();
-        CmdSetupReady();
+        SetupUnits();
     }
 
     /// <summary>Retrieve the TileData at the given position in grid coordinates.</summary>
-    public TileData GetTileAtGridPosition(Vector3Int tilePosition)
+    public TileData? GetTileAtGridPosition(Vector3Int tilePosition)
     {
-        _tiles.TryGetValue(tilePosition, out TileData tile);
+        _tiles.TryGetValue(tilePosition, out var tile);
         return tile;
     }
 
     /// <summary>Retrieve TileData at a world position by converting it to grid tiles.</summary>
-    public TileData GetTileAtWorldPosition(Vector3 worldPosition)
+    public TileData? GetTileAtWorldPosition(Vector3 worldPosition)
     {
-        Vector3Int gridPosition = WorldToGridPosition(worldPosition);
+        var gridPosition = WorldToGridPosition(worldPosition);
         return GetTileAtGridPosition(gridPosition);
     }
 
@@ -73,9 +75,13 @@ public class GridManager : NetworkSingleton<GridManager>
     /// <summary>Returns a list of all positions currently containing references to units</summary>
     public IEnumerable<Vector3Int> GetAllUnitTiles()
     {
-        return _tiles.Where(t => t.Value.Unit != null)
-            .Select(t => t.Key)
-            .ToList();
+        return _tiles.Where(t => t.Value.Unit != null).Select(t => t.Key);
+    }
+
+    /// <summary> Returns references to all units currently on the field </summary>
+    public IEnumerable<Unit> GetAllUnits()
+    {
+        return _tiles.Where(t => t.Value.Unit != null).Select(t => t.Value.Unit!);
     }
 
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
@@ -100,11 +106,15 @@ public class GridManager : NetworkSingleton<GridManager>
     /// <param name="startPos"> Position of the tile to retrieve its neighbours from </param>
     /// <param name="onlyMainAxis"> Whether only the four main axis should be checked or all eight </param>
     /// <param name="validEdgeTypes"> All the <see cref="Tile.EdgeType"/>s that can be traversed by the unit </param>
+    /// <param name="validTileStates"> All states a tile can have to still be considered valid </param>
     public IEnumerable<Vector3Int> GetReachableNeighbours(Vector3Int startPos, bool onlyMainAxis, Tile.EdgeType[] validEdgeTypes, TileData.TileState[] validTileStates)
     {
-        if (!_tiles.TryGetValue(startPos, out var startTile)) 
+        if (!_tiles.TryGetValue(startPos, out var startTile))
+        {
+            Debug.Log($"_tiles do not contain value {startPos} but have a length of {_tiles.Count}");
             return new Vector3Int[] { };
-        ;
+        }
+        
         Vector3Int[] mainDirections = { Vector3Int.back, Vector3Int.forward, Vector3Int.left, Vector3Int.right };
         List<Vector3Int> neighbours = new();
 
@@ -146,15 +156,19 @@ public class GridManager : NetworkSingleton<GridManager>
     }
 
     /// <summary>Transfers a Unit-reference from a start tile to a target tile</summary>
-    public void MoveUnit(Vector3Int startTile, Vector3Int targetTile)
+    [Server]
+    public void MoveUnit(Vector3Int startPos, Vector3Int targetPos)
     {
-        var unit = _tiles[startTile].Unit;
-        
-        if(unit == null)
+        if(!_tiles.TryGetValue(startPos, out var startTile) || !_tiles.TryGetValue(targetPos, out var targetTile) || startTile.Unit == null)
             return;
         
-        CmdUpdateTileUnit(startTile, null);
-        CmdUpdateTileUnit(targetTile, unit);
+        startTile.Unit.UpdateGridPosition(targetPos);
+
+        targetTile.Unit = startTile.Unit;
+        _tiles[targetPos] = targetTile;
+        
+        startTile.Unit = null;
+        _tiles[startPos] = startTile;
     }
 
     /// <summary>Removes the reference to the unit from the given tile</summary>
@@ -200,7 +214,7 @@ public class GridManager : NetworkSingleton<GridManager>
                     );
 
                     var tileNeighbours = hit.collider.gameObject.GetComponent<Tile>().Neighbours;
-
+                    
                     _tiles.TryAdd(gridPos, new TileData
                     {
                         TilePosition = gridPos,
@@ -208,13 +222,6 @@ public class GridManager : NetworkSingleton<GridManager>
                         TileNeighbours = tileNeighbours,
                         State = TileData.TileState.Normal
                     });
-                    
-                    var worldPos = hit.point;
-                    worldPos.y += markerHeight;
-                    
-                    // Exclude Markers from being registered during edit mode
-                    if (Application.isPlaying)
-                        MarkerManager.Instance.RegisterTile(gridPos, worldPos, tileSize);
                 }
             }
         }
@@ -280,39 +287,25 @@ public class GridManager : NetworkSingleton<GridManager>
                 var gridPos = WorldToGridPosition(unitPosition);
                 gridPos.y -= 1;
                 
-                if(!IsExistingGridPosition(gridPos, out _))
+                if(!IsExistingGridPosition(gridPos, out var tile))
                     continue;
             
                 unit.gameObject.SetActive(true);
-                unitScript.MoveToTile(gridPos);
+                unitScript.UpdateGridPosition(tile.TilePosition);
 
                 var newTile = _tiles[gridPos];
                 newTile.Unit = unitScript;
-                RPCUpdateTile(gridPos, newTile);
+
+                _tiles[gridPos] = newTile;
             }
         }
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdUpdateTileUnit(Vector3Int gridPos, Unit unit)
+    private void CmdUpdateTileUnit(Vector3Int gridPos, Unit? unit)
     {
         var tile = _tiles[gridPos];
         tile.Unit = unit;
-        RPCUpdateTile(gridPos, tile);
-    }
-
-    [Command(requiresAuthority = false)]
-    private void CmdSetupReady()
-    {
-        _readyPlayers++;
-        
-        if(_readyPlayers == NetworkServer.connections.Values.Count)
-            SetupUnits();
-    }
-
-    [ClientRpc]
-    private void RPCUpdateTile(Vector3Int pos, TileData newTile)
-    {
-        _tiles[pos] = newTile;
+        _tiles[gridPos] = tile;
     }
 }

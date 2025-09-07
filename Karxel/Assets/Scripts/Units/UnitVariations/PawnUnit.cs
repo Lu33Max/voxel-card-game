@@ -25,8 +25,8 @@ public class PawnUnit : UnitBehaviour
                 var prevPos = queue.Dequeue();
                 
                 var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
-                    true, UnitRef.Data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
-
+                    true, UnitRef.Data.traversableEdgeTypes, new [] { TileData.TileState.Normal }).ToArray();
+                
                 var targetPosition = prevPos + direction;
 
                 foreach (var neighbour in validNeighbours.Where(n => n.x == targetPosition.x && n.z == targetPosition.z))

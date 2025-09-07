@@ -58,30 +58,30 @@ public class Unit : NetworkBehaviour
     /// <summary> ONLY INVOKED ON SERVER </summary>
     public static event Action<UnitBehaviour, Team>? OnUnitDied;
     
-    public Vector3Int TilePosition { get; private set; }
-    private List<MoveCommand> MoveIntent { get; } = new();
-    private List<Attack> AttackIntent { get; } = new();
+    [field: SyncVar] public Vector3Int TilePosition { get; private set; }
     public UnitData Data => data;
 
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
     [SyncVar] private LiveStatus _status = LiveStatus.Alive;
-    
+
+    private readonly SyncList<MoveCommand> _moveIntents = new();
+    private readonly SyncList<Attack> _attackIntents = new();
     private readonly SyncList<UnitStatus> _statusEffects = new();
 
     /// <summary> Boolean to track whether damage was taken in the current round to remove the shield status </summary>
     private bool _tookDamage;
     
-    private AudioSource _sfxSource;
-    private PathManager _pathManager;
-    private UnitEffectDisplay _effectDisplay;
+    private AudioSource _sfxSource = null!;
+    private PathManager _pathManager = null!;
+    private UnitEffectDisplay _effectDisplay = null!;
     
     /// <summary> Contains all unit-specific functionalities like movement and attacking </summary>
     private UnitBehaviour _behaviour = null!;
     /// <summary> Plays animations for movement and attacks </summary>
     private UnitAnimator _animator = null!;
-    
-    public UnitMarkerManager MarkerManager { get; private set; }
 
+    public UnitMarkerManager MarkerManager { get; private set; } = null!;
+    
     private void Awake()
     {
         MarkerManager = GetComponent<UnitMarkerManager>();
@@ -134,18 +134,12 @@ public class Unit : NetworkBehaviour
         GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
-    /// <summary> Instantly move the unit to the given tile </summary>
-    public void MoveToTile(Vector3Int tilePos)
-    {
-        var worldPos = GridManager.Instance.GridToWorldPosition(tilePos);
-        
-        if(worldPos != null)
-            CmdChangePosition(worldPos.Value, tilePos);
-    }
-    
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
-    public IEnumerable<MoveCommand> GetValidMoves(int movementRange) => _behaviour.GetValidMoves(movementRange);
+    public IEnumerable<MoveCommand> GetValidMoves(int movementRange)
+    {
+        return _behaviour.GetValidMoves(movementRange);
+    }
 
     /// <summary> Calculates a list of unique tile positions that can be attacked from the current unit position </summary>
     /// <param name="positionOverride"> Optional override if the calculation should take place from a different tile </param>
@@ -162,16 +156,16 @@ public class Unit : NetworkBehaviour
         _behaviour.GetAttackForHoverPosition(hoveredPos, damageMultiplier);
 
     /// <summary> Returns whether the unit can currently be selected by a new player </summary>
-    public bool IsSelectable => _status == LiveStatus.Alive && !IsStunned && MoveAmountLeft > 0 && !isControlled;
+    public bool IsSelectable => _status == LiveStatus.Alive && !IsStunned && ActionAmountLeft > 0 && !isControlled;
 
     /// <summary> Returns true whenever the amount of registered move intents this turn is at least 1 </summary>
-    public bool HasMoveIntentsRegistered => MoveIntent.Count > 0;
+    public bool HasMoveIntentsRegistered => _moveIntents.Count > 0;
 
     /// <summary> Returns the amount of moves this unit is still allowed to do this turn </summary>
-    public int MoveAmountLeft => GameManager.Instance.gameState switch
+    public int ActionAmountLeft => GameManager.Instance.gameState switch
     {
-        GameState.Movement => Data.moveAmount - MoveIntent.Count,
-        GameState.Attack => Data.attackAmount - AttackIntent.Count,
+        GameState.Movement => Data.moveAmount - _moveIntents.Count,
+        GameState.Attack => Data.attackAmount - _attackIntents.Count,
         _ => 0
     };
 
@@ -183,7 +177,7 @@ public class Unit : NetworkBehaviour
         _statusEffects.FirstOrDefault(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
     
     /// <summary> Returns the tile position the unit would have after executing all MoveIntents </summary>
-    public Vector3Int PositionAfterMove => MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition;
+    public Vector3Int PositionAfterMove => _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition;
 
     /// <summary> Checks whether the given type is currently active on the unit </summary>
     /// <param name="effect"> Type of StatusEffect to search for </param>
@@ -346,27 +340,24 @@ public class Unit : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdChangePosition(Vector3 position, Vector3Int tilePos)
-    {
-        RPCChangePosition(position, tilePos);
-    }
-
-    [Command(requiresAuthority = false)]
     public void CmdRegisterMoveIntent(MoveCommand moveCommand)
     {
+        // TODO: Validate incoming attack
+        
         _pathManager.CreatePath(moveCommand,
-            MoveIntent.Count > 0 ? MoveIntent.Last().TargetPosition : TilePosition);
+            _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
 
         GameManager.Instance.RegisterMoveIntent(TilePosition, moveCommand);
-        
-        RPCAddToMoveIntent(moveCommand);
+        _moveIntents.Add(moveCommand);
     }
 
     [Command(requiresAuthority = false)]
     public void CmdRegisterAttackIntent(Attack newAttack)
     {
+        // TODO: Validate incoming attack
+        
         GameManager.Instance.RegisterAttackIntent(TilePosition, newAttack, owningTeam);
-        RPCAddToAttackIntent(newAttack);
+        _attackIntents.Add(newAttack);
     }
 
     [Command(requiresAuthority = false)]
@@ -374,40 +365,26 @@ public class Unit : NetworkBehaviour
     {
         isControlled = newState;
     }
-    
-    [ClientRpc]
-    private void RPCChangePosition(Vector3 position, Vector3Int tilePos)
+
+    [Server]
+    public void UpdateGridPosition(Vector3Int startingPosition)
     {
-        transform.position = position;
-        TilePosition = tilePos;
+        TilePosition = startingPosition;
     }
+    
     
     [ClientRpc]
     public void RPCStep(MoveCommand moveCommand)
     {
         StartCoroutine(MoveToPositions(moveCommand));
-        
-        GridManager.Instance.MoveUnit(TilePosition, moveCommand.TargetPosition);
-        TilePosition = moveCommand.TargetPosition;
     }
 
-    [ClientRpc]
-    public void RPCCleanUp()
+    // TODO: Connect to gamestate changed
+    [Server]
+    public void CleanUpAfterActionExecution()
     {
-        MoveIntent.Clear();
-        AttackIntent.Clear();
-    }
-
-    [ClientRpc]
-    private void RPCAddToMoveIntent(MoveCommand moveCommand)
-    {
-        MoveIntent.Add(moveCommand);
-    }
-
-    [ClientRpc]
-    private void RPCAddToAttackIntent(Attack newAttack)
-    {
-        AttackIntent.Add(newAttack);
+        _moveIntents.Clear();
+        _attackIntents.Clear();
     }
 
     [ClientRpc]

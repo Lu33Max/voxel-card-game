@@ -60,7 +60,7 @@ public class UnitMarkerManager : MonoBehaviour
                 var cardData = HandManager.Instance.SelectedCard?.CardData;
                 
                 if(cardData == null || cardData is not MoveCardData data) return;
-
+                
                 HashSet<Vector3Int> allReachableAtkTiles = new();
                 _currentMoveTiles = _unit.GetValidMoves(data.moveDistance).Select(m => m.TargetPosition).ToArray();
                 
@@ -89,7 +89,7 @@ public class UnitMarkerManager : MonoBehaviour
                     : _currentMoveTiles.Contains(hoveredTile)
                         ? _unit.GetValidAttackTiles(hoveredTile).ToArray()
                         : new Vector3Int[] { };
-
+                
                 CreateNewMarkers(attackTiles, MarkerType.AttackPreview, 4);
                 break;
         }

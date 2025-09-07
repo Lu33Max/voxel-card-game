@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using Mirror;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public enum GameState
 {
@@ -28,17 +24,17 @@ public class GameManager : NetworkSingleton<GameManager>
     /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
     private Dictionary<Vector3Int, List<Attack>> AttackIntents = new();
     
-    public event Action PlayersReady;
-    public event Action RoundTimerUp;
-    public event Action<Attack> AttackExecuted;
-    public event Action CheckHealth;
-    public event Action<int> NewRound;
+    public event Action? PlayersReady;
+    public event Action? RoundTimerUp;
+    public event Action<Attack>? AttackExecuted;
+    public event Action? CheckHealth;
+    public event Action<int>? NewRound;
     /// <summary> Called every frame the remaining time gets updated </summary>
-    public event Action<float> TimerUpdated;
+    public event Action<float>? TimerUpdated;
     /// <summary> Called whenever the GameState gets updated, sending the new status with it </summary>
-    public event Action<GameState> GameStateChanged; 
+    public event Action<GameState>? GameStateChanged; 
     /// <summary> Called on every new round, sending the number of blue and red players </summary>
-    public event Action<int, int> UpdateActionPoints;
+    public event Action<int, int>? UpdateActionPoints;
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
     [HideInInspector] public Player localPlayer;
@@ -310,15 +306,14 @@ public class GameManager : NetworkSingleton<GameManager>
             if (unit == null)
                 continue;
 
+            GridManager.Instance.MoveUnit(intent.Key, intent.Value.TargetPosition);
             unit.RPCStep(intent.Value);
         }
 
         // Do the cleanup function for all units that had intents registered, even if they didn't move
-        foreach (var unit in MoveIntents
-                     .Select(origIntent => GridManager.Instance.GetTileAtGridPosition(origIntent.Key).Unit)
-                     .Where(unit => unit != null))
+        foreach (var unit in GridManager.Instance.GetAllUnits())
         {
-            unit.RPCCleanUp();
+            unit!.CleanUpAfterActionExecution();
         }
         
         _unitsToMove = actualMoves.Count;
@@ -377,9 +372,7 @@ public class GameManager : NetworkSingleton<GameManager>
             foreach (var unit in AttackIntents
                          .Select(origIntent => GridManager.Instance.GetTileAtGridPosition(origIntent.Key).Unit)
                          .Where(unit => unit != null))
-            {
-                unit.RPCCleanUp();
-            }
+                unit!.CleanUpAfterActionExecution();
             
             AttackIntents.Clear();
         } 
