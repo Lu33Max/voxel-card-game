@@ -37,8 +37,9 @@ public class HandManager : MonoBehaviour
     
     private List<Card> _handCards = new();
     private int _discardCount;
+    private CardComponent? _lastPlayedCard;
     
-    public Card SelectedCard { get; private set; }
+    public Card? SelectedCard { get; private set; }
     
     public void Initialize()
     {
@@ -79,6 +80,24 @@ public class HandManager : MonoBehaviour
         UpdateCardPositions(GameManager.Instance.gameState);
     }
 
+    /// <summary> Re-Adds the last played card to the player's hand and restores its action points </summary>
+    public void RestoreLastPlayedCard()
+    {
+        if(_lastPlayedCard == null) return;
+        
+        var newCardObject = Instantiate(cardPrefab, transform);
+        var newCard = newCardObject.GetComponent<Card>();
+        newCard.Initialize(_lastPlayedCard, new Vector2(0, 105));
+        
+        _handCards.Add(newCard);
+        _handCards = _handCards.OrderBy(c => c.CardData.type).ThenBy(c => c.CardData.cardName).ToList();
+        
+        UpdateCardPositions(GameManager.Instance.gameState);
+        
+        ActionPointManager.Instance.UpdateActionPointsOnPlay(newCard.CardData.cost);
+        _lastPlayedCard = null;
+    }
+
     /// <summary>
     ///     Handle the logic for selecting and deselecting a card depending on whether it was already selected. At this 
     ///     point it is already checked whether the card is actually selectable.
@@ -110,7 +129,8 @@ public class HandManager : MonoBehaviour
     public void PlaySelectedCard()
     {
         ActionPointManager.Instance.UpdateActionPointsOnPlay(-SelectedCard.CardData.cost);
-        
+
+        _lastPlayedCard = SelectedCard.AttachedData;
         SelectedCard.RemoveCard();
         _handCards.Remove(SelectedCard);
         SelectedCard = null;

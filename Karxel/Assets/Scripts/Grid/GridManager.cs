@@ -85,7 +85,7 @@ public class GridManager : NetworkSingleton<GridManager>
     }
 
     /// <summary>Checks if grid position is inside the world boundaries.</summary>
-    public bool IsExistingGridPosition(Vector3Int gridPosition, out TileData tile)
+    public bool IsExistingGridPosition(Vector3Int gridPosition, out TileData? tile)
     {
         return _tiles.TryGetValue(gridPosition, out tile);
     }

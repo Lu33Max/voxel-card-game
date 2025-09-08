@@ -7,16 +7,15 @@ public class HealerUnit : UnitBehaviour
 {
     [SerializeField] private int baseRange = 1;
     
-    public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
+    public override IEnumerable<MoveCommand> GetValidMoves(Vector3Int unitPosition, int movementRange)
     {
         var moves = new List<MoveCommand>();
-        var startPosition = UnitRef.PositionAfterMove;
         
         // Key = current Tile, Value = previous Tile
         Dictionary<Vector3Int, Vector3Int> path = new();
         
         var queue = new Queue<Vector3Int>();
-        queue.Enqueue(startPosition);
+        queue.Enqueue(unitPosition);
 
         while (queue.Count > 0)
         {
@@ -27,10 +26,10 @@ public class HealerUnit : UnitBehaviour
             
             foreach (var neighbour in validNeighbours)
             {
-                if(neighbour == startPosition)
+                if(neighbour == unitPosition)
                     continue;
                 
-                var relativePos = startPosition - neighbour;
+                var relativePos = unitPosition - neighbour;
                 
                 if(Math.Pow(relativePos.x, 2) + Math.Pow(relativePos.y, 2) + Math.Pow(relativePos.z, 2) > Math.Pow(baseRange * movementRange + 0.5f, 2))
                     continue;
@@ -38,7 +37,7 @@ public class HealerUnit : UnitBehaviour
                 if(!path.TryAdd(neighbour, prevPos))
                     continue;
                 
-                var pathToTile = ReconstructPath(path, neighbour, startPosition);
+                var pathToTile = ReconstructPath(path, neighbour, unitPosition);
                 moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
                 
                 queue.Enqueue(neighbour);

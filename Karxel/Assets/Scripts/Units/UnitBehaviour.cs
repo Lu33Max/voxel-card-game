@@ -16,7 +16,7 @@ public abstract class UnitBehaviour : NetworkBehaviour
     
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
-    public abstract IEnumerable<MoveCommand> GetValidMoves(int movementRange);
+    public abstract IEnumerable<MoveCommand> GetValidMoves(Vector3Int unitPosition, int movementRange);
 
     /// <summary> Calculates a list of unique tile positions that can be attacked from the current unit position </summary>
     /// <param name="position"> Tile position from which to start the calculation </param>

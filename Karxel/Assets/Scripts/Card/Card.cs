@@ -17,15 +17,15 @@ public class Card : MonoBehaviour
 
     public CardData CardData => GameManager.Instance != null &&
                                 GameManager.Instance.gameState is GameState.Movement or GameState.MovementExecution
-        ? _cardData.moveSide
-        : _cardData.attackSide;
+        ? AttachedData.moveSide
+        : AttachedData.attackSide;
 
-    private CardComponent _cardData = null!;
+    public CardComponent AttachedData { get; private set; } = null!;
     private RectTransform _transform = null!;
     
     public void Initialize(CardComponent data, Vector2 startPos)
     {
-        _cardData = data;
+        AttachedData = data;
         
         _transform = GetComponent<RectTransform>();
         _transform.position = new Vector3(0, startPos.y, 0);
@@ -67,7 +67,7 @@ public class Card : MonoBehaviour
 
     public void RemoveCard()
     {
-        CardManager.Instance.AddCardToUsed(_cardData);
+        CardManager.Instance.AddCardToUsed(AttachedData);
         Destroy(gameObject);
     }
     

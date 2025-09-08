@@ -75,4 +75,22 @@ public class PathRenderer : MonoBehaviour
         for (var i = 1; i < positions.Count; i++)
             lineRenderer.SetPosition(positionCount + i - 1, positions[i]);   
     }
+
+    public void RegeneratePath(List<MoveCommand> allMoveCommands, Vector3Int startPos, out bool canBeRemoved)
+    {
+        lineRenderer.SetPositions(Array.Empty<Vector3>());
+
+        if (allMoveCommands.Count == 0)
+        {
+            canBeRemoved = true;
+            return;
+        }
+
+        DrawPath(allMoveCommands[0], startPos);          
+        
+        for(var i = 1; i < allMoveCommands.Count; i++)
+            AppendToPath(allMoveCommands[i]);
+
+        canBeRemoved = false;
+    }
 }

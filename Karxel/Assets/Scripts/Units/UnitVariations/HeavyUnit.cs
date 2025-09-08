@@ -4,10 +4,9 @@ using UnityEngine;
 
 public class HeavyUnit : UnitBehaviour
 {
-    public override IEnumerable<MoveCommand> GetValidMoves(int movementRange)
+    public override IEnumerable<MoveCommand> GetValidMoves(Vector3Int unitPosition, int movementRange)
     {
         var moves = new List<MoveCommand>();
-        var startPosition = UnitRef.PositionAfterMove;
         
         Vector3Int[] directions =
         {
@@ -21,7 +20,7 @@ public class HeavyUnit : UnitBehaviour
             Dictionary<Vector3Int, Vector3Int> path = new();
             
             var queue = new Queue<Vector3Int>();
-            queue.Enqueue(startPosition);
+            queue.Enqueue(unitPosition);
 
             while (queue.Count > 0)
             {
@@ -35,7 +34,7 @@ public class HeavyUnit : UnitBehaviour
                 foreach (var neighbour in validNeighbours.Where(n => n.x == targetPosition.x && n.z == targetPosition.z))
                 {
                     path.Add(neighbour, prevPos);
-                    var pathToTile = ReconstructPath(path, neighbour, startPosition);
+                    var pathToTile = ReconstructPath(path, neighbour, unitPosition);
                     moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
                     
                     if(pathToTile.Count < movementRange - 1)

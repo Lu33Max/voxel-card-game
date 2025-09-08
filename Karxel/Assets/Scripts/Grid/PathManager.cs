@@ -35,13 +35,27 @@ public class PathManager : NetworkBehaviour
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
-    [Server]
-    public void CreatePath(MoveCommand path, Vector3Int start)
+    [Client]
+    public void CreatePathLocally(MoveCommand path, Vector3Int start)
     {
         if (pathPrefab == null) 
             return;
         
-        RPCSpawnNewPath(path, start, _unit.TilePosition);
+        SpawnNewPath(path, start, _unit.TilePosition);
+    }
+
+    [Client]
+    public void RegeneratePathLocally(List<MoveCommand> path)
+    {
+        if(!_activePaths.TryGetValue(_unit.TilePosition, out var pathRenderer)) return;
+
+        pathRenderer.RegeneratePath(path, _unit.TilePosition, out var canBeRemoved);
+
+        if (!canBeRemoved) return;
+        
+        _activePaths[_unit.TilePosition].gameObject.SetActive(false);
+        PathPool.Enqueue(_activePaths[_unit.TilePosition].gameObject);
+        _activePaths.Remove(_unit.TilePosition);
     }
 
     private void ClearAllPaths()
@@ -62,13 +76,9 @@ public class PathManager : NetworkBehaviour
             RPCRemoveAllPaths();
     }
 
-    [ClientRpc]
-    private void RPCSpawnNewPath(MoveCommand moveCommand, Vector3Int start, Vector3Int unitPosition)
+    [Client]
+    private void SpawnNewPath(MoveCommand moveCommand, Vector3Int start, Vector3Int unitPosition)
     {
-        // Do not show the path to players of the opposing team
-        if(GameManager.Instance.localPlayer.team != _unit.owningTeam)
-            return;
-
         if (_activePaths.TryGetValue(unitPosition, out var path))
         {
             path.AppendToPath(moveCommand);
@@ -81,7 +91,7 @@ public class PathManager : NetworkBehaviour
         newPath.SetActive(true);
         
         var pathRenderer = newPath.GetComponent<PathRenderer>();
-        _activePaths.Add(start, pathRenderer);
+        _activePaths.Add(unitPosition, pathRenderer);
         
         if (pathRenderer != null)
             pathRenderer.DrawPath(moveCommand, start);

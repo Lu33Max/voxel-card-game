@@ -29,7 +29,7 @@ public class MoveCardData : CardData
         var moveCommand = selectedUnit.GetValidMoves(moveDistance)
             .First(move => move.TargetPosition == hoveredTile.TilePosition);
         
-        selectedUnit.CmdRegisterMoveIntent(moveCommand);
         HandManager.Instance.PlaySelectedCard();
+        selectedUnit.ExecuteMoveLocally(moveCommand, this);
     }
 }

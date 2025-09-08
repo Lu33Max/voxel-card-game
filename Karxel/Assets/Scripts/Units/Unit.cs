@@ -64,7 +64,7 @@ public class Unit : NetworkBehaviour
     [SyncVar(hook = nameof(OnHealthUpdated))] private int _currentHealth;
     [SyncVar] private LiveStatus _status = LiveStatus.Alive;
 
-    private readonly SyncList<MoveCommand> _moveIntents = new();
+    private readonly List<MoveCommand> _moveIntents = new();
     private readonly SyncList<Attack> _attackIntents = new();
     private readonly SyncList<UnitStatus> _statusEffects = new();
 
@@ -81,6 +81,9 @@ public class Unit : NetworkBehaviour
     private UnitAnimator _animator = null!;
 
     public UnitMarkerManager MarkerManager { get; private set; } = null!;
+
+    private MoveCommand? _tempRegisteredMove;
+    private MoveCardData? _tempMoveCardData;
     
     private void Awake()
     {
@@ -136,9 +139,10 @@ public class Unit : NetworkBehaviour
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>
     /// <param name="movementRange">The movement range given by the played card</param>
-    public IEnumerable<MoveCommand> GetValidMoves(int movementRange)
+    /// <param name="positionOverride"> Optional override if the calculation should take place from a different tile </param>
+    public IEnumerable<MoveCommand> GetValidMoves(int movementRange, Vector3Int? positionOverride = null)
     {
-        return _behaviour.GetValidMoves(movementRange);
+        return _behaviour.GetValidMoves(positionOverride ?? PositionAfterMove, movementRange);
     }
 
     /// <summary> Calculates a list of unique tile positions that can be attacked from the current unit position </summary>
@@ -242,6 +246,9 @@ public class Unit : NetworkBehaviour
 
     protected virtual void OnGameStateChanged(GameState newState)
     {
+        _moveIntents.Clear();
+        //_attackIntents.Clear();
+        
         if(isServer && newState is GameState.Attack or GameState.Movement)
             CheckForStatusDurations();
     }
@@ -340,18 +347,6 @@ public class Unit : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    public void CmdRegisterMoveIntent(MoveCommand moveCommand)
-    {
-        // TODO: Validate incoming attack
-        
-        _pathManager.CreatePath(moveCommand,
-            _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
-
-        GameManager.Instance.RegisterMoveIntent(TilePosition, moveCommand);
-        _moveIntents.Add(moveCommand);
-    }
-
-    [Command(requiresAuthority = false)]
     public void CmdRegisterAttackIntent(Attack newAttack)
     {
         // TODO: Validate incoming attack
@@ -443,6 +438,68 @@ public class Unit : NetworkBehaviour
     {
         if(_statusEffects.Count(e => e.Status == removedStatus.Status) == 0)
             _effectDisplay.RemoveEffect(removedStatus.Status);
+    }
+
+    /// <summary> Used to locally store a potential move until it's been validated by the server </summary>
+    /// <param name="command"> The command to execute locally </param>
+    /// <param name="moveCard"> The card that was played on this move </param>
+    [Client]
+    public void ExecuteMoveLocally(MoveCommand command, MoveCardData moveCard)
+    {
+        _tempRegisteredMove = command;
+        _tempMoveCardData = moveCard;
+
+        _pathManager.CreatePathLocally(command,
+            _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
+        
+        UnitActionManager.Instance.CmdTryRegisterMoveIntent(GameManager.Instance.localPlayer.netId, TilePosition,
+            command, moveCard.moveDistance);
+    }
+
+    /// <summary> Called on the client that tried to register, confirming registration was successful </summary>
+    /// <param name="target"> Targeted NetworkConnection </param>
+    /// <param name="command"> The validated <see cref="MoveCommand"/> </param>
+    [TargetRpc]
+    public void TargetOnMoveRegisterSuccessful(NetworkConnectionToClient target, MoveCommand command)
+    {
+        _moveIntents.Add(command);
+        _tempMoveCardData = null;
+        _tempRegisteredMove = null;
+    }
+
+    /// <summary> Called on all team clients except the registering one upon successful move validation </summary>
+    /// <param name="target"> Targeted NetworkConnection </param>
+    /// <param name="command"> The validated <see cref="MoveCommand"/> </param>
+    [TargetRpc]
+    public void TargetRegisterNewMoveIntent(NetworkConnectionToClient target, MoveCommand command)
+    {
+        _moveIntents.Add(command);
+        _pathManager.CreatePathLocally(command,
+            _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
+    }
+
+    /// <summary> Used by the server to update its own copy of the unit upon successful registration </summary>
+    /// <param name="command"> The validated &lt;see cref="MoveCommand"/&gt; </param>
+    [Server]
+    public void AddToMoveIntents(MoveCommand command)
+    {
+        _moveIntents.Add(command);
+    }
+
+    /// <summary>
+    ///     Called in case the validation of the new move has failed. Removes local displays and re-adds played card
+    /// </summary>
+    /// <param name="target"> Targeted NetworkConnection </param>
+    [TargetRpc]
+    public void TargetUndoLocallyRegisteredMove(NetworkConnectionToClient target)
+    {
+        if(_tempRegisteredMove == null || _tempMoveCardData == null) return;
+        
+        _pathManager.RegeneratePathLocally(_moveIntents);
+        HandManager.Instance.RestoreLastPlayedCard();
+
+        _tempMoveCardData = null;
+        _tempRegisteredMove = null;
     }
     
     #endregion
