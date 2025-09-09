@@ -15,8 +15,8 @@ public class UnitEffectDisplay : MonoBehaviour
 
     [SerializeField] private float distance = 0.4f;
     [SerializeField] private float speed = 5f;
-    [SerializeField] private StatusModel[] effectModels;
-    [SerializeField] private Unit.StatusEffect[] hiddenEffects;
+    [SerializeField] private StatusModel[] effectModels = null!;
+    [SerializeField] private Unit.StatusEffect[] hiddenEffects = null!;
 
     private List<Unit.StatusEffect> _activeEffects = new();
     
@@ -25,7 +25,7 @@ public class UnitEffectDisplay : MonoBehaviour
     private MeshRenderer[] _meshRenderers = new MeshRenderer[4];
 
     private Unit _unit = null!;
-    
+
     private void Awake()
     {
         _unit = GetComponentInParent<Unit>();
