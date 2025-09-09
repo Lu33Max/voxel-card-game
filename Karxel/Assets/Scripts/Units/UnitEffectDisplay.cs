@@ -16,15 +16,20 @@ public class UnitEffectDisplay : MonoBehaviour
     [SerializeField] private float distance = 0.4f;
     [SerializeField] private float speed = 5f;
     [SerializeField] private StatusModel[] effectModels;
+    [SerializeField] private Unit.StatusEffect[] hiddenEffects;
 
     private List<Unit.StatusEffect> _activeEffects = new();
     
     private GameObject[] _displays = new GameObject[4];
     private MeshFilter[] _meshFilters = new MeshFilter[4];
     private MeshRenderer[] _meshRenderers = new MeshRenderer[4];
+
+    private Unit _unit = null!;
     
     private void Awake()
     {
+        _unit = GetComponentInParent<Unit>();
+        
         for (var i = 0; i < 4; i++)
         {
             _displays[i] = new GameObject();
@@ -47,7 +52,8 @@ public class UnitEffectDisplay : MonoBehaviour
 
     public void AddEffect(Unit.StatusEffect effect)
     {
-        if(_activeEffects.Contains(effect)) return;
+        if(_activeEffects.Contains(effect) || (hiddenEffects.Contains(effect) && _unit.owningTeam == Player.LocalPlayer.team)) 
+            return;
         
         _activeEffects.Add(effect);
         UpdateDisplay();

@@ -4,8 +4,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "StunCard", menuName = "Cards/Stun")]
 public class StunCardData : CardData
 {
-    public int stunDuration;
-    
     public override bool IsCorrectPhase() => true;
     
     public override bool CanBeUsed(TileData? hoveredTile, Unit? selectedUnit)
@@ -19,7 +17,7 @@ public class StunCardData : CardData
         if (hoveredTile == null || hoveredTile.Unit == null)
             throw new NullReferenceException("[StunCardData] Stun execution called without having a valid target tile");
         
-        hoveredTile.Unit.CmdAddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.Stunned, Duration = 2 });
+        hoveredTile.Unit.CmdAddNewStatusEffect(new Unit.UnitStatus{ Status = Unit.StatusEffect.PreStunned, Duration = 1 });
         HandManager.Instance.PlaySelectedCard();
     }
 }

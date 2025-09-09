@@ -10,16 +10,17 @@ using UnityEngine.UI;
 [RequireComponent(typeof(UnitMarkerManager))]
 public class Unit : NetworkBehaviour
 {
-    private enum LiveStatus
+    private enum LiveStatus : byte
     {
         Alive,
         Dead,
     }
     
-    public enum StatusEffect
+    public enum StatusEffect : byte
     {
         Shielded,
         Stunned,
+        PreStunned,
     }
     
     [Serializable]
@@ -35,12 +36,11 @@ public class Unit : NetworkBehaviour
     {
         /// <summary> Type of status effect to attach to the unit </summary>
         public StatusEffect Status;
-        
         /// <summary> Number of turns this effect stays active for. Negative numbers indicate infinite duration </summary>
         public int Duration;
     }
     
-    [SyncVar] public Team owningTeam = Team.None;
+    [field: SyncVar, SerializeField] public Team owningTeam { get; private set; } = Team.None;
     [HideInInspector, SyncVar(hook = nameof(OnControlStatusChanged))] public bool isControlled;
     
     [Header("UnitData")]
@@ -118,6 +118,13 @@ public class Unit : NetworkBehaviour
         GameManager.Instance.CheckHealth += OnCheckHealth;
     }
 
+    protected override void OnValidate()
+    {
+        base.OnValidate();
+        UpdateMaterialToTeamColor();
+        healthSlider.GetComponent<HealthSlider>().SetupSliderColor(owningTeam);
+    }
+
     private void OnDisable()
     {
         StopAllCoroutines();
@@ -176,11 +183,10 @@ public class Unit : NetworkBehaviour
     public bool HasMaxHealth => _currentHealth == Data.health;
 
     /// <summary> Returns whether the unit is stunned during the current attack or movement round </summary>
-    private bool IsStunned =>
-        _statusEffects.FirstOrDefault(s => s.Status == StatusEffect.Stunned && s.Duration == 1) != null;
+    private bool IsStunned => _statusEffects.FindIndex(s => s.Status == StatusEffect.Stunned) >= 0;
     
     /// <summary> Returns the tile position the unit would have after executing all MoveIntents </summary>
-    public Vector3Int PositionAfterMove => _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition;
+    private Vector3Int PositionAfterMove => _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition;
 
     /// <summary> Checks whether the given type is currently active on the unit </summary>
     /// <param name="effect"> Type of StatusEffect to search for </param>
@@ -279,15 +285,22 @@ public class Unit : NetworkBehaviour
     [Server]
     private void CheckForStatusDurations()
     {
+        var addStun = false;
+        
         for (var i = _statusEffects.Count - 1; i >= 0; i--)
         {
             var newStatus = new UnitStatus{ Status = _statusEffects[i].Status, Duration = _statusEffects[i].Duration - 1};
             _statusEffects[i] = newStatus;
                 
             if (_statusEffects[i].Duration != 0) continue;
-                
+
+            if (_statusEffects[i].Status == StatusEffect.PreStunned)
+                addStun = true;
+            
             _statusEffects.RemoveAt(i);
         }
+        
+        if(addStun) _statusEffects.Add(new UnitStatus{ Status = StatusEffect.Stunned, Duration = 1 });
 
         if (!_tookDamage) return;
         
@@ -315,7 +328,6 @@ public class Unit : NetworkBehaviour
             actualChange = Mathf.RoundToInt(actualChange / data.dmgReductionFromShield);
         
         _currentHealth = Mathf.Clamp(_currentHealth + actualChange, 0, data.health);
-
         if(actualChange >= 0) return;
         
         PlayHurtSound();
@@ -354,7 +366,6 @@ public class Unit : NetworkBehaviour
     {
         TilePosition = startingPosition;
     }
-    
     
     [ClientRpc]
     public void RPCStep(MoveCommand moveCommand)

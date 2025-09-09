@@ -56,3 +56,8 @@ MonoBehaviour:
     model: {fileID: 7619744853408693548, guid: b3be1dfc263d1f6458b58ec933bfb5d1, type: 3}
     material: {fileID: 7265628154983987930, guid: b3be1dfc263d1f6458b58ec933bfb5d1,
       type: 3}
+  - effect: 2
+    model: {fileID: 6171633098976586568, guid: 5d2dfbe323ab8164abb4e01925c02e57, type: 3}
+    material: {fileID: 5094739550546856069, guid: 5d2dfbe323ab8164abb4e01925c02e57,
+      type: 3}
+  hiddenEffects: 02
