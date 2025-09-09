@@ -7644,14 +7644,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
-  m_LocalRotation: {x: -0.1736314, y: 0.0136784855, z: -0.002411921, w: -0.98471284}
+  m_LocalRotation: {x: 0.17364816, y: 0, z: 0, w: 0.9848078}
   m_LocalPosition: {x: 2.294, y: 0.632, z: 2.336}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 20, y: 358.408, z: 0}
+  m_LocalEulerAnglesHint: {x: 20, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13863,7 +13863,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 640841894}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 606.32654, y: 200.49559, z: -1.6882882}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15413,7 +15413,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1777310910}
   m_LocalRotation: {x: 0.13928378, y: -0.98146486, z: 0.049404826, w: 0.122008145}
-  m_LocalPosition: {x: -554.1353, y: -288.50937, z: 3.1616156}
+  m_LocalPosition: {x: 3.0964966, y: 0.63116455, z: 4.0152254}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -15756,10 +15756,9 @@ MonoBehaviour:
   headlessStartMode: 1
   editorAutoStart: 0
   sendRate: 60
-  autoStartServerBuild: 0
-  autoConnectClientBuild: 0
   offlineScene: Assets/Scenes/MainMenu.unity
   onlineScene: Assets/Scenes/Lobby.unity
+  offlineSceneLoadDelay: 0
   transport: {fileID: 756790344}
   networkAddress: localhost
   maxConnections: 8
@@ -15793,7 +15792,6 @@ MonoBehaviour:
   RoomScene: Assets/Scenes/Lobby.unity
   GameplayScene: Assets/Scenes/Game3.unity
   _allPlayersReady: 0
-  roomSlots: []
   clientIndex: 0
 --- !u!4 &756790347
 Transform:
@@ -24832,7 +24830,7 @@ MonoBehaviour:
   MaxRetransmit: 40
   MaximizeSocketBuffers: 1
   ReliableMaxMessageSize: 297433
-  UnreliableMaxMessageSize: 1195
+  UnreliableMaxMessageSize: 1194
   debugLog: 0
   statisticsGUI: 0
   statisticsLog: 0
@@ -24867,10 +24865,9 @@ MonoBehaviour:
   headlessStartMode: 1
   editorAutoStart: 0
   sendRate: 60
-  autoStartServerBuild: 0
-  autoConnectClientBuild: 0
   offlineScene: Assets/Scenes/MainMenu.unity
   onlineScene: Assets/Scenes/Lobby.unity
+  offlineSceneLoadDelay: 0
   transport: {fileID: 1240296518}
   networkAddress: localhost
   maxConnections: 8
@@ -24904,7 +24901,6 @@ MonoBehaviour:
   RoomScene: Assets/Scenes/Lobby.unity
   GameplayScene: Assets/Scenes/Game3.unity
   _allPlayersReady: 0
-  roomSlots: []
   clientIndex: 0
 --- !u!4 &1240296521
 Transform:
@@ -28852,7 +28848,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1482143126}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 557.2318, y: 289.14053, z: 0.8536098}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -29546,7 +29542,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1693814304}
   m_LocalRotation: {x: 0.07092677, y: -0.9585204, z: 0.1943604, w: 0.19604097}
-  m_LocalPosition: {x: -553.451, y: -288.558, z: 2.3928137}
+  m_LocalPosition: {x: 3.7808228, y: 0.58251953, z: 3.2464235}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -29578,7 +29574,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1517772300}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 557.2318, y: 289.14053, z: 0.8536098}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -31206,7 +31202,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 845961269}
   m_LocalRotation: {x: -0.08183841, y: 0.048385628, z: -0.003977851, w: 0.9954625}
-  m_LocalPosition: {x: -553.609, y: -288.836, z: 2.0740001}
+  m_LocalPosition: {x: 3.6228027, y: 0.3045349, z: 2.92761}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -31763,7 +31759,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1617078315}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 557.2318, y: 289.14053, z: 0.8536098}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

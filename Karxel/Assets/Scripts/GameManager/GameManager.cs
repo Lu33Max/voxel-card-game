@@ -348,4 +348,15 @@ public class GameManager : NetworkSingleton<GameManager>
     {
         NewRound?.Invoke(count);
     }
+
+    [Server]
+    public void CallRpcOnTeam(Action<NetworkConnectionToClient> task, Team team, uint? senderId = null)
+    {
+        var connections = _playerConnections.TryGetValue(team, out var connection)
+            ? connection.Where(c => senderId == null || c.identity.netId != senderId).ToList()
+            : new();
+
+        foreach (var conn in connections)
+            task(conn);
+    }
 }

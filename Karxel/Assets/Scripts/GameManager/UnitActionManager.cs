@@ -54,15 +54,15 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     ///     Used to validate a given <see cref="MoveCommand"/> before broadcasting it to other clients of the team
     /// </summary>
     /// <param name="sender"> The client netId that tries to register the intent </param>
+    /// <param name="senderTeam"> Team of the client sending the request </param>
     /// <param name="unitPosition"> The grid position of that unit this intent comes from </param>
     /// <param name="moveToRegister"> The move that should be registered </param>
     /// <param name="cardMoveDistance"> The card that was used on the unit to execute the move </param>
     [Command(requiresAuthority = false)]
-    public void CmdTryRegisterMoveIntent(uint sender, Vector3Int unitPosition, MoveCommand moveToRegister, 
-        int cardMoveDistance)
+    public void CmdTryRegisterMoveIntent(uint sender, Team senderTeam, Vector3Int unitPosition, 
+        MoveCommand moveToRegister, int cardMoveDistance)
     {
         var senderConnection = NetworkServer.connections.Select(c => c.Value).First(c => c.identity.netId == sender);
-        var senderTeam = senderConnection.identity.GetComponent<Player>().team;
         
         if (!UnitExistsAtTile(unitPosition, out var unit) || unit == null || !IsValidMoveCommand(unit!, moveToRegister, cardMoveDistance) || 
             (_moveIntents.ContainsKey(unitPosition) && _moveIntents[unitPosition].Count >= unit!.Data.moveAmount)) 
@@ -79,28 +79,25 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
         
         // Tell the sencer client that its registration was successful
         unit.TargetOnMoveRegisterSuccessful(senderConnection, moveToRegister);
-        
         // Tell the other team members about the new intent
-        foreach (var connection in NetworkServer.connections.Select(c => c.Value)
-                     .Where(c => c.identity.netId != sender && c.identity.GetComponent<Player>().team == senderTeam))
-            unit.TargetRegisterNewMoveIntent(connection, moveToRegister);
+        GameManager.Instance.CallRpcOnTeam(conn => unit.TargetRegisterNewMoveIntent(conn, moveToRegister), senderTeam, sender);
         
         unit.isControlled = false;
     }
-    
+
     /// <summary>
     ///     Used to validate a given <see cref="Attack"/> before broadcasting it to other clients of the team
     /// </summary>
     /// <param name="sender"> The client that tries to register the intent </param>
+    /// <param name="senderTeam"> Team of the client sending the request </param>
     /// <param name="unitPosition"> The grid position of that unit this intent comes from </param>
     /// <param name="attackToRegister"> The attack that should be registered </param>
     /// <param name="cardDamageMultiplier"> The card that was used on the unit to execute the attack </param>
     [Command(requiresAuthority = false)]
-    public void CmdTryRegisterAttackIntent(uint sender, Vector3Int unitPosition,
+    public void CmdTryRegisterAttackIntent(uint sender, Team senderTeam, Vector3Int unitPosition,
         Attack attackToRegister, int cardDamageMultiplier)
     {
         var senderConnection = NetworkServer.connections.Select(c => c.Value).First(c => c.identity.netId == sender);
-        var senderTeam = senderConnection.identity.GetComponent<Player>().team;
         
         if (!UnitExistsAtTile(unitPosition, out var unit) || unit == null || !IsValidAttack(unit!, attackToRegister, cardDamageMultiplier) || 
             (_attackIntents.ContainsKey(unitPosition) && _attackIntents[unitPosition].Count >= unit.Data.attackAmount)) 
@@ -119,9 +116,8 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
         unit.TargetOnAttackRegisterSuccessful(senderConnection, attackToRegister);
         
         // Tell the other team members about the new intent
-        foreach (var connection in NetworkServer.connections.Select(c => c.Value)
-                     .Where(c => c.identity.netId != sender && c.identity.GetComponent<Player>().team == senderTeam))
-            unit.TargetRegisterNewMoveIntent(connection, attackToRegister);
+        GameManager.Instance.CallRpcOnTeam(conn => unit.TargetRegisterNewAttackIntent(conn, attackToRegister),
+            senderTeam, sender);
         
         // Make the targeted tiles show up for each client
         foreach (var tile in attackToRegister.Tiles)

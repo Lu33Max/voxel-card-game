@@ -441,8 +441,8 @@ public class Unit : NetworkBehaviour
         _pathManager.CreatePathLocally(command,
             _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
         
-        UnitActionManager.Instance.CmdTryRegisterMoveIntent(Player.LocalPlayer.netId, TilePosition,
-            command, moveCard.moveDistance);
+        UnitActionManager.Instance.CmdTryRegisterMoveIntent(Player.LocalPlayer.netId, Player.LocalPlayer.team, 
+            TilePosition, command, moveCard.moveDistance);
     }
 
     /// <summary> Called on the client that tried to register, confirming registration was successful </summary>
@@ -497,8 +497,8 @@ public class Unit : NetworkBehaviour
                 Visibility = "local"
             });
         
-        UnitActionManager.Instance.CmdTryRegisterAttackIntent(Player.LocalPlayer.netId, TilePosition,
-            attack, attackCard.damageMultiplier);
+        UnitActionManager.Instance.CmdTryRegisterAttackIntent(Player.LocalPlayer.netId, Player.LocalPlayer.team, 
+            TilePosition, attack, attackCard.damageMultiplier);
     }
     
     /// <summary> Called on the client that tried to register, confirming registration was successful </summary>
@@ -520,7 +520,7 @@ public class Unit : NetworkBehaviour
     /// <param name="target"> Targeted NetworkConnection </param>
     /// <param name="attack"> The validated <see cref="Attack"/> </param>
     [TargetRpc]
-    public void TargetRegisterNewMoveIntent(NetworkConnectionToClient target, Attack attack)
+    public void TargetRegisterNewAttackIntent(NetworkConnectionToClient target, Attack attack)
     {
         _attackIntents.Add(attack);
     }
