@@ -13,20 +13,13 @@ public enum GameState
     AttackExecution,
     PreStart,
     Win,
-    Empty
 }
 
 // TODO: Turn GameManager into server-only component
 public class GameManager : NetworkSingleton<GameManager>
 {
-    /// <summary>SERVER ONLY<br/>List of all moves to execute when round finishes</summary>
-    private Dictionary<Vector3Int, List<MoveCommand>> MoveIntents = new();
-    /// <summary>SERVER ONLY<br/>List of all attacks to execute when round finishes</summary>
-    private Dictionary<Vector3Int, List<Attack>> AttackIntents = new();
-    
     public event Action? PlayersReady;
     public event Action? RoundTimerUp;
-    public event Action<Attack>? AttackExecuted;
     public event Action? CheckHealth;
     public event Action<int>? NewRound;
     /// <summary> Called every frame the remaining time gets updated </summary>
@@ -61,13 +54,6 @@ public class GameManager : NetworkSingleton<GameManager>
     private int _blueSubmit;
     
     private int _readyPlayers;
-    
-    private int _unitsToMove;
-    private int _unitsDoneMoving;
-    
-    private int _attackRound;
-    private int _unitsToAttack;
-    private int _unitsDoneAttacking;
 
     private readonly HashSet<Team> _defeatedKings = new();
     private AudioSource _timerAudio;
@@ -89,6 +75,16 @@ public class GameManager : NetworkSingleton<GameManager>
         if(!isServer) return;
 
         Unit.OnUnitDied += HandleUnitDied;
+        UnitActionManager.Instance.OnAllUnitActionsDone += HandleAllUnitsDone;
+    }
+
+    [Server]
+    private void HandleAllUnitsDone()
+    {
+        if(gameState == GameState.MovementExecution) StartAttackPhase();
+        if(gameState == GameState.AttackExecution) StartMovePhase();
+            
+        CheckHealth?.Invoke();
     }
 
     private void Update()
@@ -108,6 +104,7 @@ public class GameManager : NetworkSingleton<GameManager>
     private void OnDisable()
     {
         Unit.OnUnitDied -= HandleUnitDied;
+        UnitActionManager.Instance.OnAllUnitActionsDone -= HandleAllUnitsDone;
     }
 
     [Server]
@@ -142,273 +139,16 @@ public class GameManager : NetworkSingleton<GameManager>
     }
 
     [Server]
-    public void RegisterMoveIntent(Vector3Int unitPos, MoveCommand moveCommand)
+    private void UpdateGameState(GameState newState)
     {
-        if (MoveIntents.TryGetValue(unitPos, out _))
-            MoveIntents[unitPos].Add(moveCommand);
-        else
-            MoveIntents.Add(unitPos, new List<MoveCommand>{ moveCommand });
-    }
-
-    [Server]
-    public void RegisterAttackIntent(Vector3Int unitPos, Attack newAttack, Team team)
-    {
-        if (AttackIntents.TryGetValue(unitPos, out _))
-            AttackIntents[unitPos].Add(newAttack);
-        else
-            AttackIntents.Add(unitPos, new List<Attack>{ newAttack });
-        
-        foreach (var tile in newAttack.Tiles)
-        {
-            MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
-            {
-                Type = MarkerType.Attack,
-                Priority = 1,
-                Visibility = team == Team.Blue ? "Blue" : "Red"
-            });
-        }
-    }
-
-    [Server]
-    public void UnitDefeated(Vector3Int unitPos)
-    {
-        MoveIntents.Remove(unitPos);
-        AttackIntents.Remove(unitPos);
-    }
-
-    [Server]
-    private void ExecuteMoveIntents()
-    {
-        // Combine all moveCommands for every unit
-        Dictionary<Vector3Int, MoveCommand> intendedMoves =
-            MoveIntents.ToDictionary(intent => intent.Key, intent => new MoveCommand
-            {
-                TargetPosition = intent.Value.Last().TargetPosition,
-                Path = intent.Value.SelectMany((m, index) => m.Path.Concat(index < intent.Value.Count - 1
-                        ? new[] { m.TargetPosition }
-                        : Enumerable.Empty<Vector3Int>()))
-                    .ToList()
-            });
-
-        // Static units are all units minus the ones with move intents
-        List<Vector3Int> staticUnits = GridManager.Instance.GetAllUnitTiles().Except(intendedMoves.Keys).ToList();
-        Dictionary<Vector3Int, MoveCommand> actualMoves = new();
-
-        int i = 0;
-        while (intendedMoves.Count > 0)
-        {
-            // Remove all moves that have already ended
-            foreach (var move in intendedMoves.ToList().Where(move => move.Value.Path.Count < i))
-            {
-                staticUnits.Add(move.Value.TargetPosition);
-                intendedMoves.Remove(move.Key);
-            }
-
-            // Needs to be extra loop so that all units that would need to stop because of a collision with other
-            // moving units can get to the static units
-            foreach (var move in intendedMoves.ToList())
-            {
-                var currentTarget = move.Value.Path.Count == i ? move.Value.TargetPosition : move.Value.Path[i];
-
-                var unitsWithSameIntent = intendedMoves.Where(m =>
-                    m.Key != move.Key && m.Value.Path.Count >= i && (m.Value.Path.Count == i
-                        ? m.Value.TargetPosition == currentTarget
-                        : m.Value.Path[i] == currentTarget)).ToList();
-                
-                // If no other unit wants to move to this tile in the turn add the tile to the actual path
-                if (unitsWithSameIntent.Count == 0)
-                    continue;
-
-                // If x units want to move to the same tile
-                intendedMoves.Remove(move.Key);
-                staticUnits.Add(i > 0 ? actualMoves[move.Key].TargetPosition : move.Key);
-
-                if (i == 0)
-                    actualMoves.Add(move.Key, new MoveCommand
-                    {
-                        Path = new(), TargetPosition = move.Key,
-                        BlockedPosition = move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition
-                    });
-                else
-                    actualMoves[move.Key].BlockedPosition =
-                        move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition;
-
-                foreach (var otherMove in unitsWithSameIntent)
-                {
-                    intendedMoves.Remove(otherMove.Key);
-                    staticUnits.Add(i > 0 ? actualMoves[otherMove.Key].TargetPosition : otherMove.Key);
-                    
-                    if (i == 0)
-                        actualMoves.Add(otherMove.Key, new MoveCommand
-                        {
-                            Path = new(), TargetPosition = otherMove.Key,
-                            BlockedPosition = otherMove.Value.Path.Count > i ? otherMove.Value.Path[i] : otherMove.Value.TargetPosition
-                        });
-                    else
-                        actualMoves[otherMove.Key].BlockedPosition =
-                            otherMove.Value.Path.Count > i ? otherMove.Value.Path[i] : otherMove.Value.TargetPosition;
-                }
-                
-            }
-
-            bool addedStatics = true;
-
-            while (addedStatics)
-            {
-                addedStatics = false;
-
-                // Needs to be in separate loop in front so that all blocked units are already added to the static units
-                foreach (var move in intendedMoves.ToList())
-                {
-                    var currentTarget = move.Value.Path.Count == i ? move.Value.TargetPosition : move.Value.Path[i];
-
-                    // If a static unit is the next position, stop the movement and add self as static unit
-                    if (!staticUnits.Contains(currentTarget))
-                        continue;
-                    
-                    intendedMoves.Remove(move.Key);
-                    staticUnits.Add(i > 0 ? actualMoves[move.Key].TargetPosition : move.Key);
-                    
-                    if (i == 0)
-                        actualMoves.Add(move.Key, new MoveCommand
-                        {
-                            Path = new(), TargetPosition = move.Key,
-                            BlockedPosition = move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition
-                        });
-                    else
-                        actualMoves[move.Key].BlockedPosition =
-                            move.Value.Path.Count > i ? move.Value.Path[i] : move.Value.TargetPosition;
-                    
-                    addedStatics = true;
-                }
-            }
-
-            // All the moves that will neither interfere with other intents nor run into static pieces
-            foreach (var move in intendedMoves.ToList())
-            {
-                var currentTarget = move.Value.Path.Count == i ? move.Value.TargetPosition : move.Value.Path[i];
-                
-                if (i == 0)
-                    actualMoves.Add(move.Key, new MoveCommand { TargetPosition = currentTarget, Path = new() });
-                else
-                    actualMoves[move.Key] = new MoveCommand
-                        { TargetPosition = currentTarget, Path = move.Value.Path.GetRange(0, i) };
-            }
-
-            i++;
-        }
-
-        // Execute all build moves
-        foreach (var intent in actualMoves)
-        {
-            var unit = GridManager.Instance.GetTileAtGridPosition(intent.Key).Unit;
-
-            if (unit == null)
-                continue;
-
-            GridManager.Instance.MoveUnit(intent.Key, intent.Value.TargetPosition);
-            unit.RPCStep(intent.Value);
-        }
-
-        // Do the cleanup function for all units that had intents registered, even if they didn't move
-        foreach (var unit in GridManager.Instance.GetAllUnits())
-        {
-            unit!.CleanUpAfterActionExecution();
-        }
-        
-        _unitsToMove = actualMoves.Count;
-        MoveIntents.Clear();
-
-        if (_unitsToMove > 0)
-            UpdateGameState(GameState.MovementExecution);
-        else
-            StartAttackPhase();
-    }
-
-    [Server]
-    private void ExecuteAttackIntents()
-    {
-        UpdateGameState(GameState.AttackExecution);
-        _attackRound = 0;
-        
-        // Hide all previous local tiles
-        MarkerManager.Instance.RPCClearAllMarkers();
-        
-        ExecuteCurrentAttackRound();
-    }
-
-    [Server]
-    private void ExecuteCurrentAttackRound()
-    {
-        // Hide all previous' rounds attack tiles
-        foreach (var tile in from attacks in AttackIntents.Values from attack in attacks from tile in attack.Tiles select tile)
-        {
-            MarkerManager.Instance.RPCRemoveMarker(tile, MarkerType.Attack, "All");
-        }
-        
-        var attacksToExecute = AttackIntents.Where(a => a.Value.Count > _attackRound).ToList();
-
         if (_defeatedKings.Count > 0)
         {
             GameOver();
-            return;
+            newState = GameState.Win;
         }
         
-        if (!attacksToExecute.Any())
-        {
-            UpdateGameState(GameState.Movement);
-            
-            _roundCounter++;
-            RPCInvokeNewRound(_roundCounter);
-            
-            _bluePlayerText = $"0/{bluePlayers.Count}";
-            _redPlayerText = $"0/{redPlayers.Count}";
-            
-            _timeLeft = movementTime;
-            _timerActive = true;
-            
-            DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, localPlayer.team, NetworkServer.connections.Count, _roundCounter);
-            
-            foreach (var unit in AttackIntents
-                         .Select(origIntent => GridManager.Instance.GetTileAtGridPosition(origIntent.Key).Unit)
-                         .Where(unit => unit != null))
-                unit!.CleanUpAfterActionExecution();
-            
-            AttackIntents.Clear();
-        } 
-        
-        foreach (var attackIntent in attacksToExecute)
-        {
-            var currentAttack = attackIntent.Value[_attackRound];
-            
-            foreach (var tile in currentAttack.Tiles)
-            {
-                MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
-                {
-                    Type = MarkerType.Attack,
-                    Priority = 1,
-                    Visibility = "All"
-                });
-            }
-            
-            AttackExecuted?.Invoke(currentAttack);
-
-            _unitsToAttack = attacksToExecute.Count;
-            
-            var unit = GridManager.Instance.GetTileAtGridPosition(attackIntent.Key).Unit;
-            if (unit != null)
-                unit.RPCExecuteAttack(currentAttack);
-        }
-    }
-
-    [Server]
-    private void UpdateGameState(GameState newState)
-    {
         gameState = newState;
         
-        if(gameState is GameState.Movement or GameState.Attack)
-            ActionLogger.Instance.LogAction("server", "server", "phaseSwitch", $"[{_roundCounter + (gameState == GameState.Movement ? 1 : 0)}]", null, null, null, null);
-
         if (gameState is GameState.Movement)
             RpcUpdateActionPoints(bluePlayers.Count, redPlayers.Count);
         
@@ -433,10 +173,25 @@ public class GameManager : NetworkSingleton<GameManager>
     }
 
     [Server]
+    private void StartMovePhase()
+    {
+        UpdateGameState(GameState.Movement);
+            
+        _roundCounter++;
+        RPCInvokeNewRound(_roundCounter);
+            
+        _bluePlayerText = $"0/{bluePlayers.Count}";
+        _redPlayerText = $"0/{redPlayers.Count}";
+            
+        _timeLeft = movementTime;
+        _timerActive = true;
+            
+        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, localPlayer.team, NetworkServer.connections.Count, _roundCounter);
+    }
+
+    [Server]
     private void GameOver()
     {
-        UpdateGameState(GameState.Win);
-
         var screenText = _defeatedKings.Count > 1 ? "The game ends in a tie" :
             _defeatedKings.First() == Team.Blue ? "Red team has won!" : "Blue team has won!";
         RPCGameOver(screenText);
@@ -507,42 +262,19 @@ public class GameManager : NetworkSingleton<GameManager>
         _blueSubmit = 0;
         _redSubmit = 0;
         
-        // Logging
-        ActionLogger.Instance.LogAction("server", "server", "allSubmit", $"[{_timeLeft}]", null, null, null, null);
-        
         switch (gameState)
         {
             case GameState.Movement:
-                ExecuteMoveIntents();
+                UpdateGameState(GameState.MovementExecution);
                 break;
             case GameState.Attack:
-                ExecuteAttackIntents();
+                UpdateGameState(GameState.AttackExecution);
                 break;
         }
     }
 
-    [Command(requiresAuthority = false)]
-    public void CmdUnitMovementDone()
-    {
-        _unitsDoneMoving++;
-
-        CheckForAllMovesExecuted();
-    }
-
-    [Server]
-    private void CheckForAllMovesExecuted()
-    {
-        if (_unitsDoneMoving != _unitsToMove * NetworkServer.connections.Count) 
-            return;
-        
-        StartAttackPhase();
-    }
-
     private void StartAttackPhase()
     {
-        _unitsDoneMoving = 0;
-        _unitsToMove = 0;
-
         _bluePlayerText = $"0/{bluePlayers.Count}";
         _redPlayerText = $"0/{redPlayers.Count}";
 
@@ -550,28 +282,6 @@ public class GameManager : NetworkSingleton<GameManager>
         _timerActive = true;
         
         UpdateGameState(GameState.Attack);
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdUnitAttackDone()
-    {
-        _unitsDoneAttacking++;
-        
-        CheckForAllAttacksExecuted();
-    }
-
-    [Server]
-    private void CheckForAllAttacksExecuted()
-    {
-        if(_unitsDoneAttacking != _unitsToAttack * NetworkServer.connections.Count)
-            return;
-
-        _unitsDoneAttacking = 0;
-        _unitsToAttack = 0;
-        _attackRound++;
-        
-        CheckHealth?.Invoke();
-        ExecuteCurrentAttackRound();
     }
 
     [Command(requiresAuthority = false)]
@@ -603,13 +313,13 @@ public class GameManager : NetworkSingleton<GameManager>
         
         _bluePlayerText = $"{_blueSubmit}/{bluePlayers.Count}";
         _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
-        
-        CheckForAllSubmitted();
 
-        if (gameState == GameState.AttackExecution)
-            CheckForAllAttacksExecuted();
-        else if (gameState == GameState.MovementExecution)
-            CheckForAllMovesExecuted();
+        if (!UnitActionManager.Instance.AllUnitActionsDone()) return;
+        
+        if(gameState == GameState.MovementExecution) StartAttackPhase();
+        if(gameState == GameState.AttackExecution) StartMovePhase();
+            
+        CheckHealth?.Invoke();
     }
 
     [ClientRpc]

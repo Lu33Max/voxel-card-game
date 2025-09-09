@@ -65,7 +65,7 @@ public class Unit : NetworkBehaviour
     [SyncVar] private LiveStatus _status = LiveStatus.Alive;
 
     private readonly List<MoveCommand> _moveIntents = new();
-    private readonly SyncList<Attack> _attackIntents = new();
+    private readonly List<Attack> _attackIntents = new();
     private readonly SyncList<UnitStatus> _statusEffects = new();
 
     /// <summary> Boolean to track whether damage was taken in the current round to remove the shield status </summary>
@@ -80,14 +80,14 @@ public class Unit : NetworkBehaviour
     /// <summary> Plays animations for movement and attacks </summary>
     private UnitAnimator _animator = null!;
 
-    public UnitMarkerManager MarkerManager { get; private set; } = null!;
+    public UnitMarkerManager UnitMarkerManager { get; private set; } = null!;
 
     private MoveCommand? _tempRegisteredMove;
-    private MoveCardData? _tempMoveCardData;
+    private Attack? _tempRegisteredAttack;
     
     private void Awake()
     {
-        MarkerManager = GetComponent<UnitMarkerManager>();
+        UnitMarkerManager = GetComponent<UnitMarkerManager>();
         
         _sfxSource = GetComponent<AudioSource>();
         _pathManager = GetComponent<PathManager>();
@@ -115,7 +115,7 @@ public class Unit : NetworkBehaviour
             return;
         
         UpdateHealth(data.health);
-        GameManager.Instance.AttackExecuted += OnAttackExecuted;
+        UnitActionManager.Instance.OnExecuteAttack += OnAttackExecuted;
         GameManager.Instance.CheckHealth += OnCheckHealth;
     }
 
@@ -133,7 +133,7 @@ public class Unit : NetworkBehaviour
         if(!isServer)
             return;
         
-        GameManager.Instance.AttackExecuted -= OnAttackExecuted;
+        UnitActionManager.Instance.OnExecuteAttack -= OnAttackExecuted;
         GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
@@ -214,7 +214,7 @@ public class Unit : NetworkBehaviour
                 yield return StartCoroutine(_animator.PlayBlockedAnimation(blockedPos.Value));
         }
         
-        GameManager.Instance.CmdUnitMovementDone();
+        UnitActionManager.Instance.CmdUnitActionDone();
     }
 
     /// <summary> Plays the attack animation and reports to the <see cref="GameManager"/> once done </summary>
@@ -222,7 +222,7 @@ public class Unit : NetworkBehaviour
     private IEnumerator ExecuteAttack(Attack attack)
     {
        yield return StartCoroutine(_animator.PlayAttackAnimation(attack));
-       GameManager.Instance.CmdUnitAttackDone();
+       UnitActionManager.Instance.CmdUnitActionDone();
     }
 
     private void OnHealthUpdated(int old, int newHealth)
@@ -247,7 +247,7 @@ public class Unit : NetworkBehaviour
     protected virtual void OnGameStateChanged(GameState newState)
     {
         _moveIntents.Clear();
-        //_attackIntents.Clear();
+        _attackIntents.Clear();
         
         if(isServer && newState is GameState.Attack or GameState.Movement)
             CheckForStatusDurations();
@@ -337,22 +337,11 @@ public class Unit : NetworkBehaviour
         
         StartCoroutine(Die());
     }
-
-    #region Networking
     
     [Command(requiresAuthority = false)]
     public void CmdUpdateHealth(int changeAmount)
     {
         UpdateHealth(changeAmount);
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdRegisterAttackIntent(Attack newAttack)
-    {
-        // TODO: Validate incoming attack
-        
-        GameManager.Instance.RegisterAttackIntent(TilePosition, newAttack, owningTeam);
-        _attackIntents.Add(newAttack);
     }
 
     [Command(requiresAuthority = false)]
@@ -374,14 +363,6 @@ public class Unit : NetworkBehaviour
         StartCoroutine(MoveToPositions(moveCommand));
     }
 
-    // TODO: Connect to gamestate changed
-    [Server]
-    public void CleanUpAfterActionExecution()
-    {
-        _moveIntents.Clear();
-        _attackIntents.Clear();
-    }
-
     [ClientRpc]
     public void RPCExecuteAttack(Attack attack)
     {
@@ -397,13 +378,12 @@ public class Unit : NetworkBehaviour
     [ClientRpc]
     protected virtual void RpcDie()
     {
-        GameManager.Instance.UnitDefeated(TilePosition);
         GridManager.Instance.RemoveUnit(TilePosition);
         Destroy(gameObject);
     }
 
     [Server]
-    protected virtual IEnumerator Die()
+    private IEnumerator Die()
     {
         _status = LiveStatus.Dead;
         OnUnitDied?.Invoke(_behaviour, owningTeam);
@@ -447,7 +427,6 @@ public class Unit : NetworkBehaviour
     public void ExecuteMoveLocally(MoveCommand command, MoveCardData moveCard)
     {
         _tempRegisteredMove = command;
-        _tempMoveCardData = moveCard;
 
         _pathManager.CreatePathLocally(command,
             _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
@@ -463,7 +442,6 @@ public class Unit : NetworkBehaviour
     public void TargetOnMoveRegisterSuccessful(NetworkConnectionToClient target, MoveCommand command)
     {
         _moveIntents.Add(command);
-        _tempMoveCardData = null;
         _tempRegisteredMove = null;
     }
 
@@ -478,14 +456,6 @@ public class Unit : NetworkBehaviour
             _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
     }
 
-    /// <summary> Used by the server to update its own copy of the unit upon successful registration </summary>
-    /// <param name="command"> The validated &lt;see cref="MoveCommand"/&gt; </param>
-    [Server]
-    public void AddToMoveIntents(MoveCommand command)
-    {
-        _moveIntents.Add(command);
-    }
-
     /// <summary>
     ///     Called in case the validation of the new move has failed. Removes local displays and re-adds played card
     /// </summary>
@@ -493,14 +463,71 @@ public class Unit : NetworkBehaviour
     [TargetRpc]
     public void TargetUndoLocallyRegisteredMove(NetworkConnectionToClient target)
     {
-        if(_tempRegisteredMove == null || _tempMoveCardData == null) return;
+        if(_tempRegisteredMove == null) return;
         
         _pathManager.RegeneratePathLocally(_moveIntents);
         HandManager.Instance.RestoreLastPlayedCard();
-
-        _tempMoveCardData = null;
+        
         _tempRegisteredMove = null;
     }
+
+    /// <summary> Used to locally store a potential attack until it's been validated by the server </summary>
+    /// <param name="attack"> The attack to execute locally </param>
+    /// <param name="attackCard"> The card that was played on this attack </param>
+    [Client]
+    public void ExecuteAttackLocally(Attack attack, AttackCardData attackCard)
+    {
+        _tempRegisteredAttack = attack;
+
+        foreach (var tile in attack.Tiles)
+            MarkerManager.Instance.AddMarkerLocal(tile, new MarkerData
+            {
+                Type = MarkerType.Attack,
+                Priority = 1,
+                Visibility = "local"
+            });
+        
+        UnitActionManager.Instance.CmdTryRegisterAttackIntent(GameManager.Instance.localPlayer.netId, TilePosition,
+            attack, attackCard.damageMultiplier);
+    }
     
-    #endregion
+    /// <summary> Called on the client that tried to register, confirming registration was successful </summary>
+    /// <param name="target"> Targeted NetworkConnection </param>
+    /// <param name="attack"> The validated <see cref="Attack"/> </param>
+    [TargetRpc]
+    public void TargetOnAttackRegisterSuccessful(NetworkConnectionToClient target, Attack attack)
+    {
+        _attackIntents.Add(attack);
+        if(_tempRegisteredAttack == null) return;
+        
+        foreach (var tile in _tempRegisteredAttack.Tiles)
+            MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, "local");
+        
+        _tempRegisteredAttack = null;
+    }
+    
+    /// <summary> Called on all team clients except the registering one upon successful attack validation </summary>
+    /// <param name="target"> Targeted NetworkConnection </param>
+    /// <param name="attack"> The validated <see cref="Attack"/> </param>
+    [TargetRpc]
+    public void TargetRegisterNewMoveIntent(NetworkConnectionToClient target, Attack attack)
+    {
+        _attackIntents.Add(attack);
+    }
+
+    /// <summary>
+    ///     Called in case the validation of the new attack has failed. Removes local displays and re-adds played card
+    /// </summary>
+    /// <param name="target"> Targeted NetworkConnection </param>
+    [TargetRpc]
+    public void TargetUndoLocallyRegisteredAttack(NetworkConnectionToClient target)
+    {
+        if(_tempRegisteredAttack == null) return;
+        
+        foreach (var tile in _tempRegisteredAttack.Tiles)
+            MarkerManager.Instance.RemoveMarkerLocal(tile, MarkerType.Attack, "local");
+        
+        HandManager.Instance.RestoreLastPlayedCard();
+        _tempRegisteredAttack = null;
+    }
 }

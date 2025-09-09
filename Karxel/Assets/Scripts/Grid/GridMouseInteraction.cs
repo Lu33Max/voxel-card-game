@@ -7,7 +7,7 @@ public class GridMouseInteraction : MonoBehaviour
 {
     [SerializeField] private LayerMask groundLayer;
 
-    public static UnityEvent<Unit> UnitHovered;
+    public static UnityEvent<Unit>? UnitHovered;
     
     private Camera _mainCamera = null!;
     private TileData? _hoveredTile;
@@ -99,13 +99,13 @@ public class GridMouseInteraction : MonoBehaviour
         if (_hoveredTile?.TilePosition == newHoveredTile.TilePosition)
             return;
         
-        _selectedUnit?.MarkerManager.UpdatePreviews(newHoveredTile.TilePosition); // Unit can recalculate the displayed preview tiles; attack previews change depending on hovered tile in move phase
+        _selectedUnit?.UnitMarkerManager.UpdatePreviews(newHoveredTile.TilePosition); // Unit can recalculate the displayed preview tiles; attack previews change depending on hovered tile in move phase
         
         if(_hoveredTile?.Unit != _selectedUnit)
-            _hoveredTile?.Unit?.MarkerManager.ClearHoverPreviews();
+            _hoveredTile?.Unit?.UnitMarkerManager.ClearHoverPreviews();
             
         if(newHoveredTile.Unit != _selectedUnit)
-            newHoveredTile.Unit?.MarkerManager.DisplayHoverPreviews(newHoveredTile.TilePosition); // Display preview tiles and update stat display
+            newHoveredTile.Unit?.UnitMarkerManager.DisplayHoverPreviews(newHoveredTile.TilePosition); // Display preview tiles and update stat display
         
         UnitHovered?.Invoke(newHoveredTile.Unit);
         
@@ -117,7 +117,7 @@ public class GridMouseInteraction : MonoBehaviour
     {
         if(_hoveredTile == null) return;
             
-        _hoveredTile?.Unit?.MarkerManager.ClearHoverPreviews();
+        _hoveredTile?.Unit?.UnitMarkerManager.ClearHoverPreviews();
         UnitHovered?.Invoke(null);
 
         MarkerManager.Instance.RemoveMarkerLocal(_hoveredTile!.TilePosition, MarkerType.Hover, _playerId);
@@ -126,9 +126,9 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnStateChanged(GameState newState)
     {
-        _hoveredTile?.Unit?.MarkerManager.ClearHoverPreviews();
-        _selectedUnit?.MarkerManager.ClearHoverPreviews();
-        _selectedUnit?.MarkerManager.ClearSelectPreviews();
+        _hoveredTile?.Unit?.UnitMarkerManager.ClearHoverPreviews();
+        _selectedUnit?.UnitMarkerManager.ClearHoverPreviews();
+        _selectedUnit?.UnitMarkerManager.ClearSelectPreviews();
 
         _selectedUnit = null;
         _hasSubmitted = false;
@@ -183,7 +183,7 @@ public class GridMouseInteraction : MonoBehaviour
         
         // In case the player is hovering over the same unit just deselected, restore its previews
         if(shouldRecoverPreview)
-            _hoveredTile.Unit!.MarkerManager.DisplayHoverPreviews(_hoveredTile.TilePosition);
+            _hoveredTile.Unit!.UnitMarkerManager.DisplayHoverPreviews(_hoveredTile.TilePosition);
     }
 
     private void SelectHoveredUnit()
@@ -194,7 +194,7 @@ public class GridMouseInteraction : MonoBehaviour
 
         _selectedUnit = _hoveredTile.Unit;
         _selectedUnit.CmdUpdateControlStatus(true);
-        _selectedUnit.MarkerManager.DisplaySelectedPreviews(_hoveredTile.TilePosition);
+        _selectedUnit.UnitMarkerManager.DisplaySelectedPreviews(_hoveredTile.TilePosition);
     }
     
     private void DeselectUnit()
@@ -202,8 +202,8 @@ public class GridMouseInteraction : MonoBehaviour
         if(_selectedUnit == null)
             return;
         
-        _selectedUnit.MarkerManager.ClearHoverPreviews();
-        _selectedUnit.MarkerManager.ClearSelectPreviews();
+        _selectedUnit.UnitMarkerManager.ClearHoverPreviews();
+        _selectedUnit.UnitMarkerManager.ClearSelectPreviews();
         _selectedUnit.CmdUpdateControlStatus(false);
         _selectedUnit = null;
     }

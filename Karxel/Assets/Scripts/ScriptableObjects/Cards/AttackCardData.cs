@@ -26,6 +26,6 @@ public class AttackCardData : CardData
         var attackCommand = selectedUnit.GetAttackForHoverPosition(hoveredTile.TilePosition, damageMultiplier)!;
         
         HandManager.Instance.PlaySelectedCard();
-        selectedUnit.CmdRegisterAttackIntent(attackCommand);
+        selectedUnit.ExecuteAttackLocally(attackCommand, this);
     }
 }
