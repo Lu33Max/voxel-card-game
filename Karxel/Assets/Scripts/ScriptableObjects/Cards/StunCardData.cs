@@ -10,7 +10,7 @@ public class StunCardData : CardData
     
     public override bool CanBeUsed(TileData? hoveredTile, Unit? selectedUnit)
     {
-        return hoveredTile?.Unit != null && hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team &&
+        return hoveredTile?.Unit != null && hoveredTile.Unit.owningTeam != Player.LocalPlayer.team &&
                !hoveredTile.Unit.HasEffectOfTypeActive(Unit.StatusEffect.Stunned, 2);
     }
 

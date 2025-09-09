@@ -91,7 +91,7 @@ public class HeavyUnit : UnitBehaviour
                         .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
                         .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
                         .ToList(),
-            PlayerId = (int)GameManager.Instance.localPlayer.netId,
+            PlayerId = (int)Player.LocalPlayer.netId,
         };
     }
 }

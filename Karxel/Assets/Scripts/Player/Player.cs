@@ -12,14 +12,16 @@ public enum Team
 
 public class Player : NetworkBehaviour
 {
+    public static Player LocalPlayer { get; private set; }
+    
     [SyncVar] public Team team;
 
-    [SerializeField] private GameObject hud;
-    [SerializeField] private Button turnSubmitBtn;
+    [SerializeField] private GameObject hud = null!;
+    [SerializeField] private Button turnSubmitBtn = null!;
 
     [HideInInspector] public UnityEvent turnSubmitted = new();
 
-    public bool HasSubmitted { get; private set; }
+    [field: SyncVar] public bool HasSubmitted { get; private set; }
 
     private void Start()
     {
@@ -36,37 +38,48 @@ public class Player : NetworkBehaviour
         GetComponentInChildren<CardManager>().Initialize();
         GetComponentInChildren<ActionPointManager>().Initialize();
         
-        GameManager.Instance.localPlayer = this;
+        LocalPlayer = this;
+        turnSubmitBtn.interactable = false;
+        
         GameManager.Instance.GameStateChanged += OnGameStateChanged;
         GameManager.Instance.RoundTimerUp += SubmitTurn;
-        GameManager.Instance.CmdPlayerSpawned();
-        
         DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, team, NetworkServer.connections.Count, 1);
 
-        CmdAddToPlayerList(team);
+        CmdAddToPlayerList();
     }
     
-    private void OnDestroy()
+    private void OnDisable()
     {
         // Only execute if leaving during play mode
         if(GameManager.Instance == null)
             return;
-        
+
         GameManager.Instance.RoundTimerUp -= SubmitTurn;
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
-        GameManager.Instance.CmdLeaveLobby();
+        GameManager.Instance.CmdLeaveLobby(netIdentity.netId);
     }
 
     public void SubmitTurn()
     {
-        if(HasSubmitted)
-            return;
-
-        HasSubmitted = true;
+        if(HasSubmitted) return;
+        
         turnSubmitBtn.interactable = false;
         turnSubmitted?.Invoke();
-        
-        GameManager.Instance.CmdSubmitTurn(team);
+
+        CmdUpdateSubmittedStatus(true);
+    }
+
+    [Server]
+    public void UnreadyPlayer()
+    {
+        HasSubmitted = false;
+    }
+    
+    [Command(requiresAuthority = false)]
+    private void CmdUpdateSubmittedStatus(bool newState)
+    {
+        HasSubmitted = newState;
+        GameManager.Instance.SubmitTurn();
     }
 
     private void OnGameStateChanged(GameState newState)
@@ -76,14 +89,14 @@ public class Player : NetworkBehaviour
             case GameState.Movement:
             case GameState.Attack:
                 turnSubmitBtn.interactable = true;
-                HasSubmitted = false;
                 break;
         }
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdAddToPlayerList(Team team)
+    // ReSharper disable once MemberCanBeMadeStatic.Local
+    private void CmdAddToPlayerList()
     {
-        GameManager.Instance.AddPlayerToTeam(team, this);
+        GameManager.Instance.PlayerHasSpawned();
     }
 }

@@ -65,7 +65,7 @@ public class UnitStatDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExit
         unitStats.text =
             $"{stats.health} LP  {Mathf.Abs(stats.attackDamage)} {(stats.attackDamage > 0 ? "ATK" : "Heal")}";
 
-        if (hoveredUnit.owningTeam != GameManager.Instance.localPlayer.team)
+        if (hoveredUnit.owningTeam != Player.LocalPlayer.team)
         {
             moveDisplayParent.gameObject.SetActive(false);
             return;

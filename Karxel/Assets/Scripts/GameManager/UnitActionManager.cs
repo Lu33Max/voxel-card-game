@@ -316,7 +316,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
         _totalUnitActions = actualMoves.Count;
         _moveIntents.Clear();
 
-        if(_totalUnitActions == 0)
+        if (_totalUnitActions == 0)
             OnAllUnitActionsDone?.Invoke();
     }
     
@@ -375,7 +375,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     public void CmdUnitActionDone()
     {
         _unitActionsExecuted++;
-        if (AllUnitActionsDone()) HandleAllActionsDone();
+        if (_totalUnitActions > 0 && AllUnitActionsDone()) HandleAllActionsDone();
     }
 
     /// <summary> Called whenever all attacks or moves have been executed on all clients </summary>

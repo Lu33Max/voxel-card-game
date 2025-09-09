@@ -81,12 +81,12 @@ public class MarkerManager : NetworkSingleton<MarkerManager>
             tile.ClearAllMarkers();
     }
 
-    private static bool ShouldIgnore(string visibility)
+    private static bool ShouldIgnore(string? visibility)
     {
-        if (GameManager.Instance == null || GameManager.Instance.localPlayer == null || visibility == null)
+        if (GameManager.Instance == null || Player.LocalPlayer == null || visibility == null)
             return true;
         
-        var player = GameManager.Instance.localPlayer;
+        var player = Player.LocalPlayer;
 
         return visibility != "All" && ((visibility == "Blue" && player.team != Team.Blue) ||
                                         (visibility == "Red" && player.team != Team.Red) ||

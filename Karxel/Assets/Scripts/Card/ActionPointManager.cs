@@ -70,8 +70,8 @@ public class ActionPointManager : MonoBehaviour
         var pointGainDiff = Mathf.Abs(blueCount - redCount) * basePointsPerRound;
 
         // If the player is part of the disadvantaged team
-        if ((GameManager.Instance.localPlayer.team == Team.Red && redCount < blueCount) ||
-            (GameManager.Instance.localPlayer.team == Team.Blue && blueCount < redCount))
+        if ((Player.LocalPlayer.team == Team.Red && redCount < blueCount) ||
+            (Player.LocalPlayer.team == Team.Blue && blueCount < redCount))
         {
             _maxPoints = baseMaxPoints + (pointDiff / redCount);
             _pointsPerRound = basePointsPerRound + (pointGainDiff / redCount);

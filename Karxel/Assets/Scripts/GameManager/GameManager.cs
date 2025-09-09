@@ -30,10 +30,16 @@ public class GameManager : NetworkSingleton<GameManager>
     public event Action<int, int>? UpdateActionPoints;
 
     [HideInInspector, SyncVar] public GameState gameState = GameState.PreStart;
-    [HideInInspector] public Player localPlayer;
-    [HideInInspector] public List<Player> redPlayers; // Server only
-    [HideInInspector] public List<Player> bluePlayers; // Server only
 
+    private Dictionary<Team, List<NetworkConnectionToClient>> _playerConnections = new();
+    private Dictionary<Team, List<Player>> _players = new();
+    
+    private List<Player> BluePlayers => _players.TryGetValue(Team.Blue, out var bluePlayers) ? bluePlayers : new();
+    private List<Player> RedPlayers => _players.TryGetValue(Team.Red, out var redPlayers) ? redPlayers : new();
+
+    private int SubmittedBluePlayers => BluePlayers.Count(p => p.HasSubmitted);
+    private int SubmittedRedPlayers => RedPlayers.Count(p => p.HasSubmitted);
+    
     [Header("Team Information")]
     [SerializeField] private TextMeshProUGUI redReadyUIText;
     [SerializeField] private TextMeshProUGUI blueReadyUIText;
@@ -50,10 +56,9 @@ public class GameManager : NetworkSingleton<GameManager>
     
     private int _roundCounter = 1;
     
-    private int _redSubmit;
-    private int _blueSubmit;
-    
     private int _readyPlayers;
+    private int _spawnedPlayers;
+    private int _submittedPlayers;
 
     private readonly HashSet<Team> _defeatedKings = new();
     private AudioSource _timerAudio;
@@ -77,34 +82,62 @@ public class GameManager : NetworkSingleton<GameManager>
         Unit.OnUnitDied += HandleUnitDied;
         UnitActionManager.Instance.OnAllUnitActionsDone += HandleAllUnitsDone;
     }
+    
+    private void Update()
+    {
+        if(!isServer || !_timerActive) return;
+        
+        UpdateTimer();
+        if(_submittedPlayers > 0) CheckForAllSubmitted();
+    }
+    
+    private void OnDisable()
+    {
+        if(!isServer) return;
+        
+        Unit.OnUnitDied -= HandleUnitDied;
+        UnitActionManager.Instance.OnAllUnitActionsDone -= HandleAllUnitsDone;
+    }
+
+    /// <summary>
+    ///     Called whenever a <see cref="Player"/> has executed their LocalPlayerStart method. Tracks all player instances
+    ///     that take part in the current round and starts the first play phase upon successful spawning
+    /// </summary>
+    [Server]
+    public void PlayerHasSpawned()
+    {
+        _spawnedPlayers++;
+        if(_spawnedPlayers != NetworkServer.connections.Count) return;
+        
+        // Save references to all players currently participating in the match
+        foreach(var conn in NetworkServer.connections.Values)
+        {
+            var player = conn.identity.GetComponent<Player>();
+            
+            if(!_playerConnections.TryAdd(player.team, new() { conn }))
+                _playerConnections[player.team].Add(conn);
+           
+            if(!_players.TryAdd(player.team, new() { player }))
+                _players[player.team].Add(player);
+        }
+        
+        _bluePlayerText = _players.TryGetValue(Team.Blue, out var bluePlayers) ? $"0/{bluePlayers.Count}" : "0/0";
+        _redPlayerText = _players.TryGetValue(Team.Red, out var redPlayers) ? $"0/{redPlayers.Count}" : "0/0";
+
+        _timeLeft = movementTime + 1;
+        _timerActive = true;
+        
+        RPCInvokePlayersReady();
+        UpdateGameState(GameState.Movement);
+    }
 
     [Server]
     private void HandleAllUnitsDone()
     {
         if(gameState == GameState.MovementExecution) StartAttackPhase();
-        if(gameState == GameState.AttackExecution) StartMovePhase();
+        else if(gameState == GameState.AttackExecution) StartMovePhase();
             
         CheckHealth?.Invoke();
-    }
-
-    private void Update()
-    {
-        if(!isServer)
-            return;
-        
-        if(_timerActive)
-            UpdateTimer();
-
-        #if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.K))
-            _defeatedKings.Add(Team.Blue);
-        #endif
-    }
-
-    private void OnDisable()
-    {
-        Unit.OnUnitDied -= HandleUnitDied;
-        UnitActionManager.Instance.OnAllUnitActionsDone -= HandleAllUnitsDone;
     }
 
     [Server]
@@ -112,30 +145,6 @@ public class GameManager : NetworkSingleton<GameManager>
     {
         if (behaviour is KingUnit)
             _defeatedKings.Add(owningTeam);
-    }
-
-    [Server]
-    public void AddPlayerToTeam(Team team, Player newPlayer)
-    {
-        switch (team)
-        {
-            case Team.Blue:
-                bluePlayers.Add(newPlayer);
-                _bluePlayerText = $"0/{bluePlayers.Count}";
-                break;
-            case Team.Red:
-                redPlayers.Add(newPlayer);
-                _redPlayerText = $"0/{redPlayers.Count}";
-                break;
-        }
-
-        // Start the movement phase once all players are ready
-        if (bluePlayers.Count + redPlayers.Count != NetworkServer.connections.Count) 
-            return;
-        
-        UpdateGameState(GameState.Movement);
-        _timeLeft = movementTime;
-        _timerActive = true;
     }
 
     [Server]
@@ -150,7 +159,7 @@ public class GameManager : NetworkSingleton<GameManager>
         gameState = newState;
         
         if (gameState is GameState.Movement)
-            RpcUpdateActionPoints(bluePlayers.Count, redPlayers.Count);
+            RpcUpdateActionPoints(BluePlayers.Count, RedPlayers.Count);
         
         RPCInvokeStateUpdate(newState);
     }
@@ -166,27 +175,23 @@ public class GameManager : NetworkSingleton<GameManager>
         _timeLeft = 0;
         _timerActive = false;
         
-        // Logging
-        ActionLogger.Instance.LogAction("server", "server", "timeUp", null, null, null, null, null);
-        
         RPCInvokeTimerUp();
     }
 
     [Server]
     private void StartMovePhase()
     {
-        UpdateGameState(GameState.Movement);
-            
         _roundCounter++;
-        RPCInvokeNewRound(_roundCounter);
             
-        _bluePlayerText = $"0/{bluePlayers.Count}";
-        _redPlayerText = $"0/{redPlayers.Count}";
+        _bluePlayerText = $"0/{BluePlayers.Count}";
+        _redPlayerText = $"0/{RedPlayers.Count}";
             
         _timeLeft = movementTime;
         _timerActive = true;
             
-        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, localPlayer.team, NetworkServer.connections.Count, _roundCounter);
+        DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, Player.LocalPlayer.team, NetworkServer.connections.Count, _roundCounter);
+        UpdateGameState(GameState.Movement);
+        RPCInvokeNewRound(_roundCounter);
     }
 
     [Server]
@@ -220,63 +225,48 @@ public class GameManager : NetworkSingleton<GameManager>
         blueReadyUIText.text = _bluePlayerText;
     }
     
-    [Command(requiresAuthority = false)]
-    public void CmdPlayerSpawned()
+    /// <summary>
+    ///     Called from <see cref="Player"/> whenever a turn has been submitted. Updates display and calls to check
+    ///     if all players have already submitted
+    /// </summary>
+    [Server]
+    public void SubmitTurn()
     {
-        _readyPlayers++;
-        
-        if(_readyPlayers == NetworkServer.connections.Count)
-            RPCInvokePlayersReady();
-    }
-    
-    [Command(requiresAuthority = false)]
-    public void CmdSubmitTurn(Team team)
-    {
-        if (team == Team.Blue)
-        {
-            _blueSubmit++;
-            _bluePlayerText = $"{_blueSubmit}/{bluePlayers.Count}";
-        }
-        else if (team == Team.Red)
-        {
-            _redSubmit++;
-            _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
-        }
+        _bluePlayerText = $"{SubmittedBluePlayers}/{BluePlayers.Count}";
+        _redPlayerText = $"{SubmittedRedPlayers}/{RedPlayers.Count}";
 
+        _submittedPlayers++;
         CheckForAllSubmitted();
     }
 
+    /// <summary>
+    ///     Checks the number of submitted players per team. If all players of one team submitted the timer is reduced
+    ///     to <see cref="submitTime"/>. If every player submitted change to the execution gamestate
+    /// </summary>
     [Server]
     private void CheckForAllSubmitted()
     {
-        if (_blueSubmit != bluePlayers.Count || _redSubmit != redPlayers.Count)
+        if (((SubmittedBluePlayers == BluePlayers.Count && BluePlayers.Count > 0) || 
+             (SubmittedRedPlayers == RedPlayers.Count && RedPlayers.Count > 0)) && _timeLeft > submitTime)
         {
-            // If all players of one team have submitted, reduce the remaining round time
-            if ((_blueSubmit == bluePlayers.Count || _redSubmit == redPlayers.Count) && _timeLeft > submitTime)
-                _timeLeft = submitTime;
-            
-            return;
+            _timeLeft = submitTime;
         }
 
-        _timerActive = false;
-        _blueSubmit = 0;
-        _redSubmit = 0;
+        if (SubmittedBluePlayers != BluePlayers.Count || SubmittedRedPlayers != RedPlayers.Count) return;
         
-        switch (gameState)
-        {
-            case GameState.Movement:
-                UpdateGameState(GameState.MovementExecution);
-                break;
-            case GameState.Attack:
-                UpdateGameState(GameState.AttackExecution);
-                break;
-        }
+        _timerActive = false;
+        _submittedPlayers = 0;
+
+        foreach (var player in _players.Values.SelectMany(p => p))
+            player.UnreadyPlayer();
+        
+        UpdateGameState(gameState == GameState.Attack ? GameState.AttackExecution : GameState.MovementExecution);
     }
 
     private void StartAttackPhase()
     {
-        _bluePlayerText = $"0/{bluePlayers.Count}";
-        _redPlayerText = $"0/{redPlayers.Count}";
+        _bluePlayerText = $"0/{BluePlayers.Count}";
+        _redPlayerText = $"0/{RedPlayers.Count}";
 
         _timeLeft = movementTime;
         _timerActive = true;
@@ -285,34 +275,21 @@ public class GameManager : NetworkSingleton<GameManager>
     }
 
     [Command(requiresAuthority = false)]
-    public void CmdLeaveLobby()
+    public void CmdLeaveLobby(uint leavingNetId)
     {
-        var players = FindObjectsByType<Player>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        
-        bluePlayers.Clear();
-        redPlayers.Clear();
-
-        _blueSubmit = 0;
-        _redSubmit = 0;
-
-        foreach (var player in players)
+        if (BluePlayers.Exists(p => p.netId == leavingNetId))
         {
-            if (player.team == Team.Blue)
-            {
-                bluePlayers.Add(player);
-                if (player.HasSubmitted)
-                    _blueSubmit++;
-            }
-            else if (player.team == Team.Red)
-            {
-                redPlayers.Add(player);
-                if (player.HasSubmitted)
-                    _redSubmit++;
-            }
+            _players[Team.Blue].RemoveAll(p => p.netId == leavingNetId);
+            _playerConnections[Team.Blue].RemoveAll(p => p.identity.netId == leavingNetId);
         }
-        
-        _bluePlayerText = $"{_blueSubmit}/{bluePlayers.Count}";
-        _redPlayerText = $"{_redSubmit}/{redPlayers.Count}";
+        else if (RedPlayers.Exists(p => p.netId == leavingNetId))
+        {
+            _players[Team.Red].RemoveAll(p => p.netId == leavingNetId);
+            _playerConnections[Team.Red].RemoveAll(p => p.identity.netId == leavingNetId);
+        }
+
+        _bluePlayerText = $"{SubmittedBluePlayers}/{BluePlayers.Count}";
+        _redPlayerText = $"{SubmittedRedPlayers}/{RedPlayers.Count}";
 
         if (!UnitActionManager.Instance.AllUnitActionsDone()) return;
         

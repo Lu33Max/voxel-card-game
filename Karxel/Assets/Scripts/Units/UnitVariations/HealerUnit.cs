@@ -72,7 +72,7 @@ public class HealerUnit : UnitBehaviour
         {
             Damage = UnitRef.Data.attackDamage * damageMultiplier,
             Tiles = new List<Vector3Int>{ hoveredPos },
-            PlayerId = (int)GameManager.Instance.localPlayer.netId,
+            PlayerId = (int)Player.LocalPlayer.netId,
         };
     }
 }

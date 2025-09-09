@@ -111,8 +111,7 @@ public class Unit : NetworkBehaviour
         
         UpdateMaterialToTeamColor();
 
-        if(!isServer)
-            return;
+        if(!isServer) return;
         
         UpdateHealth(data.health);
         UnitActionManager.Instance.OnExecuteAttack += OnAttackExecuted;
@@ -234,7 +233,7 @@ public class Unit : NetworkBehaviour
     private void OnControlStatusChanged(bool old, bool isNowSelected)
     {
         // Only display selection highlight for other team members
-        if(owningTeam != GameManager.Instance.localPlayer.team)
+        if(owningTeam != Player.LocalPlayer.team)
             return;
         
         var newMaterials = isNowSelected
@@ -267,7 +266,7 @@ public class Unit : NetworkBehaviour
         // b) is a move or attack card, the unit can be selected and is of the player's own team
         if ((selectedCard.IsDisposable() &&
             selectedCard.CanBeUsed(GridManager.Instance.GetTileAtGridPosition(TilePosition), null)) ||
-            (!selectedCard.IsDisposable() && IsSelectable && owningTeam == GameManager.Instance.localPlayer.team))
+            (!selectedCard.IsDisposable() && IsSelectable && owningTeam == Player.LocalPlayer.team))
         {
             UpdateMaterialToTeamColor();
             return;
@@ -431,7 +430,7 @@ public class Unit : NetworkBehaviour
         _pathManager.CreatePathLocally(command,
             _moveIntents.Count > 0 ? _moveIntents.Last().TargetPosition : TilePosition);
         
-        UnitActionManager.Instance.CmdTryRegisterMoveIntent(GameManager.Instance.localPlayer.netId, TilePosition,
+        UnitActionManager.Instance.CmdTryRegisterMoveIntent(Player.LocalPlayer.netId, TilePosition,
             command, moveCard.moveDistance);
     }
 
@@ -487,7 +486,7 @@ public class Unit : NetworkBehaviour
                 Visibility = "local"
             });
         
-        UnitActionManager.Instance.CmdTryRegisterAttackIntent(GameManager.Instance.localPlayer.netId, TilePosition,
+        UnitActionManager.Instance.CmdTryRegisterAttackIntent(Player.LocalPlayer.netId, TilePosition,
             attack, attackCard.damageMultiplier);
     }
     

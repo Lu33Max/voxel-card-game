@@ -189,7 +189,7 @@ public class GridMouseInteraction : MonoBehaviour
     private void SelectHoveredUnit()
     {
         if (_hoveredTile?.Unit == null || !_hoveredTile.Unit.IsSelectable ||
-            _hoveredTile.Unit.owningTeam != GameManager.Instance.localPlayer.team) 
+            _hoveredTile.Unit.owningTeam != Player.LocalPlayer.team) 
             return;
 
         _selectedUnit = _hoveredTile.Unit;
@@ -210,8 +210,8 @@ public class GridMouseInteraction : MonoBehaviour
     
     private void OnPlayersReady()
     {
-        GameManager.Instance.localPlayer.GetComponent<Player>().turnSubmitted.AddListener(OnTurnSubmitted);
-        _playerId = GameManager.Instance.localPlayer.netId.ToString();
+        Player.LocalPlayer.turnSubmitted.AddListener(OnTurnSubmitted);
+        _playerId = Player.LocalPlayer.netId.ToString();
     }
 
     private void OnTurnSubmitted()
