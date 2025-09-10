@@ -7,10 +7,22 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkIdentity))]
 public class UnitActionManager : NetworkSingleton<UnitActionManager>
 {
+    public class DamageHealCount
+    {
+        public int Damage;
+        public int Heal;
+
+        public DamageHealCount(int damage, int heal)
+        {
+            Damage = damage;
+            Heal = heal;
+        }
+    }
+    
     /// <summary> Called whenever all units across all clients have finished their moves </summary>
     public event Action? OnAllUnitActionsDone;
-    /// <summary> Notifies all units of executed attacks so they can check whether they're hit </summary>
-    public event Action<Attack>? OnExecuteAttack; 
+    /// <summary> Notifies the units of the accumulated damage and heal to be received on a given tile </summary>
+    public event Action<Vector3Int, DamageHealCount>? OnTileDamaged;
     
     /// <summary>
     ///     Stores all validated and globally registered moves for the current round. <br/> Only exists on the server
@@ -168,10 +180,10 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     private static bool IsValidAttack(Unit unit, Attack attack, int damageMultiplier)
     {
         var validTiles = unit.GetValidAttackTiles();
-
+        
         if (attack.Tiles.Any(tile => !validTiles.Contains(tile)))
             return false;
-
+        
         return attack.Damage == unit.Data.attackDamage * damageMultiplier;
     }
     
@@ -344,26 +356,41 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
             OnAllUnitActionsDone?.Invoke();
             return;
         }
+
+        // Stores the sum of all damage and healing to be received on the given tile
+        Dictionary<Vector3Int, DamageHealCount> accumulatedDamage = new();
         
         // Shorty display every attacked tile, play attack animations and call events for every hit target
         foreach (var attackIntent in attacksToExecute)
         {
             var currentAttack = attackIntent.Value[_attackRound];
-            
+
             foreach (var tile in currentAttack.Tiles)
+            {
+                if (!accumulatedDamage.TryAdd(tile, new DamageHealCount(
+                        currentAttack.Damage > 0 ? currentAttack.Damage : 0,
+                        currentAttack.Damage < 0 ? currentAttack.Damage : 0)))
+                {
+                    accumulatedDamage[tile].Damage += currentAttack.Damage > 0 ? currentAttack.Damage : 0;
+                    accumulatedDamage[tile].Heal += currentAttack.Damage < 0 ? currentAttack.Damage : 0;
+                }
+                
                 MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
                 {
                     Type = MarkerType.Attack,
                     Priority = 1,
                     Visibility = "All"
-                });
+                });   
+            }
             
-            OnExecuteAttack?.Invoke(currentAttack);
             _totalUnitActions = attacksToExecute.Length;
             
             var unit = GridManager.Instance.GetTileAtGridPosition(attackIntent.Key)?.Unit;
             if (unit != null) unit.RPCExecuteAttack(currentAttack);
         }
+
+        foreach (var damageHealCount in accumulatedDamage)
+            OnTileDamaged?.Invoke(damageHealCount.Key, damageHealCount.Value);
     }
     
     /// <summary> Called by clients whenever a unit has executed its action locally </summary>

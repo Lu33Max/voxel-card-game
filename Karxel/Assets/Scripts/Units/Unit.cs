@@ -114,7 +114,7 @@ public class Unit : NetworkBehaviour
         if(!isServer) return;
         
         UpdateHealth(data.health);
-        UnitActionManager.Instance.OnExecuteAttack += OnAttackExecuted;
+        UnitActionManager.Instance.OnTileDamaged += OnAttackExecuted;
         GameManager.Instance.CheckHealth += OnCheckHealth;
     }
 
@@ -139,7 +139,7 @@ public class Unit : NetworkBehaviour
         if(!isServer)
             return;
         
-        UnitActionManager.Instance.OnExecuteAttack -= OnAttackExecuted;
+        UnitActionManager.Instance.OnTileDamaged -= OnAttackExecuted;
         GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
@@ -230,13 +230,13 @@ public class Unit : NetworkBehaviour
        UnitActionManager.Instance.CmdUnitActionDone();
     }
 
-    private void OnHealthUpdated(int old, int newHealth)
+    private void OnHealthUpdated(int _, int newHealth)
     {
         healthSlider.value = (float)newHealth / data.health;
         healthCounter.text = newHealth.ToString();
     }
 
-    private void OnControlStatusChanged(bool old, bool isNowSelected)
+    private void OnControlStatusChanged(bool _, bool isNowSelected)
     {
         // Only display selection highlight for other team members
         if(owningTeam != Player.LocalPlayer.team)
@@ -311,28 +311,31 @@ public class Unit : NetworkBehaviour
     }
 
     [Server]
-    private void OnAttackExecuted(Attack attack)
+    private void OnAttackExecuted(Vector3Int position, UnitActionManager.DamageHealCount damage)
     {
-        if(!attack.Tiles.Contains(TilePosition))
+        if(position != TilePosition)
             return;
+
+        var totalDamage = damage.Heal;
+
+        if (HasEffectOfTypeActive(StatusEffect.Shielded))
+        {
+            totalDamage += Mathf.RoundToInt(damage.Damage / 2f);
+            _tookDamage = true;
+        }
+        else totalDamage += damage.Damage;
         
-        UpdateHealth(-attack.Damage);
+        UpdateHealth(-totalDamage);
     }
     
     [Server]
     private void UpdateHealth(int changeAmount)
     {
-        var actualChange = changeAmount;
+        _currentHealth = Mathf.Clamp(_currentHealth + changeAmount, 0, data.health);
 
-        if (HasEffectOfTypeActive(StatusEffect.Shielded))
-            actualChange = Mathf.RoundToInt(actualChange / data.dmgReductionFromShield);
-        
-        _currentHealth = Mathf.Clamp(_currentHealth + actualChange, 0, data.health);
-        if(actualChange >= 0) return;
+        if (changeAmount > 0) return;
         
         PlayHurtSound();
-        _tookDamage = true;
-        
         if(_currentHealth <= 0) StartCoroutine(Die());
     }
 

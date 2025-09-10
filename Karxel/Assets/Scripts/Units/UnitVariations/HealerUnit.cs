@@ -5,42 +5,40 @@ using UnityEngine;
 
 public class HealerUnit : UnitBehaviour
 {
-    [SerializeField] private int baseRange = 1;
+    [SerializeField] private int baseRange = 3;
     
     public override IEnumerable<MoveCommand> GetValidMoves(Vector3Int unitPosition, int movementRange)
     {
         var moves = new List<MoveCommand>();
-        
-        // Key = current Tile, Value = previous Tile
-        Dictionary<Vector3Int, Vector3Int> path = new();
-        
-        var queue = new Queue<Vector3Int>();
-        queue.Enqueue(unitPosition);
 
-        while (queue.Count > 0)
+        Vector3Int[] directions = { Vector3Int.back, Vector3Int.left, Vector3Int.right, Vector3Int.forward };
+        
+        foreach (var direction in directions)
         {
-            var prevPos = queue.Dequeue();
-
-            var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
-                false, UnitRef.Data.traversableEdgeTypes, new[] { TileData.TileState.Normal });
+            // Key = current Tile, Value = previous Tile
+            Dictionary<Vector3Int, Vector3Int> path = new();
             
-            foreach (var neighbour in validNeighbours)
+            var queue = new Queue<Vector3Int>();
+            queue.Enqueue(unitPosition);
+
+            while (queue.Count > 0)
             {
-                if(neighbour == unitPosition)
-                    continue;
+                var prevPos = queue.Dequeue();
                 
-                var relativePos = unitPosition - neighbour;
+                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
+                    true, UnitRef.Data.traversableEdgeTypes, new [] { TileData.TileState.Normal }).ToArray();
                 
-                if(Math.Pow(relativePos.x, 2) + Math.Pow(relativePos.y, 2) + Math.Pow(relativePos.z, 2) > Math.Pow(baseRange * movementRange + 0.5f, 2))
-                    continue;
-                
-                if(!path.TryAdd(neighbour, prevPos))
-                    continue;
-                
-                var pathToTile = ReconstructPath(path, neighbour, unitPosition);
-                moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
-                
-                queue.Enqueue(neighbour);
+                var targetPosition = prevPos + direction;
+
+                foreach (var neighbour in validNeighbours.Where(n => n.x == targetPosition.x && n.z == targetPosition.z))
+                {
+                    path.Add(neighbour, prevPos);
+                    var pathToTile = ReconstructPath(path, neighbour, unitPosition);
+                    moves.Add(new MoveCommand { TargetPosition = neighbour, Path = pathToTile });
+                    
+                    if(pathToTile.Count < movementRange * baseRange - 1)
+                        queue.Enqueue(neighbour);
+                }
             }
         }
         
@@ -49,30 +47,33 @@ public class HealerUnit : UnitBehaviour
 
     public override List<Vector3Int> GetValidAttackTiles(Vector3Int position)
     {
-        Vector3Int[] singleLayer =
-        {
-            position + Vector3Int.back, position + Vector3Int.left, position + Vector3Int.forward,
-            position + Vector3Int.right, position + new Vector3Int(1, 0, 1), position + new Vector3Int(-1, 0, 1),
-            position + new Vector3Int(1, 0, -1), position + new Vector3Int(-1, 0, -1), position
-        };
-
-        return singleLayer
-            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
-            .Concat(singleLayer.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
+        return CalculateHealTiles(position)
             .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList();
     }
 
     public override Attack? GetAttackForHoverPosition(Vector3Int hoveredPos, int damageMultiplier)
     {
-        var allTiles = GetValidAttackTiles(UnitRef.TilePosition);
-
+        var allTiles = CalculateHealTiles(UnitRef.TilePosition);
         if (!allTiles.Contains(hoveredPos)) return null;
 
         return new Attack
         {
             Damage = UnitRef.Data.attackDamage * damageMultiplier,
-            Tiles = new List<Vector3Int>{ hoveredPos },
+            Tiles = allTiles.Where(t => GridManager.Instance.IsExistingGridPosition(t, out _)).ToList(),
             PlayerId = (int)Player.LocalPlayer.netId,
         };
+    }
+
+    /// <summary> Calculates a box of tiles around the given center position </summary>
+    private static List<Vector3Int> CalculateHealTiles(Vector3Int centerPos)
+    {
+        List<Vector3Int> positions = new();
+        
+        for(var x = -1; x <= 1; x++)
+            for(var y = -1; y <= 1; y++)
+                for(var z = -1; z <= 1; z++)
+                    positions.Add(centerPos + new Vector3Int(x, y, z));
+
+        return positions;
     }
 }
