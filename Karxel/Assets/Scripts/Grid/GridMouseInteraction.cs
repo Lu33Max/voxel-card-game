@@ -26,26 +26,16 @@ public class GridMouseInteraction : MonoBehaviour
 
         // Reassign in case any subscribers did not unsubscribe
         UnitHovered = new UnityEvent<Unit>();
-    }
-
-    private void OnEnable()
-    {
-        HandManager.OnCardDeselected += OnCardDeselected;
-        GameManager.OnReady += HandleGameManagerReady;
+        
         InputManager.Instance.OnInteract += OnMouseInteraction;
-    }
-
-    private void HandleGameManagerReady()
-    {
         GameManager.Instance.PlayersReady += OnPlayersReady;
         GameManager.Instance.GameStateChanged += OnStateChanged;
-        _isActive = true;
+        HandManager.OnCardDeselected += OnCardDeselected;
     }
 
     private void OnDisable()
     {
         InputManager.Instance.OnInteract -= OnMouseInteraction;
-        GameManager.OnReady -= HandleGameManagerReady;
         GameManager.Instance.PlayersReady -= OnPlayersReady;
         GameManager.Instance.GameStateChanged -= OnStateChanged;
         HandManager.OnCardDeselected -= OnCardDeselected;
@@ -53,8 +43,6 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void Update()
     {
-        if(!_isActive) return;
-        
         CheckForHoveredTile();
     }
 

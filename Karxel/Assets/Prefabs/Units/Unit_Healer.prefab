@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1160365348562669108, guid: da91b61b532d38b4fb642fd978984800,
@@ -85,7 +86,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 25b4af97ea1ea2747a016a569e48dad5, type: 2}
     - target: {fileID: 4213534760924973138, guid: da91b61b532d38b4fb642fd978984800,
         type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ea09eb958988bfc428ad9ee06568e6d9, type: 2}
     - target: {fileID: 5633764496343281651, guid: da91b61b532d38b4fb642fd978984800,
@@ -104,8 +105,20 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 7968110780435949349, guid: c84bfb07347b3c346828df25bffade84,
         type: 3}
+    - target: {fileID: 7423909431222590530, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 6629697987774451715, guid: da91b61b532d38b4fb642fd978984800, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5633764496343281651, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2136668532377758228}
   m_SourcePrefab: {fileID: 100100000, guid: da91b61b532d38b4fb642fd978984800, type: 3}
 --- !u!1 &5672087401023462267 stripped
 GameObject:
@@ -128,4 +141,4 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  baseRange: 1
+  baseRange: 3
