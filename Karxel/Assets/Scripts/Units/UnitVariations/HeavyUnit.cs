@@ -90,6 +90,7 @@ public class HeavyUnit : UnitBehaviour
             Tiles = tilesToAttack
                         .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y + 1, t.z)))
                         .Concat(tilesToAttack.Select(t => new Vector3Int(t.x, t.y - 1, t.z)))
+                        .Where(t => GridManager.Instance.IsExistingGridPosition(t, out _))
                         .ToList(),
             PlayerId = (int)Player.LocalPlayer.netId,
         };

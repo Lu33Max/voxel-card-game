@@ -1,9 +1,5 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class LobbyCreationMenu : MonoBehaviour
@@ -20,7 +16,7 @@ public class LobbyCreationMenu : MonoBehaviour
         nameInput.text = PlayerPrefs.GetString("lobbyName", "");
 
         _visibility = PlayerPrefs.GetInt("lobbyVisibility", 0);
-        visibilityToggle.text = _visibility == 0 ? "PUBLIC" : "PRIVATE";
+        visibilityToggle.text = _visibility == 0 ? "Public" : "Private";
         passwordInput.interactable = _visibility != 0;
 
         passwordInput.text = PlayerPrefs.GetString("lobbyPassword", "");
@@ -40,7 +36,7 @@ public class LobbyCreationMenu : MonoBehaviour
         _visibility = _visibility == 0 ? 1 : 0;
         PlayerPrefs.SetInt("lobbyVisibility", _visibility);
         
-        visibilityToggle.text = _visibility == 0 ? "PUBLIC" : "PRIVATE";
+        visibilityToggle.text = _visibility == 0 ? "Public" : "Private";
         passwordInput.interactable = _visibility != 0;
 
         CheckForValidState();

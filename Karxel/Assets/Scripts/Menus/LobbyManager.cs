@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using EpicTransport;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -38,9 +38,12 @@ public class LobbyManager : NetworkBehaviour
     
     private void Awake()
     {
-        _roomManager = FindObjectOfType<NetworkRoom>();
-        _epicLobby = FindObjectOfType<EOSLobby>();
-        
+        _roomManager = FindAnyObjectByType<NetworkRoom>();
+        _epicLobby = FindAnyObjectByType<EOSLobby>();
+    }
+
+    private void Start()
+    {
         AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
     }
 
@@ -55,10 +58,9 @@ public class LobbyManager : NetworkBehaviour
             return;
         
         _epicLobby.LeaveLobbySucceeded += OnLeaveLobbySuccess;
-        _epicLobby.LeaveLobbyFailed += message => Debug.LogError(message);
+        _epicLobby.LeaveLobbyFailed += Debug.LogError;
     }
-
-    //deregister events
+    
     private void OnDisable() {
         if(_epicLobby == null)
             return;
@@ -128,7 +130,7 @@ public class LobbyManager : NetworkBehaviour
         blueJoinBtn.interactable = localPlayer.isReady && localPlayer.team != Team.Blue;
         
         localPlayer.SetReady(!localPlayer.isReady);
-        readyBtn.GetComponentInChildren<TextMeshProUGUI>().text = localPlayer.isReady ? "READY" : "UNREADY";
+        readyBtn.GetComponentInChildren<TextMeshProUGUI>().text = localPlayer.isReady ? "Ready" : "Unready";
     }
 
     public void OnLeaveButtonPressed()
@@ -144,7 +146,6 @@ public class LobbyManager : NetworkBehaviour
         NetworkManager.singleton.StopHost();
         NetworkManager.singleton.StopClient();
     }
-    
     
     [Client]
     public void UpdatePlayerList()

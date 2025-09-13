@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using Discord;
-using JetBrains.Annotations;
 
 public class DiscordManager : Singleton<DiscordManager>
 {
@@ -11,7 +10,7 @@ public class DiscordManager : Singleton<DiscordManager>
         Game
     }
     
-    [CanBeNull] private Discord.Discord _discord;
+    private Discord.Discord? _discord;
     private Activity _activity;
     private ActivityState _lastState;
 
@@ -107,9 +106,8 @@ public class DiscordManager : Singleton<DiscordManager>
         {
             _discord = new Discord.Discord(1342122312463417396, (ulong)CreateFlags.NoRequireDiscord);
         }
-        catch (Exception ex)
+        catch (Exception _)
         {
-            Debug.LogError(ex);
             _discord = null;
         }
     }
