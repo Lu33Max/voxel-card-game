@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "StunCard", menuName = "Cards/Stun")]
 public class StunCardData : CardData
 {
-    public override bool IsCorrectPhase() => true;
+    public override bool IsCorrectPhase() => GameManager.Instance!.gameState is GameState.Attack or GameState.Movement;
     
     public override bool CanBeUsed(TileData? hoveredTile, Unit? selectedUnit)
     {

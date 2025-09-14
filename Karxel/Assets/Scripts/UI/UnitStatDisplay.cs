@@ -23,12 +23,12 @@ public class UnitStatDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExit
     
     private void Start()
     {
-        GridMouseInteraction.UnitHovered.AddListener(OnUnitHovered);
+        GridMouseInteraction.UnitHovered += OnUnitHovered;
     }
 
     private void OnDestroy()
     {
-        GridMouseInteraction.UnitHovered.RemoveListener(OnUnitHovered);
+        GridMouseInteraction.UnitHovered -= OnUnitHovered;
     }
     
     public void OnPointerEnter(PointerEventData eventData)
@@ -71,8 +71,13 @@ public class UnitStatDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExit
             return;
         }
         
+        DisplayUnitMoves(hoveredUnit);
+    }
+
+    private void DisplayUnitMoves(Unit hoveredUnit)
+    {
         moveDisplayParent.gameObject.SetActive(true);
-        
+
         for (var i = 0; i < hoveredUnit.ActionAmountLeft; i++)
         {
             if (_moveDisplays.Count <= i)
@@ -83,17 +88,17 @@ public class UnitStatDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExit
                 var rect = newDisplay.AddComponent<RectTransform>();
                 rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 30);
                 rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 30);
-                
+
                 _moveDisplays.Add(newDisplay.AddComponent<Image>());
             }
 
-            _moveDisplays[i].sprite = GameManager.Instance.gameState switch
+            _moveDisplays[i].sprite = GameManager.Instance!.gameState switch
             {
                 GameState.Movement => moveSprite,
                 GameState.Attack => attackSprite,
                 _ => null
             };
-            
+
             _moveDisplays[i].gameObject.SetActive(_moveDisplays[i].sprite != null);
         }
 

@@ -7,7 +7,7 @@ public class GridMouseInteraction : MonoBehaviour
 {
     [SerializeField] private LayerMask groundLayer;
 
-    public static UnityEvent<Unit>? UnitHovered;
+    public static event Action<Unit>? UnitHovered;
     
     private Camera _mainCamera = null!;
     private TileData? _hoveredTile;
@@ -23,9 +23,6 @@ public class GridMouseInteraction : MonoBehaviour
         if (Camera.main == null) throw new NullReferenceException("[GridMouseInteraction] Camera.main was not set");
         
         _mainCamera = Camera.main;
-
-        // Reassign in case any subscribers did not unsubscribe
-        UnitHovered = new UnityEvent<Unit>();
         
         InputManager.Instance.OnInteract += OnMouseInteraction;
         HandManager.OnCardDeselected += OnCardDeselected;
@@ -35,8 +32,6 @@ public class GridMouseInteraction : MonoBehaviour
 
     private void OnDisable()
     {
-        UnitHovered = new UnityEvent<Unit>();
-        
         InputManager.Instance.OnInteract -= OnMouseInteraction;
         HandManager.OnCardDeselected -= OnCardDeselected;
 

@@ -6,7 +6,7 @@ public class AttackCardData : CardData
 {
     public int damageMultiplier;
     
-    public override bool IsCorrectPhase() => GameManager.Instance.gameState == GameState.Attack;
+    public override bool IsCorrectPhase() => GameManager.Instance!.gameState == GameState.Attack;
     
     public override bool CanBeUsed(TileData? hoveredTile, Unit? selectedUnit)
     {
@@ -14,7 +14,7 @@ public class AttackCardData : CardData
             ? null
             : selectedUnit.GetAttackForHoverPosition(hoveredTile.TilePosition, damageMultiplier);
 
-        return attackCommand != null && GameManager.Instance.gameState == GameState.Attack;
+        return attackCommand != null && GameManager.Instance!.gameState == GameState.Attack;
     }
 
     protected override void UseCard(TileData? hoveredTile, Unit? selectedUnit)

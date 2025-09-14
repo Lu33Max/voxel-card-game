@@ -1,4 +1,5 @@
 using UnityEngine;
+#nullable enable
 
 public abstract class CardData : ScriptableObject
 {

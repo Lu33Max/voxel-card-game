@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ShieldCard", menuName = "Cards/Shield")]
 public class ShieldCardData : CardData
 {
-    public override bool IsCorrectPhase() => true;
+    public override bool IsCorrectPhase() => GameManager.Instance!.gameState is GameState.Attack or GameState.Movement;
     
     public override bool CanBeUsed(TileData? hoveredTile, Unit? selectedUnit)
     {

@@ -18,13 +18,11 @@ public class HandManager : MonoBehaviour
 
     [Header("Canvas Ref")]
     [SerializeField] private float canvasWidth = 1920;
-    [SerializeField] private float canvasHeight = 1080;
 
     [Header("Hand Positioning")]
     [SerializeField] private float cardWidth = 100f;
     [SerializeField] private float borderWidth = 150f;
     [SerializeField] private float cardRegularY = 75f;
-    [SerializeField] private float cardLoweredY = 20f;
     [SerializeField] private float cardRaisedY = 200f;
 
     [Header("Mouse Follower")]
@@ -51,8 +49,7 @@ public class HandManager : MonoBehaviour
 
     private void OnEnable()
     {
-        if(GameManager.Instance)
-            GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        GameManager.Instance!.GameStateChanged += OnGameStateChanged;
      
         // TODO: Check if mouse is set in inspector or this is still needed
         mouseFollower = FindAnyObjectByType<MouseFollower>();

@@ -28,7 +28,7 @@ public class FloodEvent : StageEventBase
         var p = (FloodParameters)parameters;
         
         // Get all effected tiles
-        var effectedTiles = GridManager.Instance.GetTilesFiltered(tile => tile.TilePosition.y < p.floodHeight);
+        var effectedTiles = GridManager.Instance!.GetTilesFiltered(tile => tile.TilePosition.y < p.floodHeight);
 
         foreach (var tile in effectedTiles)
         {

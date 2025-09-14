@@ -35,12 +35,12 @@ public class ActionPointManager : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.Instance.UpdateActionPoints += UpdatePointsOnNewRound;
+        GameManager.Instance!.UpdateActionPoints += UpdatePointsOnNewRound;
     }
 
     private void OnDisable()
     {
-        GameManager.Instance.UpdateActionPoints -= UpdatePointsOnNewRound;
+        if(GameManager.Instance) GameManager.Instance.UpdateActionPoints -= UpdatePointsOnNewRound;
     }
 
     public void UpdateActionPoints(int valueToAdd)

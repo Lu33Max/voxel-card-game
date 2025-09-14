@@ -6,12 +6,13 @@ public class KingUnit : UnitBehaviour
 {
     private void Start()
     {
-        GameManager.Instance.GameStateChanged += HandleGameStateChanged;
+        GameManager.Instance!.GameStateChanged += HandleGameStateChanged;
     }
 
     private void OnDisable()
     {
-        GameManager.Instance.GameStateChanged -= HandleGameStateChanged;
+        if(GameManager.Instance)
+            GameManager.Instance.GameStateChanged -= HandleGameStateChanged;
     }
 
     public override IEnumerable<MoveCommand> GetValidMoves(Vector3Int unitPosition, int movementRange)
@@ -31,7 +32,7 @@ public class KingUnit : UnitBehaviour
             {
                 var prevPos = queue.Dequeue();
                 
-                var validNeighbours = GridManager.Instance.GetReachableNeighbours(prevPos,
+                var validNeighbours = GridManager.Instance!.GetReachableNeighbours(prevPos,
                     true, UnitRef.Data.traversableEdgeTypes, new [] { TileData.TileState.Normal });
 
                 var targetPosition = prevPos + direction;

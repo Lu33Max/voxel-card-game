@@ -80,14 +80,15 @@ public class GameManager : NetworkSingleton<GameManager>
         if(!isServer) return;
 
         Unit.OnUnitDied += HandleUnitDied;
-        UnitActionManager.Instance.OnAllUnitActionsDone += HandleAllUnitsDone;
+        UnitActionManager.Instance!.OnAllUnitActionsDone += HandleAllUnitsDone;
     }
     
     private void Update()
     {
-        if(!isServer || !_timerActive) return;
+        if(!isServer) return;
         
-        UpdateTimer();
+        if(_defeatedKings.Count > 0 && gameState != GameState.Win) GameOver();
+        if(_timerActive) UpdateTimer();
         if(_submittedPlayers > 0) CheckForAllSubmitted();
     }
     
@@ -96,7 +97,7 @@ public class GameManager : NetworkSingleton<GameManager>
         if(!isServer) return;
         
         Unit.OnUnitDied -= HandleUnitDied;
-        UnitActionManager.Instance.OnAllUnitActionsDone -= HandleAllUnitsDone;
+        if(UnitActionManager.Instance) UnitActionManager.Instance.OnAllUnitActionsDone -= HandleAllUnitsDone;
     }
 
     /// <summary>
@@ -143,19 +144,14 @@ public class GameManager : NetworkSingleton<GameManager>
     [Server]
     private void HandleUnitDied(UnitBehaviour behaviour, Team owningTeam)
     {
-        if (behaviour is KingUnit)
-            _defeatedKings.Add(owningTeam);
+        if (behaviour is not KingUnit) return;
+
+        _defeatedKings.Add(owningTeam);
     }
 
     [Server]
     private void UpdateGameState(GameState newState)
     {
-        if (_defeatedKings.Count > 0)
-        {
-            GameOver();
-            newState = GameState.Win;
-        }
-        
         gameState = newState;
         
         if (gameState is GameState.Movement)
@@ -169,8 +165,7 @@ public class GameManager : NetworkSingleton<GameManager>
     {
         _timeLeft -= Time.deltaTime;
         
-        if(_timeLeft > 0)
-            return;
+        if(_timeLeft > 0) return;
 
         _timeLeft = 0;
         _timerActive = false;
@@ -192,14 +187,6 @@ public class GameManager : NetworkSingleton<GameManager>
         DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, Player.LocalPlayer.team, NetworkServer.connections.Count, _roundCounter);
         UpdateGameState(GameState.Movement);
         RPCInvokeNewRound(_roundCounter);
-    }
-
-    [Server]
-    private void GameOver()
-    {
-        var screenText = _defeatedKings.Count > 1 ? "The game ends in a tie" :
-            _defeatedKings.First() == Team.Blue ? "Red team has won!" : "Blue team has won!";
-        RPCGameOver(screenText);
     }
     
     public void ReturnToLobby()
@@ -327,6 +314,18 @@ public class GameManager : NetworkSingleton<GameManager>
     {
         RoundTimerUp?.Invoke();
     }
+
+    [Server]
+    private void GameOver()
+    {
+        gameState = GameState.Win;
+        _timerActive = false;
+        
+        var screenText = _defeatedKings.Count > 1 ? "The game ends in a tie" :
+            _defeatedKings.First() == Team.Blue ? "Red team has won!" : "Blue team has won!";
+        
+        RPCGameOver(screenText);
+    }
     
     [ClientRpc]
     private void RPCGameOver(string text)
@@ -334,8 +333,7 @@ public class GameManager : NetworkSingleton<GameManager>
         gameOverScreen.SetActive(true);
         gameOverScreen.GetComponent<TextMeshProUGUI>().text = text;
         
-        if(!isServer)
-            return;
+        if(!isServer) return;
         
         for(var i = 0; i < gameOverScreen.transform.childCount; i++)
             gameOverScreen.transform.GetChild(i).gameObject.SetActive(true);

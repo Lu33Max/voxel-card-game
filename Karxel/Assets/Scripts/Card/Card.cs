@@ -7,7 +7,6 @@ public class Card : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI pointText = null!;
     [SerializeField] private TextMeshProUGUI nameText = null!;
-    [SerializeField] private TextMeshProUGUI valueText = null!;
     [SerializeField] private Image cardImage = null!;
 
     [SerializeField] private Sprite cardBGRegular = null!;

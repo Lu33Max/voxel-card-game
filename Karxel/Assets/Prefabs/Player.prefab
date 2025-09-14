@@ -2431,7 +2431,6 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  leaveButtonText: {fileID: 0}
   clientLeaveText: {fileID: 4475862920369687765}
   hostLeaveText: {fileID: 6178140631912735112}
 --- !u!1 &8355493446755113752

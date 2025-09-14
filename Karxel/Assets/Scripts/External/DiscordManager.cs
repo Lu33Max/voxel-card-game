@@ -106,7 +106,7 @@ public class DiscordManager : Singleton<DiscordManager>
         {
             _discord = new Discord.Discord(1342122312463417396, (ulong)CreateFlags.NoRequireDiscord);
         }
-        catch (Exception _)
+        catch (Exception)
         {
             _discord = null;
         }

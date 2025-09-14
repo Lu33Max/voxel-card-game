@@ -4,12 +4,12 @@ using UnityEngine.InputSystem;
 
 public class InputManager : Singleton<InputManager>
 {
-    private PlayerControls _controls;
+    private PlayerControls? _controls;
     
-    public event Action<Vector2> OnMove;
-    public event Action<float> OnRotate;
-    public event Action<float> OnZoom;
-    public event Action OnInteract; 
+    public event Action<Vector2>? OnMove;
+    public event Action<float>? OnRotate;
+    public event Action<float>? OnZoom;
+    public event Action? OnInteract; 
 
     protected override void Awake()
     {
@@ -20,7 +20,7 @@ public class InputManager : Singleton<InputManager>
 
     private void OnEnable()
     {
-        _controls.Enable();
+        _controls!.Enable();
 
         _controls.Player.Move.performed += OnMovePerformed;
         _controls.Player.Move.canceled  += OnMoveCanceled;
@@ -36,6 +36,8 @@ public class InputManager : Singleton<InputManager>
     
     private void OnDisable()
     {
+        if(_controls == null) return;
+        
         _controls.Player.Move.performed -= OnMovePerformed;
         _controls.Player.Move.canceled  -= OnMoveCanceled;
         

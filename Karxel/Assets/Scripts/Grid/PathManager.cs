@@ -27,14 +27,12 @@ public class PathManager : NetworkBehaviour
         GameManager.Instance!.GameStateChanged += OnGameStateChanged;
     }
 
-    public override void OnStopServer()
+    public void OnDisable()
     {
-        base.OnStopServer();
-        
         PathPool.Clear();
         _activePaths.Clear();
         
-        if(GameManager.Instance)
+        if(isServer && GameManager.Instance)
             GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 

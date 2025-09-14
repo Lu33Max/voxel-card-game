@@ -12,7 +12,7 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private Button redJoinBtn;
     [SerializeField] private Button blueJoinBtn;
     [SerializeField] private Button readyBtn;
-    [SerializeField] private Button startBtn;
+    [SerializeField] private GameObject startBtn;
     [SerializeField] private TextMeshProUGUI redCounter;
     [SerializeField] private TextMeshProUGUI blueCounter;
     
@@ -45,12 +45,7 @@ public class LobbyManager : NetworkBehaviour
     private void Start()
     {
         AudioManager.Instance.PlayMusic(AudioManager.Instance.MenuMusic);
-    }
-
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        startBtn.gameObject.SetActive(true);
+        startBtn.gameObject.SetActive(isServer);
     }
     
     private void OnEnable() {
@@ -147,6 +142,7 @@ public class LobbyManager : NetworkBehaviour
         NetworkManager.singleton.StopClient();
     }
     
+    // TODO: Better use of instantiated objects and not always destroying each one
     [Client]
     public void UpdatePlayerList()
     {
@@ -179,6 +175,8 @@ public class LobbyManager : NetworkBehaviour
                     var newText = Instantiate(playerNameCard, parent);
                     newText.GetComponent<TextMeshProUGUI>().text = customPlayer.playerName;
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             blueCounter.text = _bluePlayers.Count.ToString();
@@ -186,12 +184,10 @@ public class LobbyManager : NetworkBehaviour
         }
     }
 
-    private void RemoveAllChildren(Transform tform)
+    private static void RemoveAllChildren(Transform parentTransform)
     {
-        for (var i = 0; i < tform.childCount; i++)
-        {
-            Destroy(tform.GetChild(i).gameObject);
-        }
+        for (var i = 0; i < parentTransform.childCount; i++)
+            Destroy(parentTransform.GetChild(i).gameObject);
     }
 
     [Command(requiresAuthority = false)]
