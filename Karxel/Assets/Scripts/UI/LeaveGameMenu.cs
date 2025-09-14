@@ -26,13 +26,13 @@ public class LeaveGameMenu : NetworkBehaviour
     {
         if (isServer)
         {
-            GameManager.Instance.ReturnToLobby();
+            GameManager.Instance!.ReturnToLobby();
         }
         else
         {
-            var epicLobby = FindObjectOfType<EOSLobby>();
+            var epicLobby = FindAnyObjectByType<EOSLobby>();
 
-            if (epicLobby != null)
+            if (epicLobby)
             {
                 epicLobby.LeaveLobby();
                 return;

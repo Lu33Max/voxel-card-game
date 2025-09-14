@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using Random = System.Random;
 
 [RequireComponent(typeof(NetworkIdentity))]
 public class UnitActionManager : NetworkSingleton<UnitActionManager>
@@ -40,7 +41,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     private void Start()
     {
         if (isServer) 
-            GameManager.Instance.GameStateChanged += HandleGameStateChanged;
+            GameManager.Instance!.GameStateChanged += HandleGameStateChanged;
     }
 
     private void Update()
@@ -52,7 +53,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
 
     private void OnDisable()
     {
-        if(isServer && NetworkServer.active) 
+        if(GameManager.Instance) 
             GameManager.Instance.GameStateChanged -= HandleGameStateChanged;
     }
 
@@ -92,7 +93,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
         // Tell the sencer client that its registration was successful
         unit.TargetOnMoveRegisterSuccessful(senderConnection, moveToRegister);
         // Tell the other team members about the new intent
-        GameManager.Instance.CallRpcOnTeam(conn => unit.TargetRegisterNewMoveIntent(conn, moveToRegister), senderTeam, sender);
+        GameManager.Instance!.CallRpcOnTeam(conn => unit.TargetRegisterNewMoveIntent(conn, moveToRegister), senderTeam, sender);
         
         unit.isControlled = false;
     }
@@ -128,12 +129,12 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
         unit.TargetOnAttackRegisterSuccessful(senderConnection, attackToRegister);
         
         // Tell the other team members about the new intent
-        GameManager.Instance.CallRpcOnTeam(conn => unit.TargetRegisterNewAttackIntent(conn, attackToRegister),
+        GameManager.Instance!.CallRpcOnTeam(conn => unit.TargetRegisterNewAttackIntent(conn, attackToRegister),
             senderTeam, sender);
         
         // Make the targeted tiles show up for each client
         foreach (var tile in attackToRegister.Tiles)
-            MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
+            MarkerManager.Instance!.RPCAddMarker(tile, new MarkerData
             {
                 Type = MarkerType.Attack,
                 Priority = 1,
@@ -149,7 +150,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     [Server]
     private static bool UnitExistsAtTile(Vector3Int gridPosition, out Unit? unit)
     {
-        GridManager.Instance.IsExistingGridPosition(gridPosition, out var tile);
+        GridManager.Instance!.IsExistingGridPosition(gridPosition, out var tile);
         unit = tile?.Unit;
         return unit != null;
     }
@@ -202,7 +203,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
             });
 
         // Static units are all units minus the ones with move intents
-        var staticUnits = GridManager.Instance.GetAllUnitTiles().Except(intendedMoves.Keys).ToList();
+        var staticUnits = GridManager.Instance!.GetAllUnitTiles().Except(intendedMoves.Keys).ToList();
         Dictionary<Vector3Int, MoveCommand> actualMoves = new();
 
         var i = 0;
@@ -335,7 +336,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
         _attackRound = 0;
         
         // Hide all previous local tiles
-        MarkerManager.Instance.RPCClearAllMarkers();
+        MarkerManager.Instance!.RPCClearAllMarkers();
         ExecuteCurrentAttackRound();
     }
     
@@ -345,7 +346,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     {
         // Hide all previous' rounds attack tiles
         foreach (var tile in from attacks in _attackIntents.Values from attack in attacks from tile in attack.Tiles select tile)
-            MarkerManager.Instance.RPCRemoveMarker(tile, MarkerType.Attack, "All");
+            MarkerManager.Instance!.RPCRemoveMarker(tile, MarkerType.Attack, "All");
         
         var attacksToExecute = _attackIntents.Where(a => a.Value.Count > _attackRound).ToArray();
         
@@ -375,7 +376,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
                     accumulatedDamage[tile].Heal += currentAttack.Damage < 0 ? currentAttack.Damage : 0;
                 }
                 
-                MarkerManager.Instance.RPCAddMarker(tile, new MarkerData
+                MarkerManager.Instance!.RPCAddMarker(tile, new MarkerData
                 {
                     Type = MarkerType.Attack,
                     Priority = 1,
@@ -385,7 +386,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
             
             _totalUnitActions = attacksToExecute.Length;
             
-            var unit = GridManager.Instance.GetTileAtGridPosition(attackIntent.Key)?.Unit;
+            var unit = GridManager.Instance!.GetTileAtGridPosition(attackIntent.Key)?.Unit;
             if (unit != null) unit.RPCExecuteAttack(currentAttack);
         }
 
@@ -404,7 +405,7 @@ public class UnitActionManager : NetworkSingleton<UnitActionManager>
     /// <summary> Called whenever all attacks or moves have been executed on all clients </summary>
     private void HandleAllActionsDone()
     {
-        if(GameManager.Instance.gameState == GameState.MovementExecution)
+        if(GameManager.Instance!.gameState == GameState.MovementExecution)
         {
             OnAllUnitActionsDone?.Invoke();
         }

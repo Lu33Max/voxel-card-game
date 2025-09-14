@@ -2,10 +2,11 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
+/// <summary> Responsible for displaying the current round count and a countdown to the next <see cref="StageEventInstance"/> </summary>
 public class RoundCounter : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI counterText;
-    [SerializeField] private TextMeshProUGUI eventText;
+    [SerializeField] private TextMeshProUGUI counterText = null!;
+    [SerializeField] private TextMeshProUGUI eventText = null!;
     
     [SerializeField] private float fadeDuration;
     [SerializeField] private float fadeAfterSeconds;
@@ -24,16 +25,16 @@ public class RoundCounter : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.Instance.NewRound += OnNewRound;
+        GameManager.Instance!.NewRound += HandleNewRound;
     }
     
     private void OnDisable()
     {
-        GameManager.Instance.NewRound -= OnNewRound;
+        GameManager.Instance!.NewRound -= HandleNewRound;
         StopAllCoroutines();
     }
 
-    private void OnNewRound(int roundCount)
+    private void HandleNewRound(int roundCount)
     {
         counterText.text = $"Round {roundCount}";
         counterText.gameObject.SetActive(true);
@@ -52,11 +53,8 @@ public class RoundCounter : MonoBehaviour
 
     private IEnumerator FadeText()
     {
-        var textColor = counterText.color;
-        var newColor = new Color(textColor.r, textColor.g, textColor.b, _alphaValue);
-        
-        counterText.color = newColor;
-        eventText.color  = newColor;
+        counterText.color = new Color(counterText.color.r, counterText.color.g, counterText.color.b, _alphaValue);
+        eventText.color  = new Color(eventText.color.r, eventText.color.g, eventText.color.b, _alphaValue);
         
         yield return new WaitForSeconds(fadeAfterSeconds);
 
@@ -65,11 +63,10 @@ public class RoundCounter : MonoBehaviour
         while (_fadeTime < fadeDuration)
         {
             _fadeTime += Time.deltaTime;
-            var currentColor = new Color(textColor.r, textColor.g, textColor.b,
-                Mathf.Lerp(_alphaValue, 0, _fadeTime / fadeDuration));
+            var alpha = Mathf.Lerp(_alphaValue, 0, _fadeTime / fadeDuration);
             
-            counterText.color = currentColor;
-            eventText.color = currentColor;
+            counterText.color = new Color(counterText.color.r, counterText.color.g, counterText.color.b, alpha);
+            eventText.color = new Color(eventText.color.r, eventText.color.g, eventText.color.b, alpha);;
             
             yield return new WaitForEndOfFrame();
         }

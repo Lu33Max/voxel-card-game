@@ -7,7 +7,7 @@ public class MoveCardData : CardData
 {
     public int moveDistance;
 
-    public override bool IsCorrectPhase() => GameManager.Instance.gameState == GameState.Movement;
+    public override bool IsCorrectPhase() => GameManager.Instance!.gameState == GameState.Movement;
 
     public override bool CanBeUsed(TileData? hoveredTile, Unit? selectedUnit)
     {
@@ -16,8 +16,8 @@ public class MoveCardData : CardData
             : selectedUnit.GetValidMoves(moveDistance)
                 .FirstOrDefault(move => move.TargetPosition == hoveredTile.TilePosition);
 
-        return moveCommand != null && GridManager.Instance.IsMoveValid(moveCommand) &&
-               GameManager.Instance.gameState == GameState.Movement;
+        return moveCommand != null && GridManager.Instance!.IsMoveValid(moveCommand) &&
+               GameManager.Instance!.gameState == GameState.Movement;
     }
 
     protected override void UseCard(TileData? hoveredTile, Unit? selectedUnit)

@@ -4,7 +4,6 @@ using System.Linq;
 using Mirror;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class GridManager : NetworkSingleton<GridManager>
 {
@@ -15,10 +14,6 @@ public class GridManager : NetworkSingleton<GridManager>
     private Vector3 tileSize = new(0.3f, 0.3f, 0.3f);
     [SerializeField, Tooltip("Layermask used by all walkable colliders")] 
     private LayerMask groundLayer;
-
-    [FormerlySerializedAs("highlightHoverHeight")]
-    [Header("Highlighting")]
-    [SerializeField] private float markerHeight = 0.001f;
     
     [Header("Unit Setup")]
     [SerializeField] private Transform blueParent;
@@ -240,12 +235,12 @@ public class GridManager : NetworkSingleton<GridManager>
 
         Vector3Int[] heights = { new(0, -1, 0), Vector3Int.zero, new(0, 1, 0) };
 
-        var tileMarkers = FindObjectsOfType<Tile>();
+        var tileMarkers = FindObjectsByType<Tile>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         
         foreach (var tileMarker in tileMarkers)
         {
             tileMarker.ResetNeighbours();
-            var tile = GetTileAtWorldPosition(tileMarker.transform.position);
+            var tile = GetTileAtWorldPosition(tileMarker.transform.position)!;
 
             foreach (var dir in directions)
             {
@@ -291,7 +286,7 @@ public class GridManager : NetworkSingleton<GridManager>
                     continue;
             
                 unit.gameObject.SetActive(true);
-                unitScript.UpdateGridPosition(tile.TilePosition);
+                unitScript.UpdateGridPosition(tile!.TilePosition);
 
                 var newTile = _tiles[gridPos];
                 newTile.Unit = unitScript;

@@ -1,3 +1,4 @@
+using System;
 using EasyTextEffects;
 using TMPro;
 using UnityEngine;
@@ -16,11 +17,24 @@ public class TextButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     
     private Button _button = null!;
     private TextEffect _textEffect = null!;
+    private TextMeshProUGUI _textMesh = null!;
+
+    private string _lastText = string.Empty;
     
     private void Awake()
     {
         _button = GetComponentInChildren<Button>();
         _textEffect = GetComponentInChildren<TextEffect>();
+        _textMesh = GetComponentInChildren<TextMeshProUGUI>();
+        _lastText = _textMesh.text;
+    }
+
+    private void Update()
+    {
+        if (string.Equals(_lastText, _textMesh.text)) return;
+        _textEffect.Refresh();
+        _textEffect.StartManualEffects();
+        _lastText = _textMesh.text;
     }
 
     private void OnEnable()

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
+// TODO: Rework for single row of cards
 public class HandManager : MonoBehaviour
 {
     public static HandManager Instance { get; private set; }
@@ -51,17 +51,19 @@ public class HandManager : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        if(GameManager.Instance)
+            GameManager.Instance.GameStateChanged += OnGameStateChanged;
      
         // TODO: Check if mouse is set in inspector or this is still needed
-        mouseFollower = FindObjectOfType<MouseFollower>();
+        mouseFollower = FindAnyObjectByType<MouseFollower>();
         if (mouseFollower == null)
             Debug.LogWarning("No MouseFollower Object found");
     }
 
     private void OnDisable()
     {
-        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        if(GameManager.Instance)
+            GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
     /// <summary> Adds new card to the deck and does the setup for its values </summary>
@@ -77,7 +79,7 @@ public class HandManager : MonoBehaviour
         if(SelectedCard != null) DeselectCurrentCard();
         else AudioManager.Instance.PlaySfx(drawCardSound);
         
-        UpdateCardPositions(GameManager.Instance.gameState);
+        UpdateCardPositions(GameManager.Instance!.gameState);
     }
 
     /// <summary> Re-Adds the last played card to the player's hand and restores its action points </summary>
@@ -92,7 +94,7 @@ public class HandManager : MonoBehaviour
         _handCards.Add(newCard);
         _handCards = _handCards.OrderBy(c => c.CardData.type).ThenBy(c => c.CardData.cardName).ToList();
         
-        UpdateCardPositions(GameManager.Instance.gameState);
+        UpdateCardPositions(GameManager.Instance!.gameState);
         
         ActionPointManager.Instance.UpdateActionPointsOnPlay(newCard.CardData.cost);
         _lastPlayedCard = null;
@@ -128,6 +130,8 @@ public class HandManager : MonoBehaviour
 
     public void PlaySelectedCard()
     {
+        if(!SelectedCard) return;
+        
         ActionPointManager.Instance.UpdateActionPointsOnPlay(-SelectedCard.CardData.cost);
 
         _lastPlayedCard = SelectedCard.AttachedData;
@@ -138,13 +142,15 @@ public class HandManager : MonoBehaviour
         mouseFollower.ClearUIElement();
         
         AudioManager.Instance.PlaySfx(drawCardSound);
-        UpdateCardPositions(GameManager.Instance.gameState);
+        UpdateCardPositions(GameManager.Instance!.gameState);
         
         OnCardPlayed?.Invoke();
     }
 
     public void DeselectCurrentCard()
     {
+        if(!SelectedCard) return;
+        
         AudioManager.Instance.PlaySfx(drawCardSound);
         
         OnCardDeselected?.Invoke();

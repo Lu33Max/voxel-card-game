@@ -7,32 +7,35 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class PathManager : NetworkBehaviour
 {
-    [SerializeField] private GameObject pathPrefab;
+    [SerializeField] private GameObject pathPrefab = null!;
 
     private static readonly Queue<GameObject> PathPool = new();
-    private static Transform _parent;
+    private static Transform _parent = null!;
     
     private readonly Dictionary<Vector3Int, PathRenderer> _activePaths = new();
-    private Unit _unit;
+    private Unit _unit = null!;
     
     public void Setup(Unit parentUnit)
     {
         _unit = parentUnit;
-
-        if (_parent == null)
-            _parent = GameObject.Find("Paths").transform;
+        _parent = GameObject.Find("Paths").transform;
     }
     
     public override void OnStartServer()
     {
         base.OnStartServer();
-        GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        GameManager.Instance!.GameStateChanged += OnGameStateChanged;
     }
 
     public override void OnStopServer()
     {
         base.OnStopServer();
-        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        
+        PathPool.Clear();
+        _activePaths.Clear();
+        
+        if(GameManager.Instance)
+            GameManager.Instance.GameStateChanged -= OnGameStateChanged;
     }
 
     [Client]

@@ -8,10 +8,10 @@ public class StageEventInstance
     public StageEventBase eventType;
 
     [SerializeReference]
-    public StageEventParameters parameters;
+    public StageEventParameters? parameters;
 
     // Only used internally for Unity to properly reset the available parameter options inside the inspector
-    [HideInInspector] public StageEventBase lastEventType;
+    [HideInInspector] public StageEventBase? lastEventType;
     
     public void InitParametersIfNull()
     {
@@ -19,13 +19,15 @@ public class StageEventInstance
             parameters = eventType.CreateDefaultParameters();
     }
     
+    /// <summary>
+    ///     Used internally to reset the displayed parameters in the inspector in case the selected eventType changes
+    /// </summary>
     public void SyncParametersWithEventType()
     {
-        // Wenn EventType geändert oder auf null gesetzt wurde → Parameter neu setzen/löschen
-        if (eventType != lastEventType)
-        {
-            parameters = eventType != null ? eventType.CreateDefaultParameters() : null;
-            lastEventType = eventType;
-        }
+        if (eventType == lastEventType) return;
+        
+        // If eventType was changed or set to null → replace parameters
+        parameters = eventType != null ? eventType.CreateDefaultParameters() : null;
+        lastEventType = eventType;
     }
 }

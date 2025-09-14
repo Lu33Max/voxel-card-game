@@ -28,17 +28,21 @@ public class GridMouseInteraction : MonoBehaviour
         UnitHovered = new UnityEvent<Unit>();
         
         InputManager.Instance.OnInteract += OnMouseInteraction;
-        GameManager.Instance.PlayersReady += OnPlayersReady;
-        GameManager.Instance.GameStateChanged += OnStateChanged;
         HandManager.OnCardDeselected += OnCardDeselected;
+        GameManager.Instance!.PlayersReady += OnPlayersReady;
+        GameManager.Instance.GameStateChanged += OnStateChanged;
     }
 
     private void OnDisable()
     {
+        UnitHovered = new UnityEvent<Unit>();
+        
         InputManager.Instance.OnInteract -= OnMouseInteraction;
+        HandManager.OnCardDeselected -= OnCardDeselected;
+
+        if (!GameManager.Instance) return;
         GameManager.Instance.PlayersReady -= OnPlayersReady;
         GameManager.Instance.GameStateChanged -= OnStateChanged;
-        HandManager.OnCardDeselected -= OnCardDeselected;
     }
 
     private void Update()

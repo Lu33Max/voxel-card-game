@@ -4,7 +4,7 @@ using UnityEngine;
 
 public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
-    private static T _instance;
+    private static T _instance = null!;
 
     public static T Instance
     {
@@ -12,11 +12,7 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         {
             if (_instance != null) return _instance;
             
-            _instance = FindObjectOfType<T>();
-
-            if (_instance == null)
-                Debug.LogError($"[Singleton] No instance of {typeof(T)} has been found inside the current scene.");
-
+            _instance = FindAnyObjectByType<T>();
             return _instance;
         }
     }
@@ -34,21 +30,21 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 
 public abstract class NetworkSingleton<T> : NetworkBehaviour where T : NetworkBehaviour
 {
-    private static T _instance;
+    private static T? _instance;
 
-    public static event Action OnReady;
+    public static event Action? OnReady;
 
-    public static T Instance
+    /// <summary>
+    ///     Singular instance of this class within the whole loaded context.<br/>Singletons of <see cref="NetworkBehaviour"/>s
+    ///     are only valid inside Start() or any other function after
+    /// </summary>
+    public static T? Instance
     {
         get
         {
             if (_instance != null) return _instance;
             
-            _instance = FindObjectOfType<T>();
-
-            if (_instance == null)
-                Debug.LogError($"[Singleton] No instance of {typeof(T)} has been found inside the current scene.");
-
+            _instance = FindAnyObjectByType<T>();
             return _instance;
         }
     }

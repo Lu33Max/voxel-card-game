@@ -315,11 +315,9 @@ public class GameManager : NetworkSingleton<GameManager>
     private void RPCInvokePlayersReady()
     {
         // Mirror does not dispose of old RoomPlayers and only replaces their reference
-        var roomPlayers = FindObjectsOfType<CustomRoomPlayer>();
+        var roomPlayers = FindObjectsByType<CustomRoomPlayer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var player in roomPlayers)
-        {
             Destroy(player.gameObject);
-        }
         
         PlayersReady?.Invoke();
     }

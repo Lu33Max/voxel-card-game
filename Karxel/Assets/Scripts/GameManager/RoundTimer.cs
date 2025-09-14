@@ -10,7 +10,7 @@ public class RoundTimer : MonoBehaviour
 {
     [Header("Countdown Display")]
     [SerializeField, Tooltip("Reference to the text display element showing the remaining seconds")] 
-    private TextMeshProUGUI timerText;
+    private TextMeshProUGUI timerText = null!;
     [SerializeField, Tooltip("Number of seconds at which the countdown starts playing")] 
     private int countdownStart;
     [SerializeField, Tooltip("Number of seconds at which the countdown sfx gets swapped")] 
@@ -18,19 +18,19 @@ public class RoundTimer : MonoBehaviour
     
     [Header("Countdown SFX")]
     [SerializeField, Tooltip("Regular sfx that gets played on every second during the countdown")] 
-    private AudioClip timerRegular;
+    private AudioClip timerRegular = null!;
     [SerializeField, Tooltip("Sfx that gets played during the last few seconds of the countdown")] 
-    private AudioClip timerEnding;
+    private AudioClip timerEnding = null!;
     [SerializeField, Tooltip("Increase in pitch for every sfx that gets played")] 
     private float pitchIncrease = 0.02f;
     
     [Header("Phase Display")]
-    [SerializeField] private List<Image> phaseDisplays;
-    [SerializeField] private Sprite moveSprite;
-    [SerializeField] private Sprite attackSprite;
+    [SerializeField] private List<Image> phaseDisplays = null!;
+    [SerializeField] private Sprite moveSprite = null!;
+    [SerializeField] private Sprite attackSprite = null!;
     
     /// <summary> AudioSource used to play all countdown sfx from </summary>
-    private AudioSource _timerAudio;
+    private AudioSource _timerAudio = null!;
 
     private void Start()
     {
@@ -39,7 +39,7 @@ public class RoundTimer : MonoBehaviour
 
     private IEnumerator SearchGameManager()
     {
-        while (GameManager.Instance == null)
+        while (!GameManager.Instance)
             yield return new WaitForEndOfFrame();
         
         GameManager.Instance.TimerUpdated += OnTimerUpdated;
@@ -53,8 +53,11 @@ public class RoundTimer : MonoBehaviour
     
     private void OnDisable()
     {
-        GameManager.Instance.TimerUpdated -= OnTimerUpdated;
-        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        if (GameManager.Instance)
+        {
+            GameManager.Instance.TimerUpdated -= OnTimerUpdated;
+            GameManager.Instance.GameStateChanged -= OnGameStateChanged;   
+        }
         StopAllCoroutines();
     }
 

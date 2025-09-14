@@ -119,10 +119,10 @@ public class MapSelection : NetworkBehaviour
         var voteDiff = _playerVotes[toggleIndex] - _voteGroups[toggleIndex].childCount;
 
         if (voteDiff < 0)
-            for (int i = 0; i < Mathf.Abs(voteDiff); i++)
+            for (var i = 0; i < Mathf.Abs(voteDiff); i++)
                 Destroy(_voteGroups[toggleIndex].GetChild(i).gameObject);
         else if (voteDiff > 0)
-            for (int i = 0; i < voteDiff; i++)
+            for (var i = 0; i < voteDiff; i++)
                 Instantiate(voteIcon, _voteGroups[toggleIndex]);
     }
 
@@ -137,6 +137,6 @@ public class MapSelection : NetworkBehaviour
     private void RpcSelectedMap(int mapIndex)
     {
         if(isServer)
-            FindObjectOfType<LobbyManager>().StartGame(mapIndex);
+            FindAnyObjectByType<LobbyManager>().StartGame(mapIndex);
     }
 }

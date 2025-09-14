@@ -101,7 +101,7 @@ public class Unit : NetworkBehaviour
 
     private void Start()
     {
-        GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        GameManager.Instance!.GameStateChanged += OnGameStateChanged;
         HandManager.OnCardSelected += UpdateMaterialForCurrentCard;
         HandManager.OnCardPlayed += UpdateMaterialToTeamColor;
         HandManager.OnCardDeselected += UpdateMaterialToTeamColor;
@@ -114,7 +114,7 @@ public class Unit : NetworkBehaviour
         if(!isServer) return;
         
         UpdateHealth(data.health);
-        UnitActionManager.Instance.OnTileDamaged += OnAttackExecuted;
+        UnitActionManager.Instance!.OnTileDamaged += OnAttackExecuted;
         GameManager.Instance.CheckHealth += OnCheckHealth;
     }
 
@@ -128,7 +128,9 @@ public class Unit : NetworkBehaviour
     private void OnDisable()
     {
         StopAllCoroutines();
-        GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        
+        if(GameManager.Instance) GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+        
         HandManager.OnCardSelected -= UpdateMaterialForCurrentCard;
         HandManager.OnCardPlayed -= UpdateMaterialToTeamColor;
         HandManager.OnCardDeselected -= UpdateMaterialToTeamColor;
@@ -139,8 +141,8 @@ public class Unit : NetworkBehaviour
         if(!isServer)
             return;
         
-        UnitActionManager.Instance.OnTileDamaged -= OnAttackExecuted;
-        GameManager.Instance.CheckHealth -= OnCheckHealth;
+        if(UnitActionManager.Instance) UnitActionManager.Instance.OnTileDamaged -= OnAttackExecuted;
+        if(GameManager.Instance) GameManager.Instance.CheckHealth -= OnCheckHealth;
     }
 
     /// <summary>Get all tiles currently reachable by the unit. Only includes valid moves.</summary>

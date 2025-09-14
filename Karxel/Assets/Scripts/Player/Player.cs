@@ -41,7 +41,7 @@ public class Player : NetworkBehaviour
         LocalPlayer = this;
         turnSubmitBtn.interactable = false;
         
-        GameManager.Instance.GameStateChanged += OnGameStateChanged;
+        GameManager.Instance!.GameStateChanged += OnGameStateChanged;
         GameManager.Instance.RoundTimerUp += SubmitTurn;
         DiscordManager.Instance.UpdateActivity(DiscordManager.ActivityState.Game, team, NetworkServer.connections.Count, 1);
 
@@ -51,8 +51,7 @@ public class Player : NetworkBehaviour
     private void OnDisable()
     {
         // Only execute if leaving during play mode
-        if(GameManager.Instance == null)
-            return;
+        if(!GameManager.Instance) return;
 
         GameManager.Instance.RoundTimerUp -= SubmitTurn;
         GameManager.Instance.GameStateChanged -= OnGameStateChanged;
@@ -79,24 +78,19 @@ public class Player : NetworkBehaviour
     private void CmdUpdateSubmittedStatus(bool newState)
     {
         HasSubmitted = newState;
-        GameManager.Instance.SubmitTurn();
+        GameManager.Instance!.SubmitTurn();
     }
 
     private void OnGameStateChanged(GameState newState)
     {
-        switch (newState)
-        {
-            case GameState.Movement:
-            case GameState.Attack:
-                turnSubmitBtn.interactable = true;
-                break;
-        }
+        if(newState is GameState.Movement or GameState.Attack)
+            turnSubmitBtn.interactable = true;
     }
 
     [Command(requiresAuthority = false)]
     // ReSharper disable once MemberCanBeMadeStatic.Local
     private void CmdAddToPlayerList()
     {
-        GameManager.Instance.PlayerHasSpawned();
+        GameManager.Instance!.PlayerHasSpawned();
     }
 }

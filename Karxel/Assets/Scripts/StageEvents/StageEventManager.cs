@@ -17,13 +17,13 @@ public class StageEventManager : Singleton<StageEventManager>
 
     private void HandleGameManagerReady()
     {
-        GameManager.Instance.NewRound += OnRoundStart;
+        GameManager.Instance!.NewRound += OnRoundStart;
     }
 
     private void OnDisable()
     {
         GameManager.OnReady -= HandleGameManagerReady;
-        GameManager.Instance.NewRound -= OnRoundStart;
+        if(GameManager.Instance) GameManager.Instance.NewRound -= OnRoundStart;
         StopAllCoroutines();
     }
 
@@ -39,7 +39,7 @@ public class StageEventManager : Singleton<StageEventManager>
     public StageEventInstance? GetNextEvent(int currentRound)
     {
         return events?.OrderBy(e => e.triggerRound)
-                     .FirstOrDefault(eventInstance => eventInstance.triggerRound > currentRound);
+                      .FirstOrDefault(eventInstance => eventInstance.triggerRound > currentRound);
     }
 
     /// <summary> Whenever a new round starts, check if there are any events that have to be executed this round </summary>

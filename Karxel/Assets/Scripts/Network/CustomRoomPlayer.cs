@@ -12,17 +12,17 @@ public class CustomRoomPlayer : NetworkRoomPlayer
     public Team team;
 
     [SyncVar(hook = nameof(OnNameChanged))] 
-    public string playerName;
+    public string playerName = string.Empty;
 
     [SyncVar(hook = nameof(OnReadyStatusChanged))]
     public bool isReady;
 
-    private LobbyManager _lobby;
+    private LobbyManager _lobby = null!;
 
     public override void OnStartClient()
     {
         base.OnStartClient();
-        _lobby = FindObjectOfType<LobbyManager>();
+        _lobby = FindAnyObjectByType<LobbyManager>();
     }
     
     public override void OnStartLocalPlayer()
