@@ -21377,7 +21377,7 @@ PrefabInstance:
     - target: {fileID: 3964906594613246026, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
@@ -21397,7 +21397,7 @@ PrefabInstance:
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
@@ -21407,7 +21407,7 @@ PrefabInstance:
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
@@ -21457,12 +21457,12 @@ PrefabInstance:
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 160
       objectReference: {fileID: 0}
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -100
       objectReference: {fileID: 0}
     - target: {fileID: 4407512609806524643, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
         type: 3}
@@ -21570,18 +21570,12 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 1205402798}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1205402800 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5927467784067597163, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
+--- !u!1 &1205402800 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3964906594613246026, guid: 613e412c3b3037c4da5a3a6a2bc1ec2a,
     type: 3}
   m_PrefabInstance: {fileID: 1205402798}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1215207601
 PrefabInstance:
   m_ObjectHideFlags: 0

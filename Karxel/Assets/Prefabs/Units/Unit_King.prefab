@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -8469494145858465668, guid: e87070f916da13b46ae3bfe4cb3c9ebf, type: 3}
+  - {fileID: -8469494145858465668, guid: 6cb7bbede76488b47a41a419a980d493, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -194,6 +194,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: -385936295183742848, guid: b70d86bbd6961ef4c9f899e569008095,
         type: 3}
+    - target: {fileID: 7423909431222590530, guid: da91b61b532d38b4fb642fd978984800,
+        type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 6629697987774451715, guid: da91b61b532d38b4fb642fd978984800, type: 3}
     m_RemovedGameObjects: []

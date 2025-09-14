@@ -2872,7 +2872,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ddb4b16aacddf9a48a409806ce5376d8, type: 2}
+  - {fileID: -8469494145858465668, guid: 8f35026540e974e46acd4901dd537ef8, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -11656,7 +11656,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ddb4b16aacddf9a48a409806ce5376d8, type: 2}
+  - {fileID: -8469494145858465668, guid: 8f35026540e974e46acd4901dd537ef8, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -25258,7 +25258,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ddb4b16aacddf9a48a409806ce5376d8, type: 2}
+  - {fileID: -8469494145858465668, guid: 8f35026540e974e46acd4901dd537ef8, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -25654,7 +25654,7 @@ MonoBehaviour:
   roomPlayerPrefab: {fileID: 1271043052132975523, guid: 70dc3ef0fc092fa4b890adfa36056340,
     type: 3}
   RoomScene: Assets/Scenes/Lobby.unity
-  GameplayScene: 
+  GameplayScene: Assets/Scenes/Game0.unity
   _allPlayersReady: 0
   clientIndex: 0
 --- !u!4 &1240296521

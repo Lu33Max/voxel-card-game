@@ -30,6 +30,8 @@ public class CameraController : MonoBehaviour
 
     private void OnDisable()
     {
+        if (!InputManager.Instance) return;
+        
         InputManager.Instance.OnMove -= OnMovePressed;
         InputManager.Instance.OnRotate -= OnRotatePressed;
         InputManager.Instance.OnZoom -= HandleZoom;
